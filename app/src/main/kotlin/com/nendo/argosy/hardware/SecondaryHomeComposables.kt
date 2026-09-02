@@ -57,6 +57,30 @@ import kotlinx.coroutines.flow.StateFlow
 
 enum class CompanionScreen { HOME, GAME_DETAIL }
 
+@Composable
+fun SecondaryHomeDimmer(
+    manager: com.nendo.argosy.DualScreenManager?,
+    isWizardActive: Boolean,
+    content: @Composable () -> Unit
+) {
+    if (manager == null) {
+        content()
+        return
+    }
+    val prefs by manager.preferencesRepository.userPreferences.collectAsState(
+        initial = com.nendo.argosy.data.preferences.UserPreferences()
+    )
+    val session by manager.playSessionTracker.activeSession.collectAsState()
+    val playback by manager.mediaPlayback.collectAsState()
+    com.nendo.argosy.ui.components.ScreenDimmerOverlay(
+        enabled = prefs.screenDimmerEnabled && session == null && !isWizardActive && playback == null,
+        timeoutMs = prefs.screenDimmerTimeoutMinutes * 60_000L,
+        dimLevel = prefs.screenDimmerLevel / 100f,
+        dimmerState = manager.screenDimmerState,
+        content = content
+    )
+}
+
 /**
  * Whether the media panel is the surface the companion is showing right now. Both role renderers
  * and the activity's key-yield gate derive from this one predicate, so the screen that is drawn

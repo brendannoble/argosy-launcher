@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,15 +20,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 @Stable
-class ScreenDimmerState {
-    private val _lastActivityTime = mutableLongStateOf(System.currentTimeMillis())
-    val lastActivityTime: Long get() = _lastActivityTime.longValue
+class ScreenDimmerState(private val now: () -> Long = { System.nanoTime() / 1_000_000L }) {
+    private val _lastActivityTime = MutableStateFlow(now())
+    val lastActivityTime = _lastActivityTime.asStateFlow()
 
     fun recordActivity() {
-        _lastActivityTime.longValue = System.currentTimeMillis()
+        _lastActivityTime.value = now()
     }
+
+    fun remainingTimeout(timeoutMs: Long): Long =
+        (timeoutMs - (now() - lastActivityTime.value)).coerceAtLeast(0L)
 }
 
 @Composable
@@ -44,18 +49,18 @@ fun ScreenDimmerOverlay(
     content: @Composable () -> Unit
 ) {
     var isDimmed by remember { mutableStateOf(false) }
+    val lastActivityTime by dimmerState.lastActivityTime.collectAsState()
 
-    LaunchedEffect(enabled, timeoutMs, dimmerState.lastActivityTime) {
+    LaunchedEffect(enabled, timeoutMs, dimmerState, lastActivityTime) {
         if (!enabled) {
             isDimmed = false
             return@LaunchedEffect
         }
 
         isDimmed = false
-        delay(timeoutMs)
+        delay(dimmerState.remainingTimeout(timeoutMs))
 
-        val elapsed = System.currentTimeMillis() - dimmerState.lastActivityTime
-        if (elapsed >= timeoutMs) {
+        if (dimmerState.remainingTimeout(timeoutMs) == 0L) {
             isDimmed = true
         }
     }
@@ -63,7 +68,7 @@ fun ScreenDimmerOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
+            .pointerInput(dimmerState) {
                 detectTapGestures {
                     dimmerState.recordActivity()
                 }
@@ -80,7 +85,7 @@ fun ScreenDimmerOverlay(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = dimLevel))
-                    .pointerInput(Unit) {
+                    .pointerInput(dimmerState) {
                         detectTapGestures {
                             dimmerState.recordActivity()
                         }

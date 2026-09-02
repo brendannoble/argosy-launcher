@@ -417,6 +417,8 @@ class DualScreenManager(
     private val idleTimerScope =
         com.nendo.argosy.util.SafeCoroutineScope(Dispatchers.Main, "MediaDimRamp")
 
+    val screenDimmerState = com.nendo.argosy.ui.components.ScreenDimmerState()
+
     /**
      * The single notion of "the person did something", raised by every claimed key event, by
      * touch on any of the app's windows, and by claimed joystick motion whose axes actually moved
@@ -425,6 +427,7 @@ class DualScreenManager(
      * the diagnostic log.
      */
     fun notifyUserActivity(source: String) {
+        screenDimmerState.recordActivity()
         lastUserActivityAtMs = android.os.SystemClock.elapsedRealtime()
         Logger.debug(MEDIA_DIM_LOG_TAG, "userActivity source=$source")
         _userActive.value = true

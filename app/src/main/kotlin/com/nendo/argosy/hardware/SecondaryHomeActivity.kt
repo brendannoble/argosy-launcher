@@ -62,6 +62,7 @@ class SecondaryHomeActivity :
     DualScreenManager.CompanionHost {
 
     private lateinit var dsm: DualScreenManager
+    private var dimmerManager by mutableStateOf<DualScreenManager?>(null)
 
     override fun attachBaseContext(newBase: android.content.Context) {
         val tag = SessionStateStore(newBase).getAppLanguage()
@@ -190,6 +191,7 @@ class SecondaryHomeActivity :
             SecondaryHomeTheme(themeState = themeState.value, fonts = customFonts.value) {
                 if (!isInitialized) return@SecondaryHomeTheme
                 val scrapingArtwork by dsm.imageCacheManager.progress.collectAsState()
+                SecondaryHomeDimmer(dimmerManager, isWizardActive) {
                 androidx.compose.runtime.CompositionLocalProvider(
                     LocalABIconsSwapped provides abIconsSwapped,
                     LocalXYIconsSwapped provides xyIconsSwapped,
@@ -298,6 +300,7 @@ class SecondaryHomeActivity :
                 }
             }
         }
+    }
     }
 
     override fun onResume() {
@@ -1159,6 +1162,7 @@ class SecondaryHomeActivity :
     }
 
     private fun initializeCompanion() {
+        dimmerManager = dsm
         registerDisplayListener()
         initializeDependencies()
         loadInitialState()

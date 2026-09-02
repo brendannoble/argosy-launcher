@@ -160,7 +160,8 @@ fun ArgosyApp(
     val netplayInvitePrompt by viewModel.netplayInvitePrompt.collectAsState()
     val netplayInviteFocusIndex by viewModel.netplayInviteFocusIndex.collectAsState()
     val netplayJoinState by viewModel.netplayJoinState.collectAsState()
-    val screenDimmerState = rememberScreenDimmerState()
+    val screenDimmerState = (LocalContext.current as? com.nendo.argosy.MainActivity)
+        ?.dualScreenManager?.screenDimmerState ?: rememberScreenDimmerState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
