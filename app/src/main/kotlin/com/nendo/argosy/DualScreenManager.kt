@@ -99,6 +99,7 @@ private const val TAG = "DualScreenManager"
 class DualScreenManager(
     context: Context,
     private var scope: CoroutineScope,
+    internal val selectShortcuts: com.nendo.argosy.ui.input.SelectShortcutHandler,
     internal val gameDao: GameDao,
     internal val gameRepository: com.nendo.argosy.data.repository.GameRepository,
     internal val activeSaveRepository: com.nendo.argosy.data.repository.ActiveSaveRepository,
@@ -1177,6 +1178,7 @@ class DualScreenManager(
     }
 
     fun setDualSyncConflictFromSaveConflict(state: com.nendo.argosy.ui.screens.common.SyncOverlayState) {
+        selectShortcuts.reset()
         _dualSyncOverlayFocusIndex.value = 0
         _dualSyncOverlay.value = state
     }
@@ -1199,6 +1201,7 @@ class DualScreenManager(
     var onSaveConflictOverwrite: (() -> Unit)? = null
 
     fun setSaveConflict(info: com.nendo.argosy.ui.components.SaveConflictInfo?) {
+        if (info != null) selectShortcuts.reset()
         _dualSaveConflict.value = info
         _dualSaveConflictFocusIndex.value = 0
     }
@@ -2558,6 +2561,7 @@ class DualScreenManager(
                 if (isConflict) {
                     _dualSyncOverlayFocusIndex.value = 0
                 }
+                if (state != null) selectShortcuts.reset()
                 _dualSyncOverlay.value = state
             }
         }

@@ -343,6 +343,7 @@ class MainActivity : ComponentActivity() {
             dualScreenManager = DualScreenManager(
                 context = this,
                 scope = activityScope,
+                selectShortcuts = gamepadInputHandler.selectShortcuts,
                 gameDao = gameDao,
                 gameRepository = gameRepository,
                 activeSaveRepository = activeSaveRepository,

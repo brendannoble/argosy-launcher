@@ -486,6 +486,10 @@ class SecondaryHomeActivity :
             return false
         }
         val gamepadEvent = mapKeycodeToGamepadEvent(keyCode, swapAB, swapXY, swapStartSelect)
+        if (gamepadEvent != null && handleSelectShortcut(
+                gamepadEvent, event.action, event.repeatCount
+            )
+        ) return true
         if (gamepadEvent == com.nendo.argosy.ui.input.GamepadEvent.Confirm && deferConfirm()) {
             if (event.repeatCount == 0) beginConfirmHold()
             return true
@@ -501,12 +505,33 @@ class SecondaryHomeActivity :
     }
 
     private fun handleGamepadKeyUp(keyCode: Int, event: android.view.KeyEvent): Boolean {
+        if (isShowcaseRole) return false
+        if (::dsm.isInitialized && !dsm.claimInput(event)) return true
         val gamepadEvent = mapKeycodeToGamepadEvent(keyCode, swapAB, swapXY, swapStartSelect)
+        if (gamepadEvent != null && handleSelectShortcut(
+                gamepadEvent, event.action, event.repeatCount
+            )
+        ) return true
         if (gamepadEvent == com.nendo.argosy.ui.input.GamepadEvent.Confirm && confirmHoldJob != null) {
             endConfirmHold()
             return true
         }
         return false
+    }
+
+    private fun handleSelectShortcut(
+        event: com.nendo.argosy.ui.input.GamepadEvent,
+        action: Int,
+        repeatCount: Int
+    ): Boolean {
+        if (isGameActive || dsm.dualSyncOverlay.value != null || dsm.dualSaveConflict.value != null) {
+            dsm.selectShortcuts.reset()
+            return false
+        }
+        return dsm.selectShortcuts.handle(event, action, repeatCount) { shortcut ->
+            val result = inputHandler.routeInput(shortcut, true, isGameActive, currentScreen)
+            dsm.inputFeedback.play(shortcut, result)
+        }
     }
 
     /**
@@ -811,6 +836,7 @@ class SecondaryHomeActivity :
             }
         }
         val gamepadEvent = mapKeycodeToGamepadEvent(keyCode, swapAB, swapXY, swapStartSelect) ?: return
+        if (handleSelectShortcut(gamepadEvent, action, repeatCount)) return
         if (gamepadEvent == com.nendo.argosy.ui.input.GamepadEvent.Confirm &&
             (confirmHoldJob != null || deferConfirm())
         ) {
