@@ -7,6 +7,7 @@ import com.nendo.argosy.data.cache.GradientExtractionConfig
 import com.nendo.argosy.ui.common.GradientExtractionResult
 import com.nendo.argosy.data.cache.GradientPreset
 import com.nendo.argosy.data.emulator.EmulatorDef
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.platform.PlatformDefinitions
 import com.nendo.argosy.data.emulator.ExtensionOption
 import com.nendo.argosy.data.emulator.InstalledEmulator
@@ -170,7 +171,7 @@ data class PlatformEmulatorConfig(
     val hasInstalledEmulators: Boolean get() = availableEmulators.isNotEmpty()
     val isRetroArchSelected: Boolean get() = selectedEmulatorPackage?.startsWith("com.retroarch") == true
     val showCoreSelection: Boolean get() = com.nendo.argosy.data.emulator.EmulatorSettingScope
-        .showsCoreSelection(effectiveEmulatorIsRetroArch || effectiveEmulatorId == "builtin", availableCores.size)
+        .showsCoreSelection(effectiveEmulatorIsRetroArch || effectiveEmulatorId == EmulatorRegistry.BUILTIN_ID, availableCores.size)
     val showExtensionSelection: Boolean get() = com.nendo.argosy.data.emulator.EmulatorSettingScope
         .showsExtensionSelection(extensionOptions.size)
     val showLegacyModeOption: Boolean get() = effectiveEmulatorId == "drastic"

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.local.entity.getDisplayName
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import androidx.compose.material3.MaterialTheme
@@ -163,7 +164,7 @@ internal data class PlatformDetailVisibility(
             showExtension = config.showExtensionSelection,
             showDisplayTarget = config.showDisplayTargetOption,
             showLegacyMode = config.showLegacyModeOption,
-            isBuiltin = config.effectiveEmulatorId == "builtin",
+            isBuiltin = config.effectiveEmulatorId == EmulatorRegistry.BUILTIN_ID,
             isRetroArch = config.effectiveEmulatorIsRetroArch,
             showSavePath = config.showSavePath,
             showStatePath = detail.supportsStatePath,
@@ -334,7 +335,7 @@ fun PlatformDetailSection(
                     )
                 }
                 PlatformDetailItem.Core -> {
-                    val platformHasNetplay = config.effectiveEmulatorId == "builtin" &&
+                    val platformHasNetplay = config.effectiveEmulatorId == EmulatorRegistry.BUILTIN_ID &&
                         LibretroCoreRegistry.getCoresForPlatform(config.platform.slug)
                             .any { it.netplaySupport == NetplaySupportLevel.SUPPORTED }
                     val activeCoreId = config.selectedCore
@@ -591,7 +592,7 @@ fun PlatformDetailSection(
                 PlatformDetailItem.SavePath -> {
                     val hasOverride = storageConfig?.isUserSavePathOverride == true
                     val canReset = storageConfig?.canResetSavePath == true
-                    val isBuiltinEmulator = config.effectiveEmulatorId == "builtin"
+                    val isBuiltinEmulator = config.effectiveEmulatorId == EmulatorRegistry.BUILTIN_ID
                     val accessBlocked = !isBuiltinEmulator && !config.effectiveEmulatorIsRetroArch &&
                         detail.packagePathAccessible == false && !hasOverride
                     ActionPreference(

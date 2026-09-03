@@ -121,7 +121,7 @@ class SavePathResolverDiscoveryTest {
         )
 
         val result = resolver.discoverSavePath(
-            emulatorId = "builtin",
+            emulatorId = "argosy",
             gameTitle = "Totally Unrelated Title",
             platformSlug = "gba",
             romPath = rom.absolutePath,
@@ -142,7 +142,7 @@ class SavePathResolverDiscoveryTest {
         }
 
         val result = resolver.discoverSavePath(
-            emulatorId = "builtin",
+            emulatorId = "argosy",
             gameTitle = "Totally Unrelated Title",
             platformSlug = "genesis",
             romPath = rom.absolutePath,
@@ -166,7 +166,7 @@ class SavePathResolverDiscoveryTest {
         }
 
         val result = resolver.discoverSavePath(
-            emulatorId = "builtin",
+            emulatorId = "argosy",
             gameTitle = "Totally Unrelated Title",
             platformSlug = "gba",
             romPath = rom.absolutePath,
@@ -189,7 +189,7 @@ class SavePathResolverDiscoveryTest {
         }
 
         val result = resolver.constructSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = rom.absolutePath, gameId = 1L,
         )
 
@@ -222,11 +222,11 @@ class SavePathResolverDiscoveryTest {
         }
 
         val discovered = resolver.discoverSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = rom.absolutePath, gameId = 1L,
         )
         val constructed = resolver.constructSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = rom.absolutePath, gameId = 1L,
         )
 
@@ -242,9 +242,9 @@ class SavePathResolverDiscoveryTest {
     fun `a builtin override row is ignored in favour of the live save directory`() = runTest {
         stubBuiltinSettings()
         val staleDir = File(tempDir, "Documents/saves").apply { mkdirs() }
-        coEvery { emulatorSaveConfigDao.getByEmulator("builtin") } returns
+        coEvery { emulatorSaveConfigDao.getByEmulator("argosy") } returns
             EmulatorSaveConfigEntity(
-                emulatorId = "builtin", savePathPattern = staleDir.absolutePath,
+                emulatorId = "argosy", savePathPattern = staleDir.absolutePath,
                 isAutoDetected = false, isUserOverride = true,
             )
         val savesDir = File(tempDir, "libretro/saves").apply { mkdirs() }
@@ -255,11 +255,11 @@ class SavePathResolverDiscoveryTest {
         }
 
         val discovered = resolver.discoverSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = rom.absolutePath, gameId = 1L,
         )
         val constructed = resolver.constructSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = rom.absolutePath, gameId = 1L,
         )
 
@@ -403,14 +403,14 @@ class SavePathResolverDiscoveryTest {
 
     @Test
     fun `savesBesideRom discovers the save in the ROM folder`() = runTest {
-        coEvery { emulatorSaveConfigDao.getByEmulator("builtin") } returns
-            EmulatorSaveConfigEntity(emulatorId = "builtin", savePathPattern = "", isAutoDetected = true, savesBesideRom = true)
+        coEvery { emulatorSaveConfigDao.getByEmulator("argosy") } returns
+            EmulatorSaveConfigEntity(emulatorId = "argosy", savePathPattern = "", isAutoDetected = true, savesBesideRom = true)
         val romDir = File(tempDir, "roms/gba").apply { mkdirs() }
         val romFile = File(romDir, "Zelda.gba").apply { writeBytes(byteArrayOf(0)) }
         val saveFile = File(romDir, "Zelda.srm").apply { writeBytes(byteArrayOf(1)) }
 
         val result = resolver.discoverSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = romFile.absolutePath, gameId = 1L,
         )
 
@@ -419,13 +419,13 @@ class SavePathResolverDiscoveryTest {
 
     @Test
     fun `savesBesideRom constructs the restore target beside the ROM with the ROM name`() = runTest {
-        coEvery { emulatorSaveConfigDao.getByEmulator("builtin") } returns
-            EmulatorSaveConfigEntity(emulatorId = "builtin", savePathPattern = "", isAutoDetected = true, savesBesideRom = true)
+        coEvery { emulatorSaveConfigDao.getByEmulator("argosy") } returns
+            EmulatorSaveConfigEntity(emulatorId = "argosy", savePathPattern = "", isAutoDetected = true, savesBesideRom = true)
         val romDir = File(tempDir, "roms/gba").apply { mkdirs() }
         val romFile = File(romDir, "Zelda.gba").apply { writeBytes(byteArrayOf(0)) }
 
         val result = resolver.constructSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = romFile.absolutePath,
         )
 
@@ -438,7 +438,7 @@ class SavePathResolverDiscoveryTest {
         val romFile = File(romDir, "Zelda (USA).gba").apply { writeBytes(byteArrayOf(0)) }
 
         val result = resolver.constructSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = romFile.absolutePath,
         )
 
@@ -453,7 +453,7 @@ class SavePathResolverDiscoveryTest {
         val romFile = File(romDir, "Zelda (USA).gba").apply { writeBytes(byteArrayOf(0)) }
 
         val constructed = resolver.constructSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = romFile.absolutePath, gameId = 1L,
         )
 
@@ -461,7 +461,7 @@ class SavePathResolverDiscoveryTest {
 
         File(constructed!!).writeBytes(byteArrayOf(1))
         val discovered = resolver.discoverSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = romFile.absolutePath, gameId = 1L,
         )
 
@@ -473,9 +473,9 @@ class SavePathResolverDiscoveryTest {
         val perGameDir = File(tempDir, "custom/per-game").apply { mkdirs() }
         val overrideDir = File(tempDir, "custom/emulator-override").apply { mkdirs() }
         coEvery { emulatorConfigDao.getSavePathForGame(1L) } returns perGameDir.absolutePath
-        coEvery { emulatorSaveConfigDao.getByEmulator("builtin") } returns
+        coEvery { emulatorSaveConfigDao.getByEmulator("argosy") } returns
             EmulatorSaveConfigEntity(
-                emulatorId = "builtin", savePathPattern = overrideDir.absolutePath,
+                emulatorId = "argosy", savePathPattern = overrideDir.absolutePath,
                 isAutoDetected = false, isUserOverride = true,
             )
         val romDir = File(tempDir, "roms/gba").apply { mkdirs() }
@@ -484,11 +484,11 @@ class SavePathResolverDiscoveryTest {
         File(overrideDir, "Zelda.srm").writeBytes(byteArrayOf(2))
 
         val discovered = resolver.discoverSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = romFile.absolutePath, gameId = 1L,
         )
         val constructed = resolver.constructSavePath(
-            emulatorId = "builtin", gameTitle = "Zelda", platformSlug = "gba",
+            emulatorId = "argosy", gameTitle = "Zelda", platformSlug = "gba",
             romPath = romFile.absolutePath, gameId = 1L,
         )
 

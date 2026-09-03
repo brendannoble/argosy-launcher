@@ -330,10 +330,13 @@ enum class LaunchType {
 object EmulatorRegistry {
 
     const val BUILTIN_PACKAGE = "argosy.builtin.libretro"
-    const val BUILTIN_ID = "builtin"
+    const val BUILTIN_ID = "argosy"
+
+    /** Id older builds sent for the built-in emulator; server rows written by them still carry it. */
+    const val LEGACY_BUILTIN_ID = "builtin"
 
     private val builtinEmulator = EmulatorDef(
-        id = "builtin",
+        id = BUILTIN_ID,
         packageName = BUILTIN_PACKAGE,
         displayName = "Built-in",
         supportedPlatforms = LibretroCoreRegistry.getSupportedPlatforms(),
@@ -1063,38 +1066,38 @@ object EmulatorRegistry {
     fun getRecommendedEmulators(): Map<String, List<String>> = recommendedEmulators
 
     private val recommendedEmulators: Map<String, List<String>> = mapOf(
-        "psx" to listOf("builtin", "duckstation", "retroarch", "retroarch_64", "retroarch_32"),
+        "psx" to listOf(BUILTIN_ID, "duckstation", "retroarch", "retroarch_64", "retroarch_32"),
         "ps2" to listOf("nethersx2", "armsx2_refresh", "armsx2", "psx2", "pcsx2"),
         "psp" to listOf(
-            "builtin", "ppsspp", "ppsspp_gold", "ppsspp_legacy", "retroarch", "retroarch_64", "retroarch_32"
+            BUILTIN_ID, "ppsspp", "ppsspp_gold", "ppsspp_legacy", "retroarch", "retroarch_64", "retroarch_32"
         ),
         "vita" to listOf("vita3k-zx", "vita3k"),
         "n64" to listOf(
-            "builtin", "mupen64plus_fz", "mupen64plus_fz_pro", "retroarch", "retroarch_64", "retroarch_32"
+            BUILTIN_ID, "mupen64plus_fz", "mupen64plus_fz_pro", "retroarch", "retroarch_64", "retroarch_32"
         ),
-        "nds" to listOf("builtin", "drastic", "melonds", "melondualds", "retroarch", "retroarch_64", "retroarch_32"),
+        "nds" to listOf(BUILTIN_ID, "drastic", "melonds", "melondualds", "retroarch", "retroarch_64", "retroarch_32"),
         "3ds" to listOf(
-            "azahar", "citra_mmj", "borked3ds", "citra", "builtin",
+            "azahar", "citra_mmj", "borked3ds", "citra", BUILTIN_ID,
             "retroarch", "retroarch_64", "retroarch_32"
         ),
         "gc" to listOf("dolphin", "dolphin_handheld", "dolphin_cs", "retroarch", "retroarch_64", "retroarch_32"),
         "wii" to listOf("dolphin", "dolphin_handheld", "dolphin_cs", "retroarch", "retroarch_64", "retroarch_32"),
         "wiiu" to listOf("cemu", "cemu_dualscreen"),
         "switch" to listOf("eden", "citron", "sudachi", "ryujinx", "yuzu", "strato", "skyline"),
-        "gba" to listOf("builtin", "pizza_boy_gba", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
-        "gb" to listOf("builtin", "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
-        "gbc" to listOf("builtin", "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
-        "nes" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "snes" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "genesis" to listOf("builtin", "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
-        "sms" to listOf("builtin", "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
-        "sg1000" to listOf("builtin", "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
-        "gg" to listOf("builtin", "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
-        "scd" to listOf("builtin", "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
-        "32x" to listOf("builtin", "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
+        "gba" to listOf(BUILTIN_ID, "pizza_boy_gba", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
+        "gb" to listOf(BUILTIN_ID, "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
+        "gbc" to listOf(BUILTIN_ID, "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
+        "nes" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "snes" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "genesis" to listOf(BUILTIN_ID, "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
+        "sms" to listOf(BUILTIN_ID, "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
+        "sg1000" to listOf(BUILTIN_ID, "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
+        "gg" to listOf(BUILTIN_ID, "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
+        "scd" to listOf(BUILTIN_ID, "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
+        "32x" to listOf(BUILTIN_ID, "md_emu", "retroarch", "retroarch_64", "retroarch_32"),
         "dreamcast" to listOf("redream", "flycast"),
         "saturn" to listOf(
-            "builtin", "yabasanshiro", "yabasanshiro_pro", "saturn_emu", "retroarch", "retroarch_64", "retroarch_32"
+            BUILTIN_ID, "yabasanshiro", "yabasanshiro_pro", "saturn_emu", "retroarch", "retroarch_64", "retroarch_32"
         ),
         "arcade" to listOf("flycast", "mame4droid", "fbalpha", "retroarch", "retroarch_64", "retroarch_32"),
         "fbneo" to listOf("fbalpha", "retroarch", "retroarch_64", "retroarch_32"),
@@ -1106,20 +1109,20 @@ object EmulatorRegistry {
         "dos" to listOf("magic_dosbox", "dosbox_turbo"),
         "scummvm" to listOf("scummvm", "retroarch", "retroarch_64", "retroarch_32"),
         "ps3" to listOf("aps3e"),
-        "atari2600" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
+        "atari2600" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
         "lynx" to listOf("retroarch", "retroarch_64", "retroarch_32"),
-        "tg16" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
+        "tg16" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
         "tgcd" to listOf("retroarch", "retroarch_64", "retroarch_32"),
-        "pcfx" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "cdi" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "jaguar" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "3do" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
+        "pcfx" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "cdi" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "jaguar" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "3do" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
         "ngp" to listOf("retroarch", "retroarch_64", "retroarch_32"),
         "ngpc" to listOf("retroarch", "retroarch_64", "retroarch_32"),
-        "wonderswan" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "wsc" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "pokemini" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
-        "gameandwatch" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
+        "wonderswan" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "wsc" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "pokemini" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
+        "gameandwatch" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
         "xbox" to listOf("hakux"),
         "xbox360" to listOf("xendroid", "ax360e", "ax360e_free"),
         "steam" to listOf("gamehub", "gamehub_lite", "gamenative"),
@@ -1127,9 +1130,9 @@ object EmulatorRegistry {
         "pc" to listOf("gamenative"),
         "c64" to listOf("retroarch", "retroarch_64", "retroarch_32"),
         "vic20" to listOf("retroarch", "retroarch_64", "retroarch_32"),
-        "amiga" to listOf("builtin", "retroarch", "retroarch_64", "retroarch_32"),
+        "amiga" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
         "pc9800" to listOf("retroarch", "retroarch_64", "retroarch_32"),
-        "pico8" to listOf("builtin", "picpic", "retroarch", "retroarch_64", "retroarch_32")
+        "pico8" to listOf(BUILTIN_ID, "picpic", "retroarch", "retroarch_64", "retroarch_32")
     )
 
     fun getPreferredCore(platformId: String): String? {
@@ -1624,7 +1627,7 @@ object EmulatorRegistry {
     fun getRetroArchSaveDirName(coreId: String): String =
         retroArchSaveDirByCore[coreId] ?: coreId
 
-    private val libretroHostEmulators = setOf("builtin", "retroarch", "retroarch_64", "retroarch_32")
+    private val libretroHostEmulators = setOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32")
 
     /**
      * Server-side save emulator label: for libretro hosts (built-in + RetroArch) the libretro core

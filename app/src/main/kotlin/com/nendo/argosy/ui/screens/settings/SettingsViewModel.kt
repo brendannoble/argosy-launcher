@@ -8,6 +8,7 @@ import com.nendo.argosy.data.cache.ImageCacheManager
 import com.nendo.argosy.data.cache.ImageCacheProgress
 import com.nendo.argosy.data.emulator.BuiltinCoreResolver
 import com.nendo.argosy.data.emulator.EmulatorDetector
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.InstalledEmulator
 import com.nendo.argosy.data.emulator.RetroArchConfigParser
 import com.nendo.argosy.data.repository.CoreOptionsRepository
@@ -387,7 +388,7 @@ class SettingsViewModel @Inject constructor(
             val totalPlayTimeMs = playStatsRepo.getTotalActivePlayMsByPlatform(platformSlug)
             val allBiosStatus = biosRepository.getStatusByPlatform()
             val biosStatus = allBiosStatus.find { it.platformSlug == platformSlug }
-            val packagePathAccessible = if (config.effectiveEmulatorId == "builtin") {
+            val packagePathAccessible = if (config.effectiveEmulatorId == EmulatorRegistry.BUILTIN_ID) {
                 true
             } else {
                 config.effectiveEmulatorPackage?.let { pkg ->
@@ -832,7 +833,7 @@ class SettingsViewModel @Inject constructor(
 
     fun setEmulatorSavePath(emulatorId: String, path: String) {
         val info = emulatorDelegate.state.value.savePathModalInfo?.takeIf { it.emulatorId == emulatorId }
-        if (emulatorId == "builtin") {
+        if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
             info?.platformId?.let { routeSetPlatformSavePath(this, it, path) }
             return
         }
@@ -840,7 +841,7 @@ class SettingsViewModel @Inject constructor(
     }
     fun resetEmulatorSavePath(emulatorId: String) {
         val info = emulatorDelegate.state.value.savePathModalInfo?.takeIf { it.emulatorId == emulatorId }
-        if (emulatorId == "builtin") {
+        if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
             info?.platformId?.let { routeResetPlatformSavePath(this, it) }
             return
         }

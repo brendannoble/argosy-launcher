@@ -43,7 +43,7 @@ class SaveStateManagerTest {
 
     private fun cacheEntity(hardcore: Boolean, applied: Boolean = false) = SaveCacheEntity(
         gameId = GAME_ID,
-        emulatorId = "builtin",
+        emulatorId = "argosy",
         cachedAt = Instant.ofEpochMilli(1000),
         saveSize = 3,
         cachePath = "cache/x.srm",

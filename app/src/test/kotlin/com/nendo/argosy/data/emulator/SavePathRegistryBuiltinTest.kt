@@ -28,7 +28,7 @@ class SavePathRegistryBuiltinTest {
         unmockkStatic(Environment::class)
     }
 
-    private fun config(id: String) = SavePathRegistry.getConfigForPlatform("builtin", id)
+    private fun config(id: String) = SavePathRegistry.getConfigForPlatform("argosy", id)
         ?: error("no builtin config for $id")
 
     @Test

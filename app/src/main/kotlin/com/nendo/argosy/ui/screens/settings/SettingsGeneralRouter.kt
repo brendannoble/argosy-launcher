@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.data.cache.GradientExtractionConfig
 import com.nendo.argosy.data.cache.GradientPreset
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.InstalledEmulator
 import com.nendo.argosy.data.emulator.SavePathRegistry
 import com.nendo.argosy.data.preferences.GridDensity
@@ -727,7 +728,7 @@ internal fun routeAdjustScreenDimmerLevel(vm: SettingsViewModel, delta: Int) {
 internal fun routeSetPlatformSavePath(vm: SettingsViewModel, platformId: Long, basePath: String) {
     val storageConfig = vm._uiState.value.storage.platformConfigs.find { it.platformId == platformId }
     val emulatorId = storageConfig?.emulatorId ?: return
-    if (emulatorId == "builtin") {
+    if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
         vm.viewModelScope.launch {
             val current = vm.libretroSettingsRepo.getByPlatformId(platformId)
                 ?: PlatformLibretroSettingsEntity(platformId = platformId)
@@ -749,7 +750,7 @@ internal fun routeResetPlatformSavePath(vm: SettingsViewModel, platformId: Long)
     val storageConfig = vm._uiState.value.storage.platformConfigs.find { it.platformId == platformId }
     val emulatorId = storageConfig?.emulatorId ?: return
     val emulatorConfig = vm.emulatorDelegate.state.value.platforms.find { it.platform.id == platformId }
-    if (emulatorId == "builtin") {
+    if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
         vm.viewModelScope.launch {
             vm.libretroSettingsRepo.getByPlatformId(platformId)?.let { current ->
                 val updated = current.copy(savePath = null)
@@ -791,7 +792,7 @@ internal data class DisplayedSavePath(
 internal fun routeSetPlatformStatePath(vm: SettingsViewModel, platformId: Long, basePath: String) {
     val storageConfig = vm._uiState.value.storage.platformConfigs.find { it.platformId == platformId }
     val emulatorId = storageConfig?.emulatorId ?: return
-    if (emulatorId == "builtin") {
+    if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
         vm.viewModelScope.launch {
             val current = vm.libretroSettingsRepo.getByPlatformId(platformId)
                 ?: PlatformLibretroSettingsEntity(platformId = platformId)
@@ -810,7 +811,7 @@ internal fun routeSetPlatformStatePath(vm: SettingsViewModel, platformId: Long, 
 internal fun routeResetPlatformStatePath(vm: SettingsViewModel, platformId: Long) {
     val storageConfig = vm._uiState.value.storage.platformConfigs.find { it.platformId == platformId }
     val emulatorId = storageConfig?.emulatorId ?: return
-    if (emulatorId == "builtin") {
+    if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
         vm.viewModelScope.launch {
             vm.libretroSettingsRepo.getByPlatformId(platformId)?.let { current ->
                 val updated = current.copy(statePath = null)
@@ -839,7 +840,7 @@ private suspend fun routeComputeEvaluatedSavePath(
         ?: return basePathOverride?.let { DisplayedSavePath(it) }
     if (!emulatorConfig.effectiveEmulatorIsRetroArch) {
         val emulatorId = emulatorConfig.effectiveEmulatorId ?: return basePathOverride?.let { DisplayedSavePath(it) }
-        if (basePathOverride != null && emulatorId != "builtin") return DisplayedSavePath(basePathOverride)
+        if (basePathOverride != null && emulatorId != EmulatorRegistry.BUILTIN_ID) return DisplayedSavePath(basePathOverride)
         val resolution = vm.savePathAuthority.resolve(
             com.nendo.argosy.data.emulator.savepath.SavePathRequest(
                 platformSlug = emulatorConfig.platform.slug,

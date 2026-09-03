@@ -1,6 +1,7 @@
 package com.nendo.argosy.data.sync
 
 import android.content.Context
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.RetroArchConfigParser
 import com.nendo.argosy.data.emulator.SavePathConfig
 import com.nendo.argosy.data.emulator.SavePathRegistry
@@ -32,7 +33,7 @@ private const val TAG = "SavePathResolver"
  */
 private const val DUCKSTATION_EMULATOR_ID = "duckstation"
 private const val DUCKSTATION_CARD_SUFFIX = "_1.mcd"
-private const val BUILTIN_ID = "builtin"
+private const val BUILTIN_ID = EmulatorRegistry.BUILTIN_ID
 
 sealed interface SaveLookup {
     data class Found(val path: String) : SaveLookup

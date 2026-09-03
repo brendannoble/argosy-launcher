@@ -1,5 +1,6 @@
 package com.nendo.argosy.data.emulator.savepath
 
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.LibretroSavePathResolver
 import com.nendo.argosy.data.emulator.RetroArchPathResolver
 import com.nendo.argosy.data.emulator.SavePathConfig
@@ -305,7 +306,7 @@ open class SavePathAuthority @Inject constructor(
     }
 
     private companion object {
-        const val BUILTIN_ID = "builtin"
+        const val BUILTIN_ID = EmulatorRegistry.BUILTIN_ID
         val packageDataPattern = Regex(".*/Android/data/[^/]+")
     }
 }

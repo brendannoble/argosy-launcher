@@ -18,7 +18,7 @@ data class SavePathConfig(
     val supported: Boolean = true
 )
 
-private const val BUILTIN_EMULATOR_ID = "builtin"
+private const val BUILTIN_EMULATOR_ID = EmulatorRegistry.BUILTIN_ID
 
 /**
  * Placeholder for the built-in core's live save base directory. Resolved by

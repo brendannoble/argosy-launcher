@@ -3,6 +3,7 @@ package com.nendo.argosy.data.repository
 import android.content.Context
 import android.util.Log
 import com.nendo.argosy.data.emulator.CoreVersionExtractor
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.RetroArchConfigParser
 import com.nendo.argosy.data.emulator.StatePathConfig
 import com.nendo.argosy.data.emulator.StatePathRegistry
@@ -149,7 +150,7 @@ class StateCacheManager @Inject constructor(
                 )
                 retroArchPathResolver.resolveStateDirectories(req)
             }
-            emulatorId == "builtin" -> listOf(libretroStatePathResolver.liveStateBaseDir(gameId).absolutePath)
+            emulatorId == EmulatorRegistry.BUILTIN_ID -> listOf(libretroStatePathResolver.liveStateBaseDir(gameId).absolutePath)
             userStateOverride != null -> listOf(userStateOverride)
             else -> StatePathRegistry.resolvePath(config, platformId)
         }
@@ -175,7 +176,7 @@ class StateCacheManager @Inject constructor(
                     )
                 )
             }
-            if (discovered.isNotEmpty() && emulatorId != "builtin") break
+            if (discovered.isNotEmpty() && emulatorId != EmulatorRegistry.BUILTIN_ID) break
         }
 
         Log.d(TAG, "Discovered ${discovered.size} states for game $gameId")
@@ -818,7 +819,7 @@ class StateCacheManager @Inject constructor(
         romPath: String? = null,
         gameId: Long? = null,
     ): String? {
-        if (emulatorId == "builtin" && gameId != null) {
+        if (emulatorId == EmulatorRegistry.BUILTIN_ID && gameId != null) {
             val baseDir = libretroStatePathResolver.liveStateBaseDir(gameId)
             return libretroStatePathResolver.liveStateFile(baseDir, romBaseName, slotNumber).absolutePath
         }
@@ -946,7 +947,7 @@ class StateCacheManager @Inject constructor(
                 retroArchPathResolver.resolveStateDirectories(req)
             }
             userStateOverride != null -> listOf(userStateOverride)
-            emulatorId == "builtin" && gameId != null ->
+            emulatorId == EmulatorRegistry.BUILTIN_ID && gameId != null ->
                 listOf(libretroStatePathResolver.liveStateBaseDir(gameId).absolutePath)
             else -> StatePathRegistry.resolvePath(config, platformSlug)
         }
@@ -1368,7 +1369,9 @@ class StateCacheManager @Inject constructor(
                     val filePart = MultipartBody.Part.createFormData("stateFile", newFileName, requestBody)
 
                     val uploadResponse = api.uploadState(
-                        rommId, save.emulator, stateFile = filePart
+                        rommId,
+                        save.emulator?.let { if (it == EmulatorRegistry.LEGACY_BUILTIN_ID) EmulatorRegistry.BUILTIN_ID else it },
+                        stateFile = filePart
                     )
 
                     if (uploadResponse.isSuccessful) {

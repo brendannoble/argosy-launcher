@@ -187,13 +187,13 @@ class EmulatorDetector @Inject constructor(
     fun getPreferredEmulator(platformId: String, builtinEnabled: Boolean = true): InstalledEmulator? {
         val canonical = PlatformDefinitions.getCanonicalSlug(platformId)
         val installed = getInstalledForPlatform(canonical).let { list ->
-            if (builtinEnabled) list else list.filterNot { it.def.id == "builtin" }
+            if (builtinEnabled) list else list.filterNot { it.def.id == EmulatorRegistry.BUILTIN_ID }
         }
         if (installed.isEmpty()) return null
 
         val recommended = EmulatorRegistry.getRecommendedEmulators()[canonical]
         if (recommended != null) {
-            val filteredRecommended = if (builtinEnabled) recommended else recommended.filter { it != "builtin" }
+            val filteredRecommended = if (builtinEnabled) recommended else recommended.filter { it != EmulatorRegistry.BUILTIN_ID }
             for (emulatorId in filteredRecommended) {
                 val match = installed.find { it.def.id == emulatorId }
                 if (match != null) return match

@@ -3546,3 +3546,20 @@ object Migration_182_183 : Migration(182, 183) {
         db.execSQL("ALTER TABLE `home_tiles` ADD COLUMN `featureConfig` TEXT")
     }
 }
+
+/**
+ * The built-in emulator's id is `argosy`, the same name the server sees. Rewrites every stored row
+ * that still carries the old `builtin` id.
+ */
+object Migration_183_184 : Migration(183, 184) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        val tablesWithEmulatorId = listOf(
+            "save_cache", "state_cache", "save_sync", "save_ownership", "state_ownership",
+            "emulator_save_config", "emulator_launch_args", "emulator_updates"
+        )
+        for (table in tablesWithEmulatorId) {
+            db.execSQL("UPDATE `$table` SET `emulatorId` = 'argosy' WHERE `emulatorId` = 'builtin'")
+        }
+        db.execSQL("UPDATE `pending_conflicts` SET `emulator` = 'argosy' WHERE `emulator` = 'builtin'")
+    }
+}

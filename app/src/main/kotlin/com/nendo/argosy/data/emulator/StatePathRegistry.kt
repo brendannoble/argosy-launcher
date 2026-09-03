@@ -105,8 +105,8 @@ data class StatePathConfig(
 object StatePathRegistry {
 
     private val configs = mapOf(
-        "builtin" to StatePathConfig(
-            emulatorId = "builtin",
+        EmulatorRegistry.BUILTIN_ID to StatePathConfig(
+            emulatorId = EmulatorRegistry.BUILTIN_ID,
             defaultPaths = listOf("{filesDir}/${AppPaths.LIBRETRO_STATES_SUBDIR}"),
             slotPattern = StateSlotPattern.BuiltinLibretro,
             maxSlots = 10

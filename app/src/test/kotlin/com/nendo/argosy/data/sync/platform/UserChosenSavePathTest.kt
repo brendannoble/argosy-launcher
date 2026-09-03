@@ -73,7 +73,7 @@ class UserChosenSavePathTest {
     @Test
     fun `an emulator spanning many folder platforms resolves to none`() {
         assertNull(registry.getFolderHandlerForEmulator("retroarch"))
-        assertNull(registry.getFolderHandlerForEmulator("builtin"))
+        assertNull(registry.getFolderHandlerForEmulator("argosy"))
     }
 
     @Test

@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.R
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.ui.components.Modal
 import com.nendo.argosy.ui.components.SwitchPreference
 import com.nendo.argosy.ui.primitives.ActionButton
@@ -79,7 +80,7 @@ fun SavePathModal(
         )
 
         if (info.besideRomSupported) {
-            val besideRomSubtitle = if (info.emulatorId == "builtin") {
+            val besideRomSubtitle = if (info.emulatorId == EmulatorRegistry.BUILTIN_ID) {
                 stringResource(R.string.settings_save_path_modal_beside_rom_subtitle_builtin)
             } else {
                 stringResource(R.string.settings_save_path_modal_beside_rom_subtitle_external)

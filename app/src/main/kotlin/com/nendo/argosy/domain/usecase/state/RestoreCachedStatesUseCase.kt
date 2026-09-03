@@ -3,6 +3,7 @@ package com.nendo.argosy.domain.usecase.state
 import android.util.Log
 import com.nendo.argosy.data.emulator.CoreVersionExtractor
 import com.nendo.argosy.data.emulator.EmulatorDetector
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.RetroArchConfigParser
 import com.nendo.argosy.data.emulator.StatePathRegistry
 import com.nendo.argosy.data.local.dao.EmulatorSaveConfigDao
@@ -97,7 +98,7 @@ class RestoreCachedStatesUseCase @Inject constructor(
                 retroArchPathResolver.resolveStateDirectories(req)
             }
             userStateOverride != null -> listOf(userStateOverride)
-            emulatorId == "builtin" -> listOf(libretroStatePathResolver.liveStateBaseDir(gameId).absolutePath)
+            emulatorId == EmulatorRegistry.BUILTIN_ID -> listOf(libretroStatePathResolver.liveStateBaseDir(gameId).absolutePath)
             else -> StatePathRegistry.resolvePath(config, game.platformSlug)
         }
 

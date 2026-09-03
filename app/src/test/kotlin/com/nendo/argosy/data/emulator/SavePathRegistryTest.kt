@@ -104,16 +104,16 @@ class SavePathRegistryTest {
 
     @Test
     fun `getConfigForPlatform routes built-in GameCube to the GCI folder config`() {
-        val config = SavePathRegistry.getConfigForPlatform("builtin", "gc")
+        val config = SavePathRegistry.getConfigForPlatform("argosy", "gc")
         assertNotNull(config)
-        assertEquals("builtin", config!!.emulatorId)
+        assertEquals("argosy", config!!.emulatorId)
         assertTrue("built-in GameCube must use GCI folder handling", config.usesGciFormat)
         assertEquals(listOf("gci"), config.saveExtensions)
     }
 
     @Test
     fun `getConfigForPlatform canonicalizes ngc alias to the built-in GameCube GCI config`() {
-        val config = SavePathRegistry.getConfigForPlatform("builtin", "ngc")
+        val config = SavePathRegistry.getConfigForPlatform("argosy", "ngc")
         assertNotNull(config)
         assertTrue("ngc alias must resolve to the GCI config", config!!.usesGciFormat)
     }

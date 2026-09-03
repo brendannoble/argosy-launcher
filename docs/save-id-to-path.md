@@ -385,7 +385,7 @@ will never look for it. The failure is silent, not an error.
 **States resolve their core through `CoreVersionExtractor.getCoreIdForEmulator`,
 not the save side's `resolveCoreForGame`.** The two genuinely disagree - the
 built-in emulator is its libretro core to the save resolver and the literal
-`builtin` to this one - and every `state_cache` row was written by the former, so
+`argosy` to this one - and every `state_cache` row was written by the former, so
 validating or pathing a state against the latter compares a row to a value that
 never wrote it. `RestoreStateUseCase` falls back to the cached row's own core
 when a caller supplies none, so a new restore entry point must either pass the

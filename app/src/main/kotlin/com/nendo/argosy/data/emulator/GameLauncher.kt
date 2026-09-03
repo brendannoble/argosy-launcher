@@ -609,7 +609,7 @@ class GameLauncher @Inject constructor(
         Logger.info(TAG, "[BuiltIn] Launching: rom=${romFile.name}, core=$coreName, romSize=${romFile.length()}b, coreVars=${coreVariables.size}")
         val builtinSettings = userPreferencesRepository.getBuiltinEmulatorSettings().first()
         val platformLibretroOverride = platformLibretroSettingsDao.getByPlatformId(game.platformId)
-        val builtinBesideRom = emulatorSaveConfigRepository.getByEmulator("builtin")?.savesBesideRom == true
+        val builtinBesideRom = emulatorSaveConfigRepository.getByEmulator(EmulatorRegistry.BUILTIN_ID)?.savesBesideRom == true
         val perGameSavePath = emulatorConfigDao.getSavePathForGame(game.id)?.takeIf { it.isNotBlank() }
         val effectiveSavePath = perGameSavePath
             ?: libretroSavePathResolver.liveSaveBaseDir(

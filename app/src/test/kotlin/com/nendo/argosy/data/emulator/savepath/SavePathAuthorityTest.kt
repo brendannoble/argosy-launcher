@@ -295,7 +295,7 @@ class SavePathAuthorityTest {
             ) = listOf("$builtinSavesDir/PSP/SAVEDATA")
         }
 
-    private val builtinPsp = SavePathRequest("psp", "builtin", "argosy.builtin.libretro", platformId = 7L)
+    private val builtinPsp = SavePathRequest("psp", "argosy", "argosy.builtin.libretro", platformId = 7L)
 
     @Test
     fun `the built-in core resolves through the libretro save directory and names the source`() = runTest {

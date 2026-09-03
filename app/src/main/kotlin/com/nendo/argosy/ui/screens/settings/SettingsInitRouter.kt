@@ -354,7 +354,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
                 .filter { it.packageName !in installedPackages && it.downloadUrl != null }
 
             val rawSelectedEmulatorDef = defaultConfig?.packageName?.let { vm.emulatorDetector.getByPackage(it) }
-            val selectedEmulatorDef = if (!prefs.builtinLibretroEnabled && rawSelectedEmulatorDef?.id == "builtin") {
+            val selectedEmulatorDef = if (!prefs.builtinLibretroEnabled && rawSelectedEmulatorDef?.id == EmulatorRegistry.BUILTIN_ID) {
                 null
             } else {
                 rawSelectedEmulatorDef
@@ -414,7 +414,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             val savePathResolution = if (savePathConfig != null && retroArchSave == null) {
                 vm.savePathAuthority.resolve(savePathRequest)
             } else null
-            val isUserSavePathOverride = if (effectiveSaveConfigId == "builtin") {
+            val isUserSavePathOverride = if (effectiveSaveConfigId == EmulatorRegistry.BUILTIN_ID) {
                 savePathResolution?.source == com.nendo.argosy.data.emulator.savepath.SavePathSource.USER_OVERRIDE
             } else {
                 userSaveConfig?.isUserOverride == true
@@ -716,11 +716,11 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
         for (config in platformConfigs) {
             val emulatorId = config.effectiveEmulatorId
             val userStateConfig = emulatorId?.let { vm.emulatorDelegate.getEmulatorSaveConfig(it) }
-            val builtinStateOverride = if (emulatorId == "builtin") {
+            val builtinStateOverride = if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
                 vm.libretroSettingsRepo.getByPlatformId(config.platform.id)?.statePath?.takeIf { it.isNotBlank() }
                     ?: builtinStateSettings.customStatePath?.takeIf { it.isNotBlank() }
             } else null
-            val isUserStatePathOverride = if (emulatorId == "builtin") {
+            val isUserStatePathOverride = if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
                 builtinStateOverride != null
             } else {
                 userStateConfig?.isUserStateOverride == true
@@ -741,7 +741,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
                         com.nendo.argosy.data.emulator.RetroArchPathResolver.DisplayPath.Unknown -> null
                     }
                 }
-                config.effectiveEmulatorId == "builtin" ->
+                config.effectiveEmulatorId == EmulatorRegistry.BUILTIN_ID ->
                     builtinStateOverride ?: AppPaths.libretroStatesDir(vm.context.filesDir).absolutePath
                 isUserStatePathOverride && userStatePathPattern != null -> userStatePathPattern
                 else -> null
@@ -750,7 +750,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             val emulatorIdForStateCheck = config.effectiveEmulatorId
             val supportsStatePath = when {
                 emulatorIdForStateCheck == null -> false
-                emulatorIdForStateCheck == "builtin" -> true
+                emulatorIdForStateCheck == EmulatorRegistry.BUILTIN_ID -> true
                 config.effectiveEmulatorIsRetroArch -> true
                 else -> com.nendo.argosy.data.emulator.StatePathRegistry.getConfig(emulatorIdForStateCheck) != null
             }

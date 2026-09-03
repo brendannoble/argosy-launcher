@@ -42,11 +42,11 @@ class PlatformSaveHandlerRegistryRoutingTest {
 
     @Test
     fun `built-in Dreamcast routes to the VMU handler rather than the file default`() {
-        val config = SavePathRegistry.getConfigForPlatform("builtin", "dreamcast")
+        val config = SavePathRegistry.getConfigForPlatform("argosy", "dreamcast")
         assertNotNull("builtin_dreamcast config must exist", config)
         assertEquals(listOf("bin"), config!!.saveExtensions)
 
-        val handler = registry.getHandler(config, "dreamcast", "builtin")
+        val handler = registry.getHandler(config, "dreamcast", "argosy")
 
         assertSame(dreamcastHandler, handler)
     }
