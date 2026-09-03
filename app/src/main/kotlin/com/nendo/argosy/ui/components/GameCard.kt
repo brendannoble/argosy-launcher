@@ -196,7 +196,11 @@ fun GameCard(
 
         val gradientColors = game.gradientColors
         val hasGradientColors = gradientColors != null
-        val gradientBorderProgress = if (hasGradientColors && useGradientBorder) 1f else 0f
+        val accentPair = (boxArtStyle.accentColor ?: borderColor).let { accent ->
+            accent to (boxArtStyle.secondaryColor ?: accent)
+        }
+        val borderGradient = gradientColors ?: accentPair
+        val gradientBorderProgress = if (useGradientBorder) 1f else 0f
 
         val cardWidthDp = this@BoxWithConstraints.maxWidth
         val baseWidthDp = 150.dp
@@ -329,10 +333,10 @@ fun GameCard(
             coverBody()
         }
 
-        if (gradientBorderProgress > 0f && gradientColors != null) {
+        if (gradientBorderProgress > 0f) {
             GradientBorderOverlay(
                 imageModel = rememberFileImageModel(effectiveCoverPath),
-                gradientColors = gradientColors,
+                gradientColors = borderGradient,
                 gradientBorderProgress = gradientBorderProgress,
                 geometry = geometry,
                 sweepOffset = sweepOffset

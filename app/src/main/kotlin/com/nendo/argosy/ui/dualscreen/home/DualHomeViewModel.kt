@@ -814,7 +814,8 @@ class DualHomeViewModel(
             delegate.gradients.collect { gradients ->
                 _uiState.update { state ->
                     state.copy(
-                        games = state.games.map { it.applyGradient(gradients) }
+                        games = state.games.map { it.applyGradient(gradients) },
+                        tileGames = state.tileGames.mapValues { (_, game) -> game.applyGradient(gradients) }
                     )
                 }
                 allLibraryGames = allLibraryGames.map { it.applyGradient(gradients) }
@@ -2229,9 +2230,10 @@ class DualHomeViewModel(
                             .associate { it.packageName to it.label }
                     }
                     customGrid.setTiles(rows)
+                    val gradients = gradientExtractionDelegate?.gradients?.value.orEmpty()
                     _uiState.update {
                         it.copy(
-                            tileGames = games,
+                            tileGames = games.mapValues { (_, game) -> game.applyGradient(gradients) },
                             tileCollections = collections,
                             tileApps = apps,
                             continueGameId = continueGameId,

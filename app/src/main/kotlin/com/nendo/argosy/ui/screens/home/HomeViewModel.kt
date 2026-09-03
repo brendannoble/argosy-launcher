@@ -492,7 +492,8 @@ class HomeViewModel @Inject constructor(
                         platformItems = state.platformItems.applyRowGradients(gradients),
                         pinnedGames = state.pinnedGames.mapValues { (_, games) ->
                             games.applyGradients(gradients)
-                        }
+                        },
+                        tileGames = state.tileGames.mapValues { (_, game) -> game.applyGradient(gradients) }
                     )
                 }
             }
@@ -824,9 +825,10 @@ class HomeViewModel @Inject constructor(
             shown.mapNotNull { (it.target as? HomeTileTargetRef.Media)?.itemId }.distinct()
         )
         customGrid.setTiles(shown)
+        val gradients = gradientExtractionDelegate.gradients.value
         _uiState.update {
             it.copy(
-                tileGames = games,
+                tileGames = games.mapValues { (_, game) -> game.applyGradient(gradients) },
                 tileCollections = collections,
                 tileApps = apps,
                 continueGameId = continueGameId,

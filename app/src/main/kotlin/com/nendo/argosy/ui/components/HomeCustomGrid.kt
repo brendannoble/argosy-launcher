@@ -3,6 +3,10 @@ package com.nendo.argosy.ui.components
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -416,6 +420,7 @@ private fun CustomGridCellBox(
             isOverlapped = isOverlapped,
             focusScale = focusScaleForSpan(rect),
             editModeLabel = editModeLabel,
+            onCoverLoaded = onCoverLoaded,
             onClick = onClick,
             onLongClick = onLongClick
         )
@@ -862,6 +867,29 @@ private fun focusScaleForSpan(rect: TileRect): Float {
 }
 
 /**
+ * The focused border a wide tile draws, matching what [GameCard] draws around a cover of the same
+ * game: the cover's own gradient for the gradient and glass styles, the accent pair when the cover
+ * has none. Solid returns null because [boxArtFrame] already draws that one.
+ */
+private fun wideTileBorderBrush(
+    style: BoxArtBorderStyle,
+    gradientColors: Pair<Color, Color>?,
+    accent: Color,
+    secondary: Color
+): Brush? = when (style) {
+    BoxArtBorderStyle.GRADIENT -> {
+        val (a, b) = gradientColors ?: (accent to secondary)
+        Brush.linearGradient(listOf(a, b))
+    }
+    BoxArtBorderStyle.GLASS -> {
+        val base = gradientColors?.first ?: accent
+        val highlight = gradientColors?.second ?: base
+        Brush.linearGradient(listOf(highlight.copy(alpha = 0.85f), base.copy(alpha = 0.6f)))
+    }
+    BoxArtBorderStyle.SOLID -> null
+}
+
+/**
  * A tile wider than it is tall. The extra width is spent on what the cover cannot say - how long
  * this has been played, how many achievements are left, how much is in a collection - rather than
  * on stretching the art, which is the one thing a wide box cannot do to a portrait cover.
@@ -875,33 +903,42 @@ private fun WideTileBox(
     isOverlapped: Boolean,
     focusScale: Float,
     editModeLabel: String?,
+    onCoverLoaded: ((Long, android.graphics.Bitmap) -> Unit)?,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?
 ) {
     val theme = LocalArgosyTheme.current
     val boxArtStyle = com.nendo.argosy.ui.theme.LocalBoxArtStyle.current
     val shape = RoundedCornerShape(boxArtStyle.cornerRadiusDp)
-    val scale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isFocused) focusScale else 1f,
-        label = "wide-tile-scale"
-    )
     val reroll = rememberRerollAnimation(enabled = content.isRandom, pickKey = content.game?.id ?: 0L)
+    val gradientColors = content.game?.gradientColors
+    val accent = boxArtStyle.accentColor ?: theme.focusAccent
+    val borderBrush = wideTileBorderBrush(
+        style = boxArtStyle.borderStyle,
+        gradientColors = gradientColors,
+        accent = accent,
+        secondary = boxArtStyle.secondaryColor ?: accent
+    ).takeIf { isFocused && boxArtStyle.borderThicknessDp.value > 0f }
 
     Box(modifier = placement) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = scale * reroll.scale
-                    scaleY = scale * reroll.scale
-                    alpha = if (isOverlapped) OVERLAPPED_ALPHA else 1f
+                    scaleX = reroll.scale
+                    scaleY = reroll.scale
                 }
-                .clip(shape)
-                .background(theme.surfaceRaised)
-                .argosyFocusIndicators(
-                    focused = isFocused,
-                    indicators = FocusIndicators.Ring,
-                    shape = shape
+                .boxArtFrame(
+                    isFocused = isFocused,
+                    focusScale = focusScale,
+                    alphaOverride = if (isOverlapped) OVERLAPPED_ALPHA else null,
+                    artworkGradient = gradientColors,
+                    background = SolidColor(theme.surfaceRaised)
+                )
+                .then(
+                    if (borderBrush != null) {
+                        Modifier.border(boxArtStyle.borderThicknessDp, borderBrush, shape)
+                    } else Modifier
                 )
                 .then(
                     if (onLongClick == null) {
@@ -942,7 +979,12 @@ private fun WideTileBox(
                         } else {
                             androidx.compose.ui.layout.ContentScale.Crop
                         },
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        onSuccess = { state ->
+                            val gameId = content.game?.id ?: return@AsyncImage
+                            val bitmap = (state.result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                            if (bitmap != null) onCoverLoaded?.invoke(gameId, bitmap)
+                        }
                     )
                 }
                 if (content.isRandom) {
