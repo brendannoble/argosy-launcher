@@ -46,6 +46,12 @@ private val licenses = listOf(
     LicenseEntry("rcheevos", "MIT", "github.com/RetroAchievements/rcheevos"),
     LicenseEntry("Oboe", "Apache 2.0", "github.com/google/oboe"),
     LicenseEntry("libretro-common", "MIT", "github.com/libretro/libretro-common"),
+    LicenseEntry("overlay-borders", "MIT", "github.com/libretro/overlay-borders"),
+    LicenseEntry(
+        "Duimon-Mega-Bezel",
+        "CC BY-NC-ND 4.0",
+        "github.com/Duimon/Duimon-Mega-Bezel"
+    ),
     LicenseEntry("AndroidX", "Apache 2.0", "developer.android.com/jetpack/androidx"),
     LicenseEntry("Jetpack Compose", "Apache 2.0", "developer.android.com/jetpack/compose"),
     LicenseEntry("Kotlin", "Apache 2.0", "kotlinlang.org"),
