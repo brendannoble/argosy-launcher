@@ -682,26 +682,43 @@ fun HomeScreen(
             .then(swipeGestureModifier)
         ) {
             /**
-             * A media row draws no info panel, so the space one would have taken is the row's to
-             * use. Reading the last measured height there would reserve room for a panel that is
-             * not on screen and shrink the rail for no reason.
+             * The details block takes room of its own only when the row rests in the middle. Hung
+             * from the top or the bottom, the rail fills the height and the block overlays it; a
+             * media row draws no block at all. Reserving for a block that is not on screen would
+             * shrink the rail for no reason.
              */
-            val infoHeight = if (uiState.isMediaRow) 0.dp else reservedGameInfoHeight()
+            val infoReserve = reservedGameInfoHeight()
+            val infoOverlaysRail = !uiState.isMediaRow &&
+                uiState.carouselConfig.rowAlignment != HomeRowAlignment.CENTER
+            val infoHeight = if (uiState.isMediaRow || infoOverlaysRail) 0.dp else infoReserve
             val cardSize = rememberCarouselCardSize(
                 availableHeight = maxHeight - headerBlockHeight - infoHeight -
                     Dimens.footerHeight - Dimens.spacingLg - Dimens.spacingXl,
                 config = uiState.carouselConfig
             )
             val infoAtBottom = uiState.carouselConfig.rowAlignment == HomeRowAlignment.TOP
+            /**
+             * How far the overlaid block moves off the header or footer to sit midway in the band
+             * the resting cards leave free. The band is the same height whichever edge the row
+             * hangs from, since the rail fills the space either way.
+             */
+            val infoBandInset = if (infoOverlaysRail) {
+                (
+                    (
+                        maxHeight - headerBlockHeight - Dimens.footerHeight - Dimens.spacingLg -
+                            cardSize.height - infoReserve
+                        ) / 2
+                    ).coerceAtLeast(0.dp)
+            } else {
+                0.dp
+            }
             val railHeight = when {
                 isAutoGrid || isCustomGrid ->
                     (maxHeight - headerBlockHeight - Dimens.footerHeight - Dimens.spacingLg)
                         .coerceAtLeast(Dimens.spacingXl)
                 infoAtBottom ->
-                    (
-                        maxHeight - headerBlockHeight - infoHeight -
-                            Dimens.footerHeight - Dimens.spacingLg
-                        ).coerceAtLeast(Dimens.spacingXl)
+                    (maxHeight - headerBlockHeight - Dimens.footerHeight - Dimens.spacingLg)
+                        .coerceAtLeast(Dimens.spacingXl)
                 else -> cardSize.height * uiState.carouselConfig.focusScale + Dimens.spacingMd
             }
             val isPortrait = maxWidth <= maxHeight
@@ -735,13 +752,6 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(
-                            bottom = if (infoAtBottom && !isAutoGrid && !isCustomGrid) {
-                                infoHeight
-                            } else {
-                                0.dp
-                            }
-                        )
                         .height(railHeight)
                 ) {
                     when {
@@ -1100,7 +1110,8 @@ fun HomeScreen(
                 targetValue = if (uiState.isVideoPreviewActive) {
                     Dimens.spacingMd
                 } else {
-                    (headerBlockHeight - Dimens.spacingLg).coerceAtLeast(Dimens.spacingMd)
+                    (headerBlockHeight - Dimens.spacingLg).coerceAtLeast(Dimens.spacingMd) +
+                        infoBandInset
                 },
                 animationSpec = tween(500),
                 label = "gameInfoTopPadding"
@@ -1176,7 +1187,7 @@ fun HomeScreen(
                             gameInfoTopPadding
                         },
                         bottom = if (uiState.carouselConfig.rowAlignment == HomeRowAlignment.TOP) {
-                            Dimens.footerHeight + Dimens.spacingLg
+                            Dimens.footerHeight + Dimens.spacingLg + infoBandInset
                         } else {
                             0.dp
                         }

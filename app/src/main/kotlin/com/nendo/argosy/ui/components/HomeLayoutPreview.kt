@@ -149,8 +149,13 @@ fun HomeLayoutPreview(
                     config = settings.carousel,
                     preview = preview,
                     availableWidth = frameWidth,
-                    availableHeight = frameHeight - headerHeight - infoHeight - footerHeight -
-                        Dimens.spacingLg * scale - Dimens.spacingXl * scale,
+                    availableHeight = frameHeight - headerHeight - footerHeight -
+                        Dimens.spacingLg * scale - Dimens.spacingXl * scale -
+                        if (settings.carousel.rowAlignment == HomeRowAlignment.CENTER) {
+                            infoHeight
+                        } else {
+                            0.dp
+                        },
                     animate = animate,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -324,12 +329,15 @@ private fun CarouselSchematic(
      */
     val pushAwayPx = if (railDirection == ambientDirection) pushPx else -pushPx
     val railHeight = cardSize.height * config.focusScale + Dimens.spacingMd * preview.scale
+    val infoAtBottom = config.rowAlignment == HomeRowAlignment.TOP
 
-    Column(modifier = modifier) {
+    Box(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = Dimens.spacingSm * preview.scale),
+                .align(if (infoAtBottom) Alignment.BottomCenter else Alignment.TopCenter)
+                .padding(vertical = Dimens.spacingSm * preview.scale)
+                .zIndex(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs * preview.scale)
         ) {
@@ -348,44 +356,49 @@ private fun CarouselSchematic(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-        Box(modifier = Modifier.weight(1f))
-        CompositionLocalProvider(LocalLayoutDirection provides railDirection) {
-            LazyRow(
-                state = listState,
-                userScrollEnabled = false,
-                contentPadding = carouselContentPadding(
-                    metrics = metrics,
-                    availableWidth = availableWidth,
-                    startGutter = Dimens.spacingMd * preview.scale
-                ),
-                horizontalArrangement = Arrangement.spacedBy(metrics.itemGap),
-                verticalAlignment = when (config.rowAlignment) {
-                    HomeRowAlignment.TOP -> Alignment.Top
-                    HomeRowAlignment.CENTER -> Alignment.CenterVertically
-                    HomeRowAlignment.BOTTOM -> Alignment.Bottom
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(railHeight)
-                    .graphicsLayer { clip = false }
-            ) {
-                items(PREVIEW_CAROUSEL_ITEMS, key = { it }) { index ->
-                    val isFocused = index == focusedIndex
-                    PreviewCoverBlock(
-                        width = cardSize.width,
-                        height = cardSize.height,
-                        isFocused = isFocused,
-                        focusScale = config.focusScale,
-                        rowAlignment = config.rowAlignment,
-                        pushPx = when {
-                            index < focusedIndex -> -pushAwayPx
-                            index > focusedIndex -> pushAwayPx
-                            else -> 0f
-                        },
-                        showBadge = config.showPlatformBadge,
-                        preview = preview,
-                        modifier = Modifier.zIndex(if (isFocused) 1f else 0f)
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(railHeight)
+                .align(if (infoAtBottom) Alignment.TopCenter else Alignment.BottomCenter)
+        ) {
+            CompositionLocalProvider(LocalLayoutDirection provides railDirection) {
+                LazyRow(
+                    state = listState,
+                    userScrollEnabled = false,
+                    contentPadding = carouselContentPadding(
+                        metrics = metrics,
+                        availableWidth = availableWidth,
+                        startGutter = Dimens.spacingMd * preview.scale
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(metrics.itemGap),
+                    verticalAlignment = when (config.rowAlignment) {
+                        HomeRowAlignment.TOP -> Alignment.Top
+                        HomeRowAlignment.CENTER -> Alignment.CenterVertically
+                        HomeRowAlignment.BOTTOM -> Alignment.Bottom
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { clip = false }
+                ) {
+                    items(PREVIEW_CAROUSEL_ITEMS, key = { it }) { index ->
+                        val isFocused = index == focusedIndex
+                        PreviewCoverBlock(
+                            width = cardSize.width,
+                            height = cardSize.height,
+                            isFocused = isFocused,
+                            focusScale = config.focusScale,
+                            rowAlignment = config.rowAlignment,
+                            pushPx = when {
+                                index < focusedIndex -> -pushAwayPx
+                                index > focusedIndex -> pushAwayPx
+                                else -> 0f
+                            },
+                            showBadge = config.showPlatformBadge,
+                            preview = preview,
+                            modifier = Modifier.zIndex(if (isFocused) 1f else 0f)
+                        )
+                    }
                 }
             }
         }
