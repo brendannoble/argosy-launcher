@@ -356,7 +356,7 @@
     <string name="ui_tile_picker_empty_features">Aucun widget disponible</string>
     <string name="ui_tile_picker_empty_ra_games">Aucun jeu reconnu par RetroAchievements</string>
     <string name="ui_feature_setup_title">Jeu aléatoire</string>
-    <string name="ui_feature_setup_step_mode">Comment cette tuile doit-elle fonctionner ?</string>
+    <string name="ui_feature_setup_step_mode">Ce que cette tuile affiche</string>
     <string name="ui_feature_setup_mode_account">Aperçu du compte</string>
     <string name="ui_feature_setup_mode_track">Suivre un jeu</string>
     <string name="ui_feature_setup_step_filters">Parmi quoi choisir</string>

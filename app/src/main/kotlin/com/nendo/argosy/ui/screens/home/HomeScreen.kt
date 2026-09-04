@@ -1307,6 +1307,7 @@ fun HomeScreen(
                 category = uiState.customGrid.pickerCategory,
                 categories = uiState.customGrid.pickerCategories,
                 onSelectCategory = { viewModel.setTilePickerCategory(it) },
+                purpose = uiState.customGrid.pickerPurpose,
                 canDeletePage = uiState.customGrid.canDeletePage,
                 onDeletePage = viewModel::deleteCustomGridPage
             )
@@ -1325,7 +1326,7 @@ fun HomeScreen(
         }
 
         val featureTileSetup = uiState.featureTileSetup
-        if (featureTileSetup != null) {
+        if (featureTileSetup != null && uiState.customGrid.isFeatureSetupOpen) {
             com.nendo.argosy.ui.components.FeatureTileSetupModal(
                 setup = featureTileSetup,
                 onSelect = viewModel::confirmFeatureTileSetupAt,

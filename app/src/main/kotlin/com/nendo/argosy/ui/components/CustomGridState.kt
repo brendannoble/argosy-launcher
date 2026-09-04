@@ -467,15 +467,36 @@ data class CustomGridState(
         }
 
     /**
-     * What the tile menu offers. Deleting the page is listed even on an empty cell, because it acts
-     * on the page rather than on whatever the cursor happens to be sitting over.
+     * What the tile menu offers, in three zones: what this tile is, then this page, then the rows
+     * that destroy something. Within the tile's own zone the rows that act now come before the ones
+     * that reconfigure it. Deleting the page is listed even on an empty cell, because it acts on the
+     * page rather than on whatever the cursor happens to be sitting over.
      */
     val menuActions: List<CustomTileMenuAction>
         get() = buildList {
             val focused = focusedTile
             if (focused != null) {
-                add(CustomTileMenuAction.ARRANGE)
+                val feature = focused.target as? HomeTileTargetRef.Feature
+                if (feature?.kind == FeatureTileKind.RA_SUMMARY &&
+                    raTile.tracksGame && raTile.browseCount > 0
+                ) {
+                    add(CustomTileMenuAction.BROWSE_ACHIEVEMENTS)
+                }
+                focusedCollection?.let { collection ->
+                    if (collection.focusGameId == null) {
+                        add(CustomTileMenuAction.START_GAME_QUEUE)
+                    } else {
+                        add(CustomTileMenuAction.ADVANCE_FOCUS_GAME)
+                        add(CustomTileMenuAction.SET_FOCUS_GAME)
+                    }
+                }
                 if (isFocusedTileCurated) add(CustomTileMenuAction.RECURATE)
+                if (feature?.kind == FeatureTileKind.RANDOM_GAME) {
+                    add(CustomTileMenuAction.EDIT_FILTERS)
+                }
+                if (feature?.kind == FeatureTileKind.RA_SUMMARY && supportsRaTileSetup) {
+                    add(CustomTileMenuAction.EDIT_TILE)
+                }
                 if (focused.target.showsGameCover()) {
                     add(
                         if (focused.coverScale == TileCoverScale.FIT) {
@@ -485,35 +506,27 @@ data class CustomGridState(
                         }
                     )
                 }
-                val feature = focused.target as? HomeTileTargetRef.Feature
-                if (feature?.kind == FeatureTileKind.RANDOM_GAME) {
-                    add(CustomTileMenuAction.EDIT_FILTERS)
-                }
-                if (feature?.kind == FeatureTileKind.RA_SUMMARY) {
-                    if (supportsRaTileSetup) add(CustomTileMenuAction.EDIT_TILE)
-                    if (raTile.tracksGame && raTile.browseCount > 0) {
-                        add(CustomTileMenuAction.BROWSE_ACHIEVEMENTS)
-                    }
-                }
-                focusedCollection?.let { collection ->
-                    if (collection.focusGameId == null) {
-                        add(CustomTileMenuAction.START_GAME_QUEUE)
-                    } else {
-                        add(CustomTileMenuAction.SET_FOCUS_GAME)
-                        add(CustomTileMenuAction.ADVANCE_FOCUS_GAME)
-                    }
-                }
-                add(CustomTileMenuAction.REMOVE)
+                add(CustomTileMenuAction.ARRANGE)
             }
             if (!isOnAddPage) {
                 add(CustomTileMenuAction.PAGE_BACKDROP)
                 add(CustomTileMenuAction.PAGE_MUSIC)
             }
+            if (focused != null) add(CustomTileMenuAction.REMOVE)
             if (canDeletePage) add(CustomTileMenuAction.DELETE_PAGE)
         }
 
+    /**
+     * Where the trailing run of destructive rows begins. Removing a tile is as destructive as
+     * deleting the page and now sits beside it, so the fence opens at whichever of the two the menu
+     * reaches first rather than at the page row alone.
+     */
     val menuDangerFromIndex: Int?
-        get() = menuActions.indexOf(CustomTileMenuAction.DELETE_PAGE).takeIf { it >= 0 }
+        get() = menuActions
+            .indexOfFirst {
+                it == CustomTileMenuAction.REMOVE || it == CustomTileMenuAction.DELETE_PAGE
+            }
+            .takeIf { it >= 0 }
 
     /**
      * Whether the picker ends in the row that deletes the page. Naming a game for the

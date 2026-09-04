@@ -345,7 +345,7 @@
     <string name="ui_tile_picker_empty_features">No hay widgets disponibles</string>
     <string name="ui_tile_picker_empty_ra_games">Ningún juego reconocido por RetroAchievements</string>
     <string name="ui_feature_setup_title">Juego aleatorio</string>
-    <string name="ui_feature_setup_step_mode">¿Cómo debería funcionar este mosaico?</string>
+    <string name="ui_feature_setup_step_mode">Lo que muestra este mosaico</string>
     <string name="ui_feature_setup_mode_account">Resumen de la cuenta</string>
     <string name="ui_feature_setup_mode_track">Seguir un juego</string>
     <string name="ui_feature_setup_step_filters">De dónde puede elegir</string>

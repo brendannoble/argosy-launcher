@@ -352,7 +352,7 @@
     <string name="ui_tile_picker_empty_features">Нет доступных виджетов</string>
     <string name="ui_tile_picker_empty_ra_games">Нет игр, распознанных RetroAchievements</string>
     <string name="ui_feature_setup_title">Случайная игра</string>
-    <string name="ui_feature_setup_step_mode">Как должна работать эта плитка?</string>
+    <string name="ui_feature_setup_step_mode">Что показывает эта плитка</string>
     <string name="ui_feature_setup_mode_account">Обзор аккаунта</string>
     <string name="ui_feature_setup_mode_track">Отслеживать игру</string>
     <string name="ui_feature_setup_step_filters">Из чего выбирать</string>

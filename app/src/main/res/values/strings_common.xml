@@ -679,7 +679,7 @@
     <string name="ui_feature_setup_title_ra" translatable="false">RetroAchievements</string>
     <!-- Second line of the setup modal while asking whether the RetroAchievements tile follows
          the whole account or one game. -->
-    <string name="ui_feature_setup_step_mode">How should this tile work?</string>
+    <string name="ui_feature_setup_step_mode">What this tile shows</string>
     <!-- Choice in that step: the tile follows the whole account. Noun phrase. -->
     <string name="ui_feature_setup_mode_account">Account overview</string>
     <!-- Choice in that step: the tile follows one game the user picks. Verb phrase. -->
@@ -700,7 +700,7 @@
     <string name="ui_tile_picker_empty_search">Nothing matches that search</string>
     <!-- Destructive row pinned under that list. Verb phrase: removes the whole page of the
          curated grid. -->
-    <string name="ui_tile_picker_delete_page">Delete Page</string>
+    <string name="ui_tile_picker_delete_page">Delete page</string>
 
     <!-- Heading of the chooser when it is picking which game a collection tile plays next. Verb
          phrase, rendered in caps by the modal. -->
