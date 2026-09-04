@@ -26,6 +26,7 @@ import com.nendo.argosy.hardware.AmbientLedContext
 import com.nendo.argosy.hardware.AmbientLedManager
 import com.nendo.argosy.ui.common.GridDirection
 import com.nendo.argosy.ui.common.GridFocusNavigator
+import com.nendo.argosy.domain.model.FeatureTileContent
 import com.nendo.argosy.domain.model.FeatureTileKind
 import com.nendo.argosy.domain.model.HomeLayoutKind
 import com.nendo.argosy.domain.model.HomeTileTargetRef
@@ -397,6 +398,7 @@ class HomeViewModel @Inject constructor(
                     newState
                 }
             }
+            refreshFeatureTiles()
         }
     }
 
@@ -787,22 +789,8 @@ class HomeViewModel @Inject constructor(
      * out never writes anything: the page the database holds is still the page the user arranged.
      */
     private suspend fun publishHomeTiles(tiles: List<com.nendo.argosy.domain.model.HomeTile>) {
-        val shown = if (tileMediaShown) {
-            tiles
-        } else {
-            tiles.filterNot { it.target is HomeTileTargetRef.Media }
-        }
-        val features = shown.mapNotNull { it.target as? HomeTileTargetRef.Feature }
-        val continueGameId = if (features.any { it.kind == FeatureTileKind.CONTINUE }) {
-            gameRepository.getRecentlyPlayed(1).firstOrNull()?.id
-        } else {
-            null
-        }
-        val raSummary = if (features.any { it.kind == FeatureTileKind.RA_SUMMARY }) {
-            retroAchievementsRepository.getAccountSummary()
-        } else {
-            null
-        }
+        val shown = shownTiles(tiles)
+        val feature = featureTileContent(shown)
         val games = libraryDelegate.resolveTileGames(
             (
                 shown.mapNotNull {
@@ -812,7 +800,7 @@ class HomeViewModel @Inject constructor(
                         is HomeTileTargetRef.Feature -> target.pickedGameId
                         else -> null
                     }
-                } + listOfNotNull(continueGameId)
+                } + listOfNotNull(feature.continueGameId)
             ).distinct()
         )
         val collections = libraryDelegate.resolveTileCollections(
@@ -831,12 +819,64 @@ class HomeViewModel @Inject constructor(
                 tileGames = games.mapValues { (_, game) -> game.applyGradient(gradients) },
                 tileCollections = collections,
                 tileApps = apps,
-                continueGameId = continueGameId,
-                raTileSummary = raSummary
+                continueGameId = feature.continueGameId,
+                raTileSummary = feature.raSummary
             )
         }
         resolveTilePlayback(shown)
         ensureRandomPicks(shown, games)
+    }
+
+    private fun shownTiles(
+        tiles: List<com.nendo.argosy.domain.model.HomeTile>
+    ): List<com.nendo.argosy.domain.model.HomeTile> =
+        if (tileMediaShown) tiles else tiles.filterNot { it.target is HomeTileTargetRef.Media }
+
+    /**
+     * What the continue and RetroAchievements tiles show, read fresh each time. Both move while
+     * the grid stands still: a session puts another game at the top of recently played and can
+     * add unlocks, and neither touches the stored tile list.
+     */
+    private suspend fun featureTileContent(
+        shown: List<com.nendo.argosy.domain.model.HomeTile>
+    ): FeatureTileContent {
+        val features = shown.mapNotNull { it.target as? HomeTileTargetRef.Feature }
+        return FeatureTileContent(
+            continueGameId = if (features.any { it.kind == FeatureTileKind.CONTINUE }) {
+                gameRepository.getRecentlyPlayed(1).firstOrNull()?.id
+            } else {
+                null
+            },
+            raSummary = if (features.any { it.kind == FeatureTileKind.RA_SUMMARY }) {
+                retroAchievementsRepository.getAccountSummary()
+            } else {
+                null
+            }
+        )
+    }
+
+    /**
+     * Re-reads the feature tiles without rebuilding the grid, so a finished session reaches the
+     * continue tile and the achievement tally the moment it lands rather than on the next time the
+     * tile list happens to change. The continue game is resolved again even when it is the same
+     * game, because its play time is part of what the tile draws.
+     */
+    private fun refreshFeatureTiles() {
+        viewModelScope.launch {
+            val feature = featureTileContent(shownTiles(storedTiles))
+            val continueGame = feature.continueGameId
+                ?.let { libraryDelegate.resolveTileGames(listOf(it)) }
+                .orEmpty()
+            val gradients = gradientExtractionDelegate.gradients.value
+            _uiState.update {
+                it.copy(
+                    tileGames = it.tileGames +
+                        continueGame.mapValues { (_, game) -> game.applyGradient(gradients) },
+                    continueGameId = feature.continueGameId,
+                    raTileSummary = feature.raSummary
+                )
+            }
+        }
     }
 
     /**
@@ -1213,17 +1253,7 @@ class HomeViewModel @Inject constructor(
         }
 
         when (val item = state.currentItems[index]) {
-            is HomeRowItem.Game -> {
-                val game = item.game
-                val indicator = state.downloadIndicatorFor(game.id)
-                when {
-                    game.needsInstall -> downloadDelegate.installApk(viewModelScope, game.id)
-                    game.isDownloaded -> launchGame(game.id)
-                    indicator.isPaused || indicator.isQueued -> downloadDelegate.resumeDownload(game.id)
-                    game.isSteamGame -> queueSteamDownload(game.id)
-                    else -> downloadDelegate.queueDownload(viewModelScope, game.id)
-                }
-            }
+            is HomeRowItem.Game -> activateGame(item.game)
             is HomeRowItem.Media -> activateFocusedMedia(item.media)
             is HomeRowItem.ViewAll -> navigateToLibrary(item.platformId, item.sourceFilter)
         }
@@ -1256,6 +1286,22 @@ class HomeViewModel @Inject constructor(
             saveCurrentState()
         }
         toggleGameMenu()
+    }
+
+    /**
+     * What pressing a game does, wherever it is pressed: play it when it is here, otherwise get it
+     * here. One decision for the rail, the game menu and every tile, so a tile pointing at a game
+     * that is not downloaded fetches it the way the rail would rather than failing to launch.
+     */
+    override fun activateGame(game: HomeGameUi) {
+        val indicator = _uiState.value.downloadIndicatorFor(game.id)
+        when {
+            game.needsInstall -> installApk(game.id)
+            game.isDownloaded -> launchGame(game.id)
+            indicator.isPaused || indicator.isQueued -> resumeDownload(game.id)
+            game.isSteamGame -> queueSteamDownload(game.id)
+            else -> queueDownload(game.id)
+        }
     }
 
     override fun launchGame(gameId: Long, channelName: String?) {
@@ -1343,11 +1389,7 @@ class HomeViewModel @Inject constructor(
         when (val action = gameMenuDelegate.resolveMenuAction(state.gameMenuFocusIndex, game, isPlatformRow)) {
             is GameMenuAction.Play -> {
                 toggleGameMenu()
-                when {
-                    action.needsInstall -> installApk(action.gameId)
-                    action.isDownloaded -> launchGame(action.gameId)
-                    else -> queueDownload(action.gameId)
-                }
+                activateGame(game)
             }
             is GameMenuAction.ToggleFavorite -> toggleFavorite(action.gameId)
             is GameMenuAction.ViewDetails -> {
@@ -1503,6 +1545,7 @@ class HomeViewModel @Inject constructor(
     fun onResume() {
         gameLaunchDelegate.handleSessionEnd(viewModelScope)
         libraryDelegate.invalidateRecentGamesCache()
+        refreshFeatureTiles()
         mediaDelegate.refresh(viewModelScope)
         viewModelScope.launch { refreshCurrentRowInternal() }
         syncDelegate.refreshFavoritesIfConnected(viewModelScope) {

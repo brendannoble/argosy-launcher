@@ -9,6 +9,7 @@ import com.nendo.argosy.ui.common.GridDirection
 import com.nendo.argosy.ui.components.AutoGridMove
 import com.nendo.argosy.ui.components.TileEditMode
 import com.nendo.argosy.ui.screens.home.HomeRow
+import com.nendo.argosy.ui.screens.home.HomeGameUi
 import com.nendo.argosy.ui.screens.home.HomeRowItem
 import com.nendo.argosy.ui.screens.home.HomeUiState
 import kotlinx.coroutines.flow.StateFlow
@@ -83,6 +84,7 @@ interface HomeInputActions {
     fun focusedTileGameId(): Long?
     fun installApk(gameId: Long)
     fun launchGame(gameId: Long, channelName: String? = null)
+    fun activateGame(game: HomeGameUi)
     fun resumeDownload(gameId: Long)
     fun queueDownload(gameId: Long)
     fun queueSteamDownload(gameId: Long)
@@ -266,12 +268,12 @@ class HomeInputHandler(
         if (actions.engageFocusedTile()) return
         when (val target = state.customGrid.focusedTile?.target) {
             is com.nendo.argosy.domain.model.HomeTileTargetRef.Game ->
-                actions.launchGame(target.gameId)
+                activateTileGame(target.gameId, state)
             is com.nendo.argosy.domain.model.HomeTileTargetRef.App ->
                 actions.launchTileApp(target.packageName)
             is com.nendo.argosy.domain.model.HomeTileTargetRef.Collection ->
                 if (target.focusGameId != null) {
-                    actions.launchGame(target.focusGameId)
+                    activateTileGame(target.focusGameId, state)
                 } else {
                     actions.openTileCollection(target.collectionId)
                 }
@@ -282,6 +284,16 @@ class HomeInputHandler(
         }
     }
 
+    /**
+     * A tile's game goes through the same play-or-fetch decision as a rail card. The resolved game
+     * is what carries the download state; a tile whose game has not been resolved yet falls back to
+     * a plain launch rather than doing nothing.
+     */
+    private fun activateTileGame(gameId: Long, state: HomeUiState) {
+        val game = state.tileGames[gameId]
+        if (game != null) actions.activateGame(game) else actions.launchGame(gameId)
+    }
+
     private fun confirmFeatureTile(
         target: com.nendo.argosy.domain.model.HomeTileTargetRef.Feature,
         state: HomeUiState
@@ -289,10 +301,10 @@ class HomeInputHandler(
         when (target.kind) {
             com.nendo.argosy.domain.model.FeatureTileKind.RANDOM_GAME -> {
                 val picked = target.pickedGameId
-                if (picked != null) actions.launchGame(picked) else actions.rerollRandomTile()
+                if (picked != null) activateTileGame(picked, state) else actions.rerollRandomTile()
             }
             com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE -> {
-                state.continueGameId?.let { actions.launchGame(it) }
+                state.continueGameId?.let { activateTileGame(it, state) }
             }
             com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY -> {
                 state.raTileSummary?.latestGameId?.let { onGameSelect(it) }
@@ -367,17 +379,7 @@ class HomeInputHandler(
             isCustomGrid(state) -> confirmCustomGridCell()
             else -> {
                 when (val item = state.focusedItem) {
-                    is HomeRowItem.Game -> {
-                        val game = item.game
-                        val indicator = state.downloadIndicatorFor(game.id)
-                        when {
-                            game.needsInstall -> actions.installApk(game.id)
-                            game.isDownloaded -> actions.launchGame(game.id)
-                            indicator.isPaused || indicator.isQueued -> actions.resumeDownload(game.id)
-                            game.isSteamGame -> actions.queueSteamDownload(game.id)
-                            else -> actions.queueDownload(game.id)
-                        }
-                    }
+                    is HomeRowItem.Game -> actions.activateGame(item.game)
                     is HomeRowItem.Media -> actions.confirmFocusedMedia()
                     is HomeRowItem.ViewAll -> actions.navigateToLibrary(item.platformId, item.sourceFilter)
                     null -> when {

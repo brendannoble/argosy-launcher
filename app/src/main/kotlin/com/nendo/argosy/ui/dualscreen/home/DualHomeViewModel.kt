@@ -23,6 +23,7 @@ import com.nendo.argosy.data.repository.PlatformRepository
 import com.nendo.argosy.data.local.entity.CollectionType
 import com.nendo.argosy.data.local.entity.PlatformEntity
 import com.nendo.argosy.data.platform.LocalPlatformIds
+import com.nendo.argosy.domain.model.FeatureTileContent
 import com.nendo.argosy.domain.model.HomeSectionKind
 import com.nendo.argosy.domain.model.PinnedCollection
 import com.nendo.argosy.domain.model.PlayerCount
@@ -630,6 +631,8 @@ class DualHomeViewModel(
             .map { it.packageName }
             .toSet()
     }
+
+    private var companionTiles: List<com.nendo.argosy.domain.model.HomeTile> = emptyList()
 
     private val customGrid = com.nendo.argosy.ui.home.grid.CustomGridCoordinator(
         context = context,
@@ -2084,6 +2087,7 @@ class DualHomeViewModel(
                 )
             }
             loadGamesForCurrentSection()
+            refreshFeatureTiles()
         }
     }
 
@@ -2193,23 +2197,10 @@ class DualHomeViewModel(
                     }
                 }
                 .collect { rows ->
-                    val features = rows.mapNotNull {
-                        it.target as? com.nendo.argosy.domain.model.HomeTileTargetRef.Feature
-                    }
-                    val continueGameId = if (
-                        features.any { it.kind == com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE }
-                    ) {
-                        gameRepository.getRecentlyPlayed(1).firstOrNull()?.id
-                    } else {
-                        null
-                    }
-                    val raSummary = if (
-                        features.any { it.kind == com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY }
-                    ) {
-                        retroAchievementsRepository?.getAccountSummary()
-                    } else {
-                        null
-                    }
+                    companionTiles = rows
+                    val feature = featureTileContent(rows)
+                    val continueGameId = feature.continueGameId
+                    val raSummary = feature.raSummary
                     val gameIds = (
                         rows.mapNotNull {
                             when (val target = it.target) {
@@ -2273,6 +2264,56 @@ class DualHomeViewModel(
                     }
                     ensureRandomPicks(rows, games, tiles)
                 }
+        }
+    }
+
+    /**
+     * What the continue and RetroAchievements tiles show, read fresh each time. Both move while
+     * the grid stands still: a session puts another game at the top of recently played and can
+     * add unlocks, and neither touches the stored tile list.
+     */
+    private suspend fun featureTileContent(
+        rows: List<com.nendo.argosy.domain.model.HomeTile>
+    ): FeatureTileContent {
+        val features = rows.mapNotNull {
+            it.target as? com.nendo.argosy.domain.model.HomeTileTargetRef.Feature
+        }
+        return FeatureTileContent(
+            continueGameId = if (
+                features.any { it.kind == com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE }
+            ) {
+                gameRepository.getRecentlyPlayed(1).firstOrNull()?.id
+            } else {
+                null
+            },
+            raSummary = if (
+                features.any { it.kind == com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY }
+            ) {
+                retroAchievementsRepository?.getAccountSummary()
+            } else {
+                null
+            }
+        )
+    }
+
+    /**
+     * Re-reads the feature tiles without rebuilding the grid, so a finished session reaches the
+     * continue tile and the achievement tally on the companion too. The continue game is resolved
+     * again even when it is the same game, because its play time is part of what the tile draws.
+     */
+    private suspend fun refreshFeatureTiles() {
+        val feature = featureTileContent(companionTiles)
+        val continueGame = feature.continueGameId
+            ?.let { id -> gameRepository.getByIds(listOf(id)).associate { it.id to it.toUi() } }
+            .orEmpty()
+        val gradients = gradientExtractionDelegate?.gradients?.value.orEmpty()
+        _uiState.update {
+            it.copy(
+                tileGames = it.tileGames +
+                    continueGame.mapValues { (_, game) -> game.applyGradient(gradients) },
+                continueGameId = feature.continueGameId,
+                raTileSummary = feature.raSummary
+            )
         }
     }
 
