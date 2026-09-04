@@ -43,6 +43,30 @@ class ArchiveRomNamingTest {
     }
 
     @Test
+    fun `live base name is the extracted entry on a platform that unpacks archives`() {
+        val zip = zipWith("Game.zip", "Game (USA).gba")
+
+        assertEquals("Game (USA)", ArchiveRomNaming.liveBaseName(zip, "gba"))
+        assertEquals(listOf("Game (USA)", "Game"), ArchiveRomNaming.candidateBaseNames(zip, "gba"))
+    }
+
+    @Test
+    fun `live base name stays the archive where the zip is the rom`() {
+        val zip = zipWith("sf2.zip", "sf2.01")
+
+        assertEquals("sf2", ArchiveRomNaming.liveBaseName(zip, "arcade"))
+        assertEquals(listOf("sf2"), ArchiveRomNaming.candidateBaseNames(zip, "arcade"))
+    }
+
+    @Test
+    fun `live base name of a bare rom is its own name`() {
+        val rom = temp.newFile("Game (USA).gba").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+
+        assertEquals("Game (USA)", ArchiveRomNaming.liveBaseName(rom, "gba"))
+        assertEquals(listOf("Game (USA)"), ArchiveRomNaming.candidateBaseNames(rom, "gba"))
+    }
+
+    @Test
     fun `7z launch base name comes from the entry not the archive`() {
         val archive = sevenZWith("Chrono Trigger (USA).7z", "Chrono Trigger (U) [!].sfc")
         assertEquals("Chrono Trigger (U) [!]", ArchiveRomNaming.launchBaseName(archive))

@@ -35,6 +35,26 @@ object ArchiveRomNaming {
         return File(launchFileName(entryName)).nameWithoutExtension
     }
 
+    /**
+     * The base name the built-in core writes saves and states under: the entry it was launched
+     * with when the archive is extracted, the archive itself on platforms that play zips as they
+     * are. Mirrors the launcher's extraction decision so the cache side agrees with the engine.
+     */
+    fun liveBaseName(rom: File, platformSlug: String): String {
+        val archiveBase = rom.nameWithoutExtension
+        if (!ZipExtractor.isArchiveFile(rom) || ZipExtractor.usesZipAsRomFormat(platformSlug)) {
+            return archiveBase
+        }
+        return launchBaseName(rom) ?: archiveBase
+    }
+
+    /**
+     * Every base name a state for [rom] may already sit under: the live name first, then the
+     * archive's own name for files written before the two were told apart.
+     */
+    fun candidateBaseNames(rom: File, platformSlug: String): List<String> =
+        listOf(liveBaseName(rom, platformSlug), rom.nameWithoutExtension).distinct()
+
     private fun firstZipEntryName(archive: File): String? =
         try {
             ZipFile(archive).use { primaryZipEntry(it)?.name }

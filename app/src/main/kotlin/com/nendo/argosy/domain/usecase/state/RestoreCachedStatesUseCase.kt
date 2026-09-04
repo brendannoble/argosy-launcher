@@ -1,6 +1,7 @@
 package com.nendo.argosy.domain.usecase.state
 
 import android.util.Log
+import com.nendo.argosy.data.emulator.ArchiveRomNaming
 import com.nendo.argosy.data.emulator.CoreVersionExtractor
 import com.nendo.argosy.data.emulator.EmulatorDetector
 import com.nendo.argosy.data.emulator.EmulatorRegistry
@@ -80,7 +81,11 @@ class RestoreCachedStatesUseCase @Inject constructor(
         val effectiveCoreId = coreId ?: coreVersionExtractor.getCoreIdForEmulator(emulatorId, game.platformSlug)
 
         val romFile = File(romPath)
-        val romBaseName = romFile.nameWithoutExtension
+        val romBaseName = if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
+            ArchiveRomNaming.liveBaseName(romFile, game.platformSlug)
+        } else {
+            romFile.nameWithoutExtension
+        }
         val contentDir = romFile.parentFile?.absolutePath
         val contentDirName = romFile.parentFile?.name
 

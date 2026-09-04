@@ -134,8 +134,12 @@ class StateCacheManager @Inject constructor(
         }
 
         val romFile = File(romPath)
-        val romBaseName = romFile.nameWithoutExtension
-        Log.d(TAG, "romBaseName=$romBaseName")
+        val romBaseNames = if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
+            com.nendo.argosy.data.emulator.ArchiveRomNaming.candidateBaseNames(romFile, platformId)
+        } else {
+            listOf(romFile.nameWithoutExtension)
+        }
+        Log.d(TAG, "romBaseNames=$romBaseNames")
 
         val userStateOverride = emulatorSaveConfigDao.getByEmulator(emulatorId)
             ?.takeIf { it.isUserStateOverride }
@@ -165,7 +169,10 @@ class StateCacheManager @Inject constructor(
                 val files = stateDir.listFiles()?.map { it.name } ?: emptyList()
                 Log.d(TAG, "Files in $statePath: $files")
             }
-            val states = StatePathRegistry.discoverStates(stateDir, romBaseName, config.slotPattern)
+            val states = romBaseNames.firstNotNullOfOrNull { baseName ->
+                StatePathRegistry.discoverStates(stateDir, baseName, config.slotPattern)
+                    .takeIf { it.isNotEmpty() }
+            }.orEmpty()
             Log.d(TAG, "Found ${states.size} matching states in $statePath")
             for ((file, slotNumber) in states) {
                 discovered.add(
@@ -931,7 +938,11 @@ class StateCacheManager @Inject constructor(
         }
 
         val romFile = File(romPath)
-        val romBaseName = romFile.nameWithoutExtension
+        val romBaseNames = if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
+            com.nendo.argosy.data.emulator.ArchiveRomNaming.candidateBaseNames(romFile, platformSlug)
+        } else {
+            listOf(romFile.nameWithoutExtension)
+        }
 
         val userStateOverride = emulatorSaveConfigDao.getByEmulator(emulatorId)
             ?.takeIf { it.isUserStateOverride }
@@ -952,12 +963,14 @@ class StateCacheManager @Inject constructor(
             else -> StatePathRegistry.resolvePath(config, platformSlug)
         }
 
-        val fileNames = listOf(
-            config.slotPattern.buildFileName(romBaseName, -1),
-            com.nendo.argosy.libretro.LibretroStateSlots.fileName(
-                romBaseName, com.nendo.argosy.libretro.LibretroStateSlots.RESUME_SLOT
-            ),
-        )
+        val fileNames = romBaseNames.flatMap { romBaseName ->
+            listOf(
+                config.slotPattern.buildFileName(romBaseName, -1),
+                com.nendo.argosy.libretro.LibretroStateSlots.fileName(
+                    romBaseName, com.nendo.argosy.libretro.LibretroStateSlots.RESUME_SLOT
+                ),
+            )
+        }
 
         var deletedAny = false
         for (path in statePaths) {
@@ -972,7 +985,7 @@ class StateCacheManager @Inject constructor(
                 }
             }
         }
-        if (!deletedAny) Log.d(TAG, "deleteAutoResumeStatesFromDisk: nothing to delete for $romBaseName")
+        if (!deletedAny) Log.d(TAG, "deleteAutoResumeStatesFromDisk: nothing to delete for $romBaseNames")
         deletedAny
     }
 
