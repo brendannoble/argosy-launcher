@@ -23,10 +23,12 @@ import com.nendo.argosy.ui.components.PageChooserAction
 import com.nendo.argosy.ui.components.PageChooserEntry
 import com.nendo.argosy.ui.components.PageChooserKind
 import com.nendo.argosy.ui.components.PageChooserState
+import com.nendo.argosy.ui.components.RaTileStatus
 import com.nendo.argosy.ui.components.TileEditMode
 import com.nendo.argosy.ui.components.TilePickerAction
 import com.nendo.argosy.ui.components.TilePickerCategory
 import com.nendo.argosy.ui.components.TilePickerEntry
+import com.nendo.argosy.ui.components.TilePickerPurpose
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -53,6 +55,7 @@ class CustomGridCoordinator(
     private val onPageRemoved: ((Int) -> Unit)? = null,
     private val mediaCatalog: MediaTileCatalog? = null,
     private val featureFilterOptions: (suspend () -> FeatureFilterOptions)? = null,
+    private val raGamePickerEntries: (suspend (String) -> List<TilePickerEntry>)? = null,
     private val read: () -> CustomGridState,
     private val write: ((CustomGridState) -> CustomGridState) -> Unit
 ) {
@@ -70,8 +73,16 @@ class CustomGridCoordinator(
             placeOnFocusedCell(target)
             closePicker()
         },
-        onEdit = { tileId, target -> retargetTile(tileId, target, emptyList()) }
+        onEdit = { tileId, target ->
+            retargetTile(tileId, target, emptyList())
+            closePicker()
+        },
+        onTrackGame = { openRaGamePicker() }
     )
+
+    init {
+        write { it.copy(supportsRaTileSetup = raGamePickerEntries != null) }
+    }
 
     private val mediaSetupController = MediaTileSetupController(
         context = context,
@@ -101,27 +112,86 @@ class CustomGridCoordinator(
     fun setTilePlayback(playback: Map<Long, String>) = write { it.copy(tilePlayback = playback) }
 
     /**
-     * Hands the d-pad to the focused tile. Answers false when it has nothing to play, so the caller
-     * can fall back to whatever a press on that tile otherwise means.
+     * What the grid needs to know about the RetroAchievements tile's content, refreshed whenever
+     * the surface re-reads that content.
+     */
+    fun setRaTile(status: RaTileStatus) = write { it.copy(raTile = status) }
+
+    /**
+     * Hands the d-pad to the focused tile. Answers false when it has nothing to step through, so the
+     * caller can fall back to whatever a press on that tile otherwise means. A tile playing a file
+     * takes the d-pad for its transport; the account RetroAchievements tile takes it to browse its
+     * unlocks. A tracked RetroAchievements tile does not engage on a press, because a press on it
+     * plays the game; browsing that one is a menu entry.
      */
     fun engageFocusedTile(): Boolean {
         val current = read()
         val tile = current.focusedTile ?: return false
-        if (tile.id !in current.tilePlayback) return false
+        val browsesOnPress = current.isFocusedRaTile &&
+            !current.raTile.tracksGame &&
+            current.raTile.browseCount > 0
+        if (tile.id !in current.tilePlayback && !browsesOnPress) return false
+        engage(tile.id, index = 0)
+        return true
+    }
+
+    /**
+     * Hands the d-pad to the focused RetroAchievements tile whichever mode it is in, which is what
+     * the tile menu's browse entry does.
+     */
+    fun browseFocusedRaTile(): Boolean {
+        val current = read()
+        val tile = current.focusedTile ?: return false
+        if (!current.isFocusedRaTile || current.raTile.browseCount == 0) return false
+        engage(tile.id, index = 0)
+        return true
+    }
+
+    /**
+     * Touch's way in: a tapped badge engages the tile with that badge already selected.
+     */
+    fun engageRaTileAt(index: Int): Boolean {
+        val current = read()
+        val tile = current.focusedTile ?: return false
+        val count = current.raTile.browseCount
+        if (!current.isFocusedRaTile || count == 0) return false
+        engage(tile.id, index = index.coerceIn(0, count - 1))
+        return true
+    }
+
+    private fun engage(tileId: Long, index: Int) = write {
+        it.copy(
+            engagedTileId = tileId,
+            engagedPaused = false,
+            engagedSeekTicks = 0,
+            engagedIndex = index,
+            showMenu = false
+        )
+    }
+
+    fun disengageTile(): Boolean {
+        if (read().engagedTileId == null) return false
         write {
             it.copy(
-                engagedTileId = tile.id,
+                engagedTileId = null,
                 engagedPaused = false,
                 engagedSeekTicks = 0,
-                showMenu = false
+                engagedIndex = 0
             )
         }
         return true
     }
 
-    fun disengageTile(): Boolean {
-        if (read().engagedTileId == null) return false
-        write { it.copy(engagedTileId = null, engagedPaused = false, engagedSeekTicks = 0) }
+    /**
+     * Moves an engaged RetroAchievements tile's cursor along its browse list, wrapping at either
+     * end. Answers false when the engaged tile is not that one, so a playing tile keeps its seek.
+     */
+    fun stepEngaged(delta: Int): Boolean {
+        val current = read()
+        if (!current.engagedRaTile) return false
+        val count = current.raTile.browseCount
+        if (count == 0) return false
+        write { it.copy(engagedIndex = (it.engagedIndex + delta).mod(count)) }
         return true
     }
 
@@ -266,7 +336,9 @@ class CustomGridCoordinator(
             CustomTileMenuAction.RECURATE -> recurateFocusedTile()
             CustomTileMenuAction.FIT_COVER -> setFocusedCoverScale(TileCoverScale.FIT)
             CustomTileMenuAction.CROP_COVER -> setFocusedCoverScale(TileCoverScale.CROP)
-            CustomTileMenuAction.EDIT_FILTERS -> editFocusedFilters()
+            CustomTileMenuAction.EDIT_FILTERS -> editFocusedFeature()
+            CustomTileMenuAction.EDIT_TILE -> editFocusedFeature()
+            CustomTileMenuAction.BROWSE_ACHIEVEMENTS -> browseFocusedRaTile()
             CustomTileMenuAction.REMOVE -> removeFocusedTile()
             CustomTileMenuAction.START_GAME_QUEUE -> startGameQueue()
             CustomTileMenuAction.SET_FOCUS_GAME -> openPageChooser(PageChooserKind.FOCUS_GAME)
@@ -587,9 +659,58 @@ class CustomGridCoordinator(
             showPicker = false,
             pickerQuery = "",
             pickerSearchActive = false,
+            pickerPurpose = TilePickerPurpose.PLACE,
             mediaSetup = null,
+            featureSetup = null,
             showFileBrowser = false
         )
+    }
+
+    /**
+     * What Back means in the picker. Naming a game for the RetroAchievements tile is a step inside
+     * that tile's setup, so leaving it returns to the setup's question rather than to the grid; and
+     * the picker it came from is only there to come back to when it was open in the first place,
+     * which is when a new tile is being placed rather than an existing one edited.
+     */
+    fun backFromPicker() {
+        val current = read()
+        if (current.pickerPurpose != TilePickerPurpose.TRACK_RA_GAME) {
+            closePicker()
+            return
+        }
+        val placing = current.featureSetup?.editingTileId == null
+        write {
+            it.copy(
+                showPicker = placing,
+                pickerPurpose = TilePickerPurpose.PLACE,
+                pickerCategory = TilePickerCategory.FEATURES,
+                pickerQuery = "",
+                pickerSearchActive = false,
+                pickerFocusIndex = 0,
+                pickerEntries = emptyList()
+            )
+        }
+        if (placing) refreshPicker()
+    }
+
+    /**
+     * Turns the picker into the list of games the RetroAchievements tile can follow. The setup
+     * that asked stays underneath, so the pick and Back both land on it.
+     */
+    private fun openRaGamePicker() {
+        if (raGamePickerEntries == null) return
+        write {
+            it.copy(
+                showPicker = true,
+                pickerPurpose = TilePickerPurpose.TRACK_RA_GAME,
+                pickerCategory = TilePickerCategory.GAMES,
+                pickerQuery = "",
+                pickerSearchActive = false,
+                pickerFocusIndex = 0,
+                pickerEntries = emptyList()
+            )
+        }
+        refreshPicker()
     }
 
     /**
@@ -648,10 +769,12 @@ class CustomGridCoordinator(
     private fun refreshPicker() {
         scope.launch {
             val current = read()
-            val entries = withLocalVideoRow(
-                current,
-                pickerEntries(current.pickerCategory, current.pickerQuery.trim().lowercase())
-            )
+            val query = current.pickerQuery.trim().lowercase()
+            val entries = if (current.pickerPurpose == TilePickerPurpose.TRACK_RA_GAME) {
+                raGamePickerEntries?.invoke(query).orEmpty()
+            } else {
+                withLocalVideoRow(current, pickerEntries(current.pickerCategory, query))
+            }
             write { state ->
                 val updated = state.copy(pickerEntries = entries)
                 updated.copy(
@@ -725,9 +848,15 @@ class CustomGridCoordinator(
     /**
      * Acts on a chosen row. Three of the kinds go straight onto the page; the two media kinds do not,
      * because one needs a file naming and the other needs to be asked what part of a show it stands
-     * for. Both a tap and a press of confirm arrive here, so neither can behave differently.
+     * for, and the two feature kinds with a setup ask their questions first. While the picker is
+     * naming a game for the RetroAchievements tile, the row is that game and the setup underneath
+     * settles it. Both a tap and a press of confirm arrive here, so neither can behave differently.
      */
     fun selectPickerEntry(entry: TilePickerEntry) {
+        if (read().pickerPurpose == TilePickerPurpose.TRACK_RA_GAME) {
+            entry.gameId?.let { featureSetupController.trackGame(it) }
+            return
+        }
         if (entry.action == TilePickerAction.BROWSE_LOCAL_FILE) {
             openFileBrowser()
             return
@@ -742,7 +871,11 @@ class CustomGridCoordinator(
         }
         val feature = entry.target as? HomeTileTargetRef.Feature
         if (feature?.kind == FeatureTileKind.RANDOM_GAME && featureFilterOptions != null) {
-            featureSetupController.begin()
+            featureSetupController.begin(kind = FeatureTileKind.RANDOM_GAME)
+            return
+        }
+        if (feature?.kind == FeatureTileKind.RA_SUMMARY && raGamePickerEntries != null) {
+            featureSetupController.begin(kind = FeatureTileKind.RA_SUMMARY)
             return
         }
         placeOnFocusedCell(entry.target)
@@ -1107,7 +1240,11 @@ class CustomGridCoordinator(
         return true
     }
 
-    fun editFocusedFilters() {
+    /**
+     * Reopens the focused feature tile's setup: filters for a random game tile, the mode question
+     * for the RetroAchievements tile.
+     */
+    fun editFocusedFeature() {
         val tile = read().focusedTile ?: return
         featureSetupController.begin(tile)
     }

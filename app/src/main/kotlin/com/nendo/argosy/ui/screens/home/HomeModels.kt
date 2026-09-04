@@ -250,7 +250,7 @@ data class HomeUiState(
     val tileApps: Map<String, String> = emptyMap(),
     val tileMedia: Map<String, HomeMediaUi> = emptyMap(),
     val continueGameId: Long? = null,
-    val raTileSummary: com.nendo.argosy.domain.model.RaAccountSummary? = null,
+    val raTileSummary: com.nendo.argosy.domain.model.RaTileContent? = null,
     val isLoading: Boolean = true,
     val isRommConfigured: Boolean = false,
     val showGameMenu: Boolean = false,
@@ -697,7 +697,14 @@ data class HomeUiState(
                     subtitle = context.getString(R.string.home_grid_tile_local_media_subtitle)
                 )
             is com.nendo.argosy.domain.model.HomeTileTargetRef.Feature ->
-                featureTileContent(target, context)
+                com.nendo.argosy.ui.common.featureTileContentFor(
+                    target = target,
+                    tileGames = tileGames,
+                    continueGameId = continueGameId,
+                    raSummary = raTileSummary,
+                    context = context,
+                    strings = HOME_FEATURE_TILE_STRINGS
+                )
             com.nendo.argosy.domain.model.HomeTileTargetRef.Unresolvable ->
                 com.nendo.argosy.ui.components.CustomGridTileContent(
                     game = null,
@@ -705,64 +712,33 @@ data class HomeUiState(
                     isMissing = true
                 )
         }
-
-    private fun featureTileContent(
-        target: com.nendo.argosy.domain.model.HomeTileTargetRef.Feature,
-        context: Context
-    ): com.nendo.argosy.ui.components.CustomGridTileContent = when (target.kind) {
-        com.nendo.argosy.domain.model.FeatureTileKind.RANDOM_GAME -> {
-            val game = target.pickedGameId?.let { tileGames[it] }
-            com.nendo.argosy.ui.components.CustomGridTileContent(
-                game = game,
-                label = game?.title
-                    ?: context.getString(R.string.home_grid_tile_feature_random_empty),
-                subtitle = context.getString(R.string.home_grid_tile_feature_random_label),
-                stats = game?.let { com.nendo.argosy.ui.components.tileStatsFor(it, context) }.orEmpty(),
-                isRandom = true
-            )
-        }
-        com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE -> {
-            val game = continueGameId?.let { tileGames[it] }
-            com.nendo.argosy.ui.components.CustomGridTileContent(
-                game = game,
-                label = game?.title
-                    ?: context.getString(R.string.home_grid_tile_feature_continue_empty),
-                subtitle = context.getString(R.string.home_grid_tile_feature_continue_label),
-                stats = game?.let { com.nendo.argosy.ui.components.tileStatsFor(it, context) }.orEmpty(),
-                isContinue = true
-            )
-        }
-        com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY -> {
-            val summary = raTileSummary
-            com.nendo.argosy.ui.components.CustomGridTileContent(
-                game = null,
-                isSummary = true,
-                label = summary?.username
-                    ?: context.getString(R.string.home_grid_tile_feature_ra_label),
-                subtitle = when {
-                    summary == null -> context.getString(R.string.home_grid_tile_feature_ra_signed_out)
-                    summary.latestTitle == null ->
-                        context.getString(R.string.home_grid_tile_feature_ra_no_unlocks)
-                    else -> context.getString(
-                        R.string.home_grid_tile_feature_ra_latest, summary.latestTitle
-                    )
-                },
-                stats = summary?.let {
-                    listOf(
-                        com.nendo.argosy.ui.components.TileStat(
-                            context.getString(R.string.home_grid_tile_stat_points),
-                            it.points.toString()
-                        ),
-                        com.nendo.argosy.ui.components.TileStat(
-                            context.getString(R.string.home_grid_tile_stat_unlocks),
-                            it.unlocks.toString()
-                        )
-                    )
-                }.orEmpty()
-            )
-        }
-    }
 }
+
+/**
+ * The words this surface lends the shared feature tiles. The mapping is written once in
+ * [com.nendo.argosy.ui.common.featureTileContentFor]; the keys stay the home screen's own.
+ */
+private val HOME_FEATURE_TILE_STRINGS = com.nendo.argosy.ui.common.FeatureTileStrings(
+    randomLabel = R.string.home_grid_tile_feature_random_label,
+    randomEmpty = R.string.home_grid_tile_feature_random_empty,
+    continueLabel = R.string.home_grid_tile_feature_continue_label,
+    continueEmpty = R.string.home_grid_tile_feature_continue_empty,
+    raLabel = R.string.home_grid_tile_feature_ra_label,
+    ra = com.nendo.argosy.ui.components.RaTileLabels(
+        signedOut = R.string.home_grid_tile_feature_ra_signed_out,
+        empty = R.string.home_grid_tile_feature_ra_no_unlocks,
+        latestHeading = R.string.home_grid_tile_ra_latest_heading,
+        nextHeading = R.string.home_grid_tile_ra_next_heading,
+        mastered = R.string.home_grid_tile_ra_mastered,
+        locked = R.string.home_grid_tile_ra_locked,
+        points = R.plurals.home_grid_tile_ra_points,
+        unlocks = R.plurals.home_grid_tile_ra_unlocks,
+        unlockMeta = R.string.home_grid_tile_ra_unlock_meta,
+        accountTally = R.string.home_grid_tile_ra_account_tally,
+        progress = R.string.home_grid_tile_ra_progress,
+        gameProgress = R.string.home_grid_tile_ra_game_progress
+    )
+)
 
 data class BreadcrumbItem(val label: String, val isCurrent: Boolean)
 
@@ -780,6 +756,13 @@ sealed class HomeEvent {
      */
     data class PlayMedia(val itemId: String, val startOver: Boolean) : HomeEvent()
     data class NavigateToMediaDetail(val itemId: String) : HomeEvent()
+
+    /**
+     * Opens one settings section directly, for a tile whose whole answer is a setting the user has
+     * not made yet. [section] is the stored [com.nendo.argosy.ui.screens.settings.SettingsSection]
+     * name, matched the way a changelog action's is.
+     */
+    data class NavigateToSettings(val section: String) : HomeEvent()
 }
 
 /**

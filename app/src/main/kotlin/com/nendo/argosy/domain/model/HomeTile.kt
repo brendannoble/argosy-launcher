@@ -78,9 +78,11 @@ sealed interface HomeTileTargetRef {
     data class LocalMedia(val filePath: String) : HomeTileTargetRef
 
     /**
-     * A tile that does something rather than pointing at one thing in the library. [filters] and
-     * [pickedGameId] only mean anything to [FeatureTileKind.RANDOM_GAME]: the pick is stored so the
-     * page looks the same when the reader comes back, and only a deliberate re-roll changes it.
+     * A tile that does something rather than pointing at one thing in the library. [filters] only
+     * mean anything to [FeatureTileKind.RANDOM_GAME]. [pickedGameId] is that tile's stored pick,
+     * kept so the page looks the same when the reader comes back and changed only by a deliberate
+     * re-roll; for [FeatureTileKind.RA_SUMMARY] it is the game whose progress the tile tracks, and
+     * null there means the account overview.
      */
     data class Feature(
         val kind: FeatureTileKind,

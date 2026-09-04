@@ -33,9 +33,9 @@ import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.util.clickableNoFocus
 
 /**
- * The random game tile's filter questions. Owns no state, like the media setup it sits beside:
- * the step, the focus index and the chosen filters belong to the caller, so a tap and a press of
- * confirm arrive at the same [onSelect] with the same row index.
+ * A feature tile's setup questions. Owns no state, like the media setup it sits beside: the step,
+ * the focus index and the chosen answers belong to the caller, so a tap and a press of confirm
+ * arrive at the same [onSelect] with the same row index.
  */
 @Composable
 fun FeatureTileSetupModal(
@@ -47,7 +47,7 @@ fun FeatureTileSetupModal(
     FocusedScroll(listState = listState, focusedIndex = setup.focusIndex)
 
     Modal(
-        title = stringResource(R.string.ui_feature_setup_title).uppercase(),
+        title = stringResource(setup.titleRes).uppercase(),
         subtitle = stringResource(setup.subtitleRes),
         baseWidth = Dimens.modalWidthLg,
         onDismiss = onDismiss
@@ -58,6 +58,7 @@ fun FeatureTileSetupModal(
             verticalArrangement = Arrangement.spacedBy(Dimens.listGap)
         ) {
             when (setup.step) {
+                FeatureSetupStep.MODE -> modeRows(setup, onSelect)
                 FeatureSetupStep.FILTERS -> filterRows(setup, onSelect)
                 FeatureSetupStep.PLATFORMS -> itemsIndexed(
                     setup.platforms,
@@ -83,6 +84,28 @@ fun FeatureTileSetupModal(
                 }
             }
         }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.modeRows(
+    setup: FeatureTileSetup,
+    onSelect: (Int) -> Unit
+) {
+    item(key = "account") {
+        CheckRow(
+            label = stringResource(R.string.ui_feature_setup_mode_account),
+            isFocused = setup.focusIndex == FeatureTileSetup.ROW_MODE_ACCOUNT,
+            isSelected = setup.pickedGameId == null,
+            onClick = { onSelect(FeatureTileSetup.ROW_MODE_ACCOUNT) }
+        )
+    }
+    item(key = "track") {
+        CheckRow(
+            label = stringResource(R.string.ui_feature_setup_mode_track),
+            isFocused = setup.focusIndex == FeatureTileSetup.ROW_MODE_TRACK,
+            isSelected = setup.pickedGameId != null,
+            onClick = { onSelect(FeatureTileSetup.ROW_MODE_TRACK) }
+        )
     }
 }
 

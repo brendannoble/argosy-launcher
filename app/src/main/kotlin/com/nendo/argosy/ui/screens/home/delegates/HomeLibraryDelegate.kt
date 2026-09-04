@@ -764,6 +764,30 @@ class HomeLibraryDelegate @Inject constructor(
     }
 
     /**
+     * Games RetroAchievements knows matching [query], for the tile that tracks one. Not narrowed
+     * to the device the way [searchInstalledForTiles] is: progress belongs to the account, not to
+     * the file, so the picker offers the whole library with installed games first.
+     */
+    suspend fun searchRaCompatibleForTiles(query: String): List<com.nendo.argosy.ui.components.TilePickerEntry> =
+        gameRepository
+            .searchRaCompatible(query.trim(), TILE_PICKER_LIMIT)
+            .first()
+            .map { game ->
+                com.nendo.argosy.ui.components.TilePickerEntry(
+                    target = com.nendo.argosy.domain.model.HomeTileTargetRef.Game(game.id),
+                    title = game.title,
+                    subtitle = context.getString(
+                        R.string.home_tile_picker_ra_progress,
+                        cachedPlatformDisplayNames[game.platformId].orEmpty(),
+                        game.earnedAchievementCount,
+                        game.achievementCount
+                    ),
+                    coverPath = game.coverPath,
+                    isLocal = game.isDownloaded
+                )
+            }
+
+    /**
      * Collections and apps a tile can point at. Both are small enough to list whole, so they are
      * filtered in memory rather than through a query the way the library has to be.
      */

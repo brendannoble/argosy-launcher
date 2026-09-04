@@ -325,13 +325,18 @@
     <string name="ui_media_tile_error_series_not_synced">इस सीरीज़ के लिए अभी तक कोई एपिसोड सिंक नहीं हुआ है</string>
 
     <string name="ui_tile_picker_title">ग्रिड में जोड़ें</string>
+    <string name="ui_tile_picker_title_track_game">एक गेम ट्रैक करें</string>
     <string name="ui_tile_picker_subtitle_matching">\"%1$s\" से मेल खाता</string>
     <string name="ui_tile_picker_empty_games">जोड़ने के लिए कोई इंस्टॉल्ड गेम नहीं</string>
     <string name="ui_tile_picker_empty_collections">अभी तक कोई कलेक्शन नहीं</string>
     <string name="ui_tile_picker_empty_apps">कोई ऐप नहीं मिला</string>
     <string name="ui_tile_picker_empty_media">जोड़ने के लिए कोई टाइटल नहीं</string>
     <string name="ui_tile_picker_empty_features">कोई विजेट उपलब्ध नहीं</string>
+    <string name="ui_tile_picker_empty_ra_games">RetroAchievements द्वारा पहचाना गया कोई गेम नहीं</string>
     <string name="ui_feature_setup_title">यादृच्छिक गेम</string>
+    <string name="ui_feature_setup_step_mode">यह टाइल कैसे काम करे?</string>
+    <string name="ui_feature_setup_mode_account">खाता अवलोकन</string>
+    <string name="ui_feature_setup_mode_track">एक गेम ट्रैक करें</string>
     <string name="ui_feature_setup_step_filters">यह किनमें से चुन सकता है</string>
     <string name="ui_feature_setup_step_platforms">प्लेटफ़ॉर्म</string>
     <string name="ui_feature_setup_step_genres">शैलियाँ</string>
@@ -373,6 +378,14 @@
     <string name="ui_page_chooser_music_soundtracks_header">आपके साउंडट्रैक</string>
 
     <string name="ui_custom_grid_add_page">एक पेज जोड़ें</string>
+    <string name="ui_custom_grid_edit_move">स्थानांतरित करें</string>
+    <string name="ui_custom_grid_edit_resize">आकार बदलें</string>
+    <string name="ui_custom_grid_confirm_play">खेलें</string>
+    <string name="ui_custom_grid_confirm_open">खोलें</string>
+    <string name="ui_custom_grid_confirm_add">जोड़ें</string>
+    <string name="ui_custom_grid_confirm_browse">ब्राउज़ करें</string>
+    <string name="ui_custom_grid_confirm_sign_in">साइन इन करें</string>
+    <string name="ui_custom_grid_confirm_library">लाइब्रेरी</string>
 
     <string name="ui_friend_options_join">जॉइन करें</string>
     <string name="ui_friend_options_view_profile">प्रोफ़ाइल देखें</string>

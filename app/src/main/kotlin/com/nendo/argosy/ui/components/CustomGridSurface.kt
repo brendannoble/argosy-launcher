@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
@@ -39,6 +40,8 @@ fun CustomGridSurface(
     onAddPage: () -> Unit,
     modifier: Modifier = Modifier,
     onTileLongPress: ((GridCell) -> Unit)? = null,
+    onBadgeTap: ((Int) -> Unit)? = null,
+    onBandTap: (() -> Unit)? = null,
     onSwipePage: ((Int) -> Unit)? = null,
     onTileDrag: ((GridCell) -> Unit)? = null,
     onTileResize: ((GridCell) -> Unit)? = null,
@@ -113,11 +116,14 @@ fun CustomGridSurface(
                     engagedTileId = state.engagedTileId,
                     engagedPaused = state.engagedPaused,
                     engagedSeekTicks = state.engagedSeekTicks,
+                    engagedIndex = state.engagedIndex,
+                    onBadgeTap = onBadgeTap,
+                    onBandTap = onBandTap,
                     playbackPositions = state.playbackPositions,
                     onPlaybackPosition = onPlaybackPosition,
                     onTakeAudio = onTakeAudio,
                     onReleaseAudio = onReleaseAudio,
-                    editModeLabel = state.editLabel,
+                    editModeLabel = state.editLabelRes?.let { stringResource(it) },
                     overlappedTileIds = state.overlappedTileIds,
                     editingTileId = state.editingTileId,
                     downloadIndicatorFor = downloadIndicatorFor,

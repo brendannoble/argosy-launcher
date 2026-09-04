@@ -14,10 +14,12 @@ class RomMAchievementService @Inject constructor(
 
     private var raProgressionRefreshedThisSession = false
     private var cachedRAProgression: Map<Long, List<RomMEarnedAchievement>> = emptyMap()
+    private var cachedProgression: List<RomMRAGameProgression> = emptyList()
 
     fun onAppResumed() {
         raProgressionRefreshedThisSession = false
         cachedRAProgression = emptyMap()
+        cachedProgression = emptyList()
     }
 
     fun getEarnedBadgeIds(raGameId: Long): Set<String> {
@@ -28,7 +30,14 @@ class RomMAchievementService @Inject constructor(
         return cachedRAProgression[raGameId] ?: emptyList()
     }
 
+    /**
+     * Every per-game progression row the last refresh returned, award dates and counts included.
+     * Empty until a refresh has succeeded this session.
+     */
+    fun getProgression(): List<RomMRAGameProgression> = cachedProgression
+
     private fun updateCache(progression: List<RomMRAGameProgression>) {
+        cachedProgression = progression
         cachedRAProgression = progression
             .filter { it.romRaId != null }
             .associate { it.romRaId!! to it.earnedAchievements }

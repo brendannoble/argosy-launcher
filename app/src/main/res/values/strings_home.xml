@@ -36,6 +36,12 @@
     <!-- Footer hint on the curated grid while a media tile is playing. Verb: takes the playing
          tile up to the whole screen. -->
     <string name="home_footer_grid_engaged_fullscreen">Fullscreen</string>
+    <!-- Footer hint on the curated grid while the achievements tile is being stepped through.
+         Verb: the left and right directions move between achievements. -->
+    <string name="home_footer_grid_engaged_browse">Browse</string>
+    <!-- Footer hint on the curated grid while the achievements tile is being stepped through.
+         Noun: opens the detail screen of the game the selected achievement belongs to. -->
+    <string name="home_footer_grid_engaged_details">Details</string>
     <!-- Footer hint on the curated grid while a tile is playing. Verb phrase: leaves playback and
          returns to the grid of tiles. -->
     <string name="home_footer_grid_engaged_back">Back to grid</string>
@@ -275,11 +281,39 @@
     <string name="home_grid_tile_feature_ra_label">RetroAchievements</string>
     <string name="home_grid_tile_feature_ra_signed_out">Sign in to see your unlocks</string>
     <string name="home_grid_tile_feature_ra_no_unlocks">No unlocks yet</string>
-    <!-- %1$s is the title of the most recently unlocked achievement. -->
-    <string name="home_grid_tile_feature_ra_latest">Latest: %1$s</string>
-    <!-- Unit words drawn after a number on the RetroAchievements tile, e.g. "120 points". -->
-    <string name="home_grid_tile_stat_points">points</string>
-    <string name="home_grid_tile_stat_unlocks">unlocks</string>
+    <!-- Heading of the row showing the most recently earned achievement on the
+         RetroAchievements tile. Adjective, short for "latest achievement". -->
+    <string name="home_grid_tile_ra_latest_heading">Latest</string>
+    <!-- Heading of the row showing the achievements still to earn on the RetroAchievements tile.
+         Adjective, short for "next achievements". -->
+    <string name="home_grid_tile_ra_next_heading">Next</string>
+    <!-- Band on the RetroAchievements tile when every achievement of the followed game has been
+         earned. RetroAchievements calls this state mastery. -->
+    <string name="home_grid_tile_ra_mastered">Mastered</string>
+    <!-- Stands in for the description of an achievement that has not been earned. -->
+    <string name="home_grid_tile_ra_locked">Not unlocked yet</string>
+    <!-- Score of an achievement or of an account on the RetroAchievements tile. -->
+    <plurals name="home_grid_tile_ra_points">
+        <item quantity="one">%d point</item>
+        <item quantity="other">%d points</item>
+    </plurals>
+    <!-- How many achievements have been earned. "Unlock" is a noun here, one earned
+         achievement. -->
+    <plurals name="home_grid_tile_ra_unlocks">
+        <item quantity="one">%d unlock</item>
+        <item quantity="other">%d unlocks</item>
+    </plurals>
+    <!-- Line under an achievement's title. %1$s is its score, %2$s how long ago it was earned. -->
+    <string name="home_grid_tile_ra_unlock_meta">%1$s, %2$s</string>
+    <!-- Account tally on the RetroAchievements tile. %1$s is the score, %2$s the number of
+         achievements earned. -->
+    <string name="home_grid_tile_ra_account_tally">%1$s, %2$s</string>
+    <!-- Progress through the followed game. %1$d is how many achievements have been earned,
+         %2$d how many the game has. -->
+    <string name="home_grid_tile_ra_progress">%1$d/%2$d</string>
+    <!-- Progress through the game of the latest achievement. %1$s is the game's title, %2$d how
+         many of its achievements have been earned, %3$d how many it has. -->
+    <string name="home_grid_tile_ra_game_progress">%1$s %2$d/%3$d</string>
 
     <!-- Brief message after refreshing one game's metadata from the game server. Past tense
          statement, not a command. -->
@@ -321,6 +355,10 @@
         <item quantity="one">%d game</item>
         <item quantity="other">%d games</item>
     </plurals>
+    <!-- Second line under a game in the tracking picker for the RetroAchievements tile. %1$s is
+         the platform name, %2$d how many achievements are earned, %3$d how many the game has in
+         total. -->
+    <string name="home_tile_picker_ra_progress">%1$s (%2$d/%3$d achievements)</string>
     <!-- Second line under an installed app in the tile picker, when Argosy recognises the app as
          an emulator. Noun, singular. -->
     <string name="home_tile_picker_app_emulator">Emulator</string>

@@ -325,13 +325,18 @@
     <string name="ui_media_tile_error_series_not_synced">Für diese Serie wurden noch keine Episoden synchronisiert</string>
 
     <string name="ui_tile_picker_title">ZUM RASTER HINZUFÜGEN</string>
+    <string name="ui_tile_picker_title_track_game">EIN SPIEL VERFOLGEN</string>
     <string name="ui_tile_picker_subtitle_matching">Treffer für \"%1$s\"</string>
     <string name="ui_tile_picker_empty_games">Keine installierten Spiele zum Hinzufügen</string>
     <string name="ui_tile_picker_empty_collections">Noch keine Sammlungen</string>
     <string name="ui_tile_picker_empty_apps">Keine Apps gefunden</string>
     <string name="ui_tile_picker_empty_media">Keine Titel zum Hinzufügen</string>
     <string name="ui_tile_picker_empty_features">Keine Widgets verfügbar</string>
+    <string name="ui_tile_picker_empty_ra_games">Kein von RetroAchievements erkanntes Spiel</string>
     <string name="ui_feature_setup_title">Zufälliges Spiel</string>
+    <string name="ui_feature_setup_step_mode">Wie soll diese Kachel funktionieren?</string>
+    <string name="ui_feature_setup_mode_account">Kontoübersicht</string>
+    <string name="ui_feature_setup_mode_track">Ein Spiel verfolgen</string>
     <string name="ui_feature_setup_step_filters">Woraus gewählt wird</string>
     <string name="ui_feature_setup_step_platforms">Plattformen</string>
     <string name="ui_feature_setup_step_genres">Genres</string>
@@ -373,6 +378,14 @@
     <string name="ui_page_chooser_music_soundtracks_header">Ihre Soundtracks</string>
 
     <string name="ui_custom_grid_add_page">Seite hinzufügen</string>
+    <string name="ui_custom_grid_edit_move">Verschieben</string>
+    <string name="ui_custom_grid_edit_resize">Größe ändern</string>
+    <string name="ui_custom_grid_confirm_play">Spielen</string>
+    <string name="ui_custom_grid_confirm_open">Öffnen</string>
+    <string name="ui_custom_grid_confirm_add">Hinzufügen</string>
+    <string name="ui_custom_grid_confirm_browse">Durchsuchen</string>
+    <string name="ui_custom_grid_confirm_sign_in">Anmelden</string>
+    <string name="ui_custom_grid_confirm_library">Bibliothek</string>
 
     <string name="ui_friend_options_join">Beitreten</string>
     <string name="ui_friend_options_view_profile">Profil ansehen</string>

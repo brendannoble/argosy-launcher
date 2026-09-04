@@ -1,6 +1,7 @@
 package com.nendo.argosy.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -27,20 +28,71 @@ interface AchievementDao {
     )
     suspend fun getByGameId(gameId: Long, ownerUserId: Long): List<AchievementEntity>
 
+    /**
+     * An unlock counts when either timestamp is set: a hardcore session writes only the hardcore
+     * column. [hardcoreOnly] narrows every tally here to hardcore unlocks, which is what the
+     * RetroAchievements tile shows when it features hardcore; softcore counts both, since a
+     * hardcore unlock is also earned in softcore.
+     */
+    @Query(
+        "SELECT COALESCE(SUM(points), 0) FROM achievements WHERE ownerUserId = :ownerUserId " +
+            "AND (unlockedHardcoreAt IS NOT NULL OR (:hardcoreOnly = 0 AND unlockedAt IS NOT NULL))"
+    )
+    suspend fun sumUnlockedPoints(ownerUserId: Long, hardcoreOnly: Boolean): Int
+
+    @Query(
+        "SELECT COUNT(*) FROM achievements WHERE ownerUserId = :ownerUserId " +
+            "AND (unlockedHardcoreAt IS NOT NULL OR (:hardcoreOnly = 0 AND unlockedAt IS NOT NULL))"
+    )
+    suspend fun countUnlocked(ownerUserId: Long, hardcoreOnly: Boolean): Int
+
+    data class UnlockWithGameRow(
+        @Embedded val achievement: AchievementEntity,
+        val gameTitle: String,
+        val gameCoverPath: String?
+    )
+
+    @Query("""
+        SELECT a.*, g.title AS gameTitle, g.coverPath AS gameCoverPath
+        FROM achievements a INNER JOIN games g ON a.gameId = g.id
+        WHERE a.ownerUserId = :ownerUserId
+          AND (a.unlockedAt IS NOT NULL OR a.unlockedHardcoreAt IS NOT NULL)
+        ORDER BY COALESCE(a.unlockedHardcoreAt, a.unlockedAt) DESC
+        LIMIT :limit
+    """)
+    suspend fun getRecentUnlocks(ownerUserId: Long, limit: Int): List<UnlockWithGameRow>
+
+    @Query("""
+        SELECT a.*, g.title AS gameTitle, g.coverPath AS gameCoverPath
+        FROM achievements a INNER JOIN games g ON a.gameId = g.id
+        WHERE a.gameId = :gameId AND a.ownerUserId = :ownerUserId
+          AND (a.unlockedAt IS NOT NULL OR a.unlockedHardcoreAt IS NOT NULL)
+        ORDER BY COALESCE(a.unlockedHardcoreAt, a.unlockedAt) DESC
+    """)
+    suspend fun getUnlockedForGame(gameId: Long, ownerUserId: Long): List<UnlockWithGameRow>
+
     @Query(
         "SELECT COALESCE(SUM(points), 0) FROM achievements " +
-            "WHERE ownerUserId = :ownerUserId AND unlockedAt IS NOT NULL"
+            "WHERE gameId = :gameId AND ownerUserId = :ownerUserId " +
+            "AND (unlockedHardcoreAt IS NOT NULL OR (:hardcoreOnly = 0 AND unlockedAt IS NOT NULL))"
     )
-    suspend fun sumUnlockedPoints(ownerUserId: Long): Int
+    suspend fun sumUnlockedPointsByGameId(gameId: Long, ownerUserId: Long, hardcoreOnly: Boolean): Int
 
-    @Query("SELECT COUNT(*) FROM achievements WHERE ownerUserId = :ownerUserId AND unlockedAt IS NOT NULL")
-    suspend fun countUnlocked(ownerUserId: Long): Int
-
+    /**
+     * The cheapest achievements still locked in the given mode. In hardcore that includes ones
+     * earned only in softcore, the complement of what [countUnlockedByGameId] tallies.
+     */
     @Query(
-        "SELECT * FROM achievements WHERE ownerUserId = :ownerUserId AND unlockedAt IS NOT NULL " +
-            "ORDER BY unlockedAt DESC LIMIT :limit"
+        "SELECT * FROM achievements WHERE gameId = :gameId AND ownerUserId = :ownerUserId " +
+            "AND unlockedHardcoreAt IS NULL AND (:hardcoreOnly = 1 OR unlockedAt IS NULL) " +
+            "ORDER BY points ASC, title ASC LIMIT :limit"
     )
-    suspend fun getRecentUnlocks(ownerUserId: Long, limit: Int): List<AchievementEntity>
+    suspend fun getNextLocked(
+        gameId: Long,
+        ownerUserId: Long,
+        hardcoreOnly: Boolean,
+        limit: Int
+    ): List<AchievementEntity>
 
     @Query("SELECT * FROM achievements WHERE gameId = :gameId ORDER BY points DESC, title ASC")
     suspend fun getAllForGame(gameId: Long): List<AchievementEntity>
@@ -144,9 +196,9 @@ interface AchievementDao {
 
     @Query(
         "SELECT COUNT(*) FROM achievements WHERE gameId = :gameId AND ownerUserId = :ownerUserId " +
-            "AND (unlockedAt IS NOT NULL OR unlockedHardcoreAt IS NOT NULL)"
+            "AND (unlockedHardcoreAt IS NOT NULL OR (:hardcoreOnly = 0 AND unlockedAt IS NOT NULL))"
     )
-    suspend fun countUnlockedByGameId(gameId: Long, ownerUserId: Long): Int
+    suspend fun countUnlockedByGameId(gameId: Long, ownerUserId: Long, hardcoreOnly: Boolean = false): Int
 
     data class UnsharedAchievementRow(
         val gameId: Long,

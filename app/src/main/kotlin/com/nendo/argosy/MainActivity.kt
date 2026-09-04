@@ -130,6 +130,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var coreVersionExtractor: com.nendo.argosy.data.emulator.CoreVersionExtractor
     @Inject lateinit var fetchAchievementsUseCase: FetchAchievementsUseCase
     @Inject lateinit var raRepository: com.nendo.argosy.data.repository.RetroAchievementsRepository
+    @Inject lateinit var raTileContentRepository: com.nendo.argosy.data.repository.RaTileContentRepository
     @Inject lateinit var achievementUpdateBus: com.nendo.argosy.core.event.AchievementUpdateBus
     @Inject lateinit var gameFileDao: com.nendo.argosy.data.local.dao.GameFileDao
     @Inject lateinit var downloadManagerInstance: com.nendo.argosy.data.download.DownloadManager
@@ -372,6 +373,7 @@ class MainActivity : ComponentActivity() {
                 coreVersionExtractor = coreVersionExtractor,
                 fetchAchievementsUseCase = fetchAchievementsUseCase,
                 raRepository = raRepository,
+                raTileContentRepository = raTileContentRepository,
                 achievementUpdateBus = achievementUpdateBus,
                 displayAffinityHelper = displayAffinityHelper,
                 sessionStateStore = sessionStateStore,

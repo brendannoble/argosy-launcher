@@ -29,11 +29,7 @@ fun AchievementEntity.toAchievementUi() = AchievementUi(
     description = description,
     points = points,
     type = type,
-    badgeUrl = if (isUnlocked) {
-        cachedBadgeUrl ?: badgeUrl
-    } else {
-        cachedBadgeUrlLock ?: badgeUrlLock ?: cachedBadgeUrl ?: badgeUrl
-    },
+    badgeUrl = badgePath,
     isUnlocked = isUnlocked,
     isUnlockedHardcore = unlockedHardcoreAt != null
 )

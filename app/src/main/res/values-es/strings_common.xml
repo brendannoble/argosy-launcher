@@ -336,13 +336,18 @@
     <string name="ui_media_tile_error_series_not_synced">Aún no se ha sincronizado ningún episodio de esta serie</string>
 
     <string name="ui_tile_picker_title">AGREGAR A LA CUADRÍCULA</string>
+    <string name="ui_tile_picker_title_track_game">SEGUIR UN JUEGO</string>
     <string name="ui_tile_picker_subtitle_matching">Coincide con \"%1$s\"</string>
     <string name="ui_tile_picker_empty_games">No hay juegos instalados para agregar</string>
     <string name="ui_tile_picker_empty_collections">Aún no hay colecciones</string>
     <string name="ui_tile_picker_empty_apps">No se encontraron aplicaciones</string>
     <string name="ui_tile_picker_empty_media">No hay títulos para agregar</string>
     <string name="ui_tile_picker_empty_features">No hay widgets disponibles</string>
+    <string name="ui_tile_picker_empty_ra_games">Ningún juego reconocido por RetroAchievements</string>
     <string name="ui_feature_setup_title">Juego aleatorio</string>
+    <string name="ui_feature_setup_step_mode">¿Cómo debería funcionar este mosaico?</string>
+    <string name="ui_feature_setup_mode_account">Resumen de la cuenta</string>
+    <string name="ui_feature_setup_mode_track">Seguir un juego</string>
     <string name="ui_feature_setup_step_filters">De dónde puede elegir</string>
     <string name="ui_feature_setup_step_platforms">Plataformas</string>
     <string name="ui_feature_setup_step_genres">Géneros</string>
@@ -384,6 +389,14 @@
     <string name="ui_page_chooser_music_soundtracks_header">Tus bandas sonoras</string>
 
     <string name="ui_custom_grid_add_page">Agregar una página</string>
+    <string name="ui_custom_grid_edit_move">Mover</string>
+    <string name="ui_custom_grid_edit_resize">Redimensionar</string>
+    <string name="ui_custom_grid_confirm_play">Jugar</string>
+    <string name="ui_custom_grid_confirm_open">Abrir</string>
+    <string name="ui_custom_grid_confirm_add">Agregar</string>
+    <string name="ui_custom_grid_confirm_browse">Explorar</string>
+    <string name="ui_custom_grid_confirm_sign_in">Iniciar sesión</string>
+    <string name="ui_custom_grid_confirm_library">Biblioteca</string>
 
     <string name="ui_friend_options_join">Unirse</string>
     <string name="ui_friend_options_view_profile">Ver perfil</string>

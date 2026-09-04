@@ -29,6 +29,8 @@ enum class CustomTileMenuAction {
     FIT_COVER,
     CROP_COVER,
     EDIT_FILTERS,
+    EDIT_TILE,
+    BROWSE_ACHIEVEMENTS,
     REMOVE,
     START_GAME_QUEUE,
     SET_FOCUS_GAME,
@@ -45,6 +47,8 @@ enum class CustomTileMenuAction {
             FIT_COVER -> R.string.custom_tile_menu_action_fit_cover
             CROP_COVER -> R.string.custom_tile_menu_action_crop_cover
             EDIT_FILTERS -> R.string.custom_tile_menu_action_edit_filters
+            EDIT_TILE -> R.string.custom_tile_menu_action_edit_tile
+            BROWSE_ACHIEVEMENTS -> R.string.custom_tile_menu_action_browse_achievements
             REMOVE -> R.string.custom_tile_menu_action_remove
             START_GAME_QUEUE -> R.string.custom_tile_menu_action_start_game_queue
             SET_FOCUS_GAME -> R.string.custom_tile_menu_action_set_focus_game
@@ -155,6 +159,24 @@ data class GridPageSettings(
 enum class TileEditMode { NONE, MOVE, RESIZE }
 
 /**
+ * What choosing a picker row does. [PLACE] fills the focused cell; [TRACK_RA_GAME] names the game
+ * the RetroAchievements tile being set up will follow, so the same modal serves both without the
+ * grid guessing from context which one it is answering.
+ */
+enum class TilePickerPurpose { PLACE, TRACK_RA_GAME }
+
+/**
+ * The little the grid has to know about the RetroAchievements tile's content to route a press:
+ * whether anyone is signed in, whether the tile follows one game, and how many badges a browse can
+ * step through. The content itself stays on the surface's own state.
+ */
+data class RaTileStatus(
+    val signedIn: Boolean = false,
+    val tracksGame: Boolean = false,
+    val browseCount: Int = 0
+)
+
+/**
  * Everything the custom grid needs to draw and edit itself, held once for both home surfaces.
  *
  * The page shape lives here rather than being derived at render time because the cursor, the bounds
@@ -182,8 +204,15 @@ data class CustomGridState(
     val pickerCategory: TilePickerCategory = TilePickerCategory.GAMES,
     val pickerFocusIndex: Int = 0,
     val pickerEntries: List<TilePickerEntry> = emptyList(),
+    val pickerPurpose: TilePickerPurpose = TilePickerPurpose.PLACE,
     val mediaAvailable: Boolean = false,
     val supportsLocalVideo: Boolean = false,
+    /**
+     * Whether this surface can run the RetroAchievements tile's setup. It needs a picker source for
+     * the games the tile can follow, which the companion does not have.
+     */
+    val supportsRaTileSetup: Boolean = false,
+    val raTile: RaTileStatus = RaTileStatus(),
     /**
      * The tile currently holding the d-pad, or null. An engaged tile plays with sound and takes
      * the directional keys for its own transport; Menu and system Back are never taken, so there
@@ -196,6 +225,11 @@ data class CustomGridState(
      * clock, so a press is sent as a step to take rather than a position to move to.
      */
     val engagedSeekTicks: Int = 0,
+    /**
+     * Which badge an engaged RetroAchievements tile has under the cursor, as a position in its
+     * browse list. Meaningless for a playing tile, which has a clock rather than a list.
+     */
+    val engagedIndex: Int = 0,
     /**
      * Local files the media tiles on this page resolve to, keyed by tile id. Only tiles with an
      * entry here can preview; everything else draws its poster.
@@ -231,8 +265,12 @@ data class CustomGridState(
      * than a feature being advertised at them. A surface with neither sees no tab at all.
      */
     val pickerCategories: List<TilePickerCategory>
-        get() = TilePickerCategory.entries.filter {
-            it != TilePickerCategory.MEDIA || mediaAvailable || supportsLocalVideo
+        get() = if (pickerPurpose == TilePickerPurpose.TRACK_RA_GAME) {
+            listOf(TilePickerCategory.GAMES)
+        } else {
+            TilePickerCategory.entries.filter {
+                it != TilePickerCategory.MEDIA || mediaAvailable || supportsLocalVideo
+            }
         }
 
     val storedPageCount: Int
@@ -279,10 +317,11 @@ data class CustomGridState(
     val isEditing: Boolean
         get() = editMode != TileEditMode.NONE
 
-    val editLabel: String?
+    @get:StringRes
+    val editLabelRes: Int?
         get() = when (editMode) {
-            TileEditMode.MOVE -> "Move"
-            TileEditMode.RESIZE -> "Resize"
+            TileEditMode.MOVE -> R.string.ui_custom_grid_edit_move
+            TileEditMode.RESIZE -> R.string.ui_custom_grid_edit_resize
             TileEditMode.NONE -> null
         }
 
@@ -336,6 +375,19 @@ data class CustomGridState(
         get() = engagedTileId?.let { tilePlayback[it] }
 
     /**
+     * Whether the engaged tile is the RetroAchievements one, whose d-pad steps through badges
+     * rather than scrubbing a clock.
+     */
+    val engagedRaTile: Boolean
+        get() = engagedTile?.target.isRaSummary()
+
+    val isFocusedRaTile: Boolean
+        get() = focusedTile?.target.isRaSummary()
+
+    private fun HomeTileTargetRef?.isRaSummary(): Boolean =
+        (this as? HomeTileTargetRef.Feature)?.kind == FeatureTileKind.RA_SUMMARY
+
+    /**
      * Whether the focused tile carries a play mode, and so has curation worth reopening.
      */
     val isFocusedTileCurated: Boolean
@@ -376,18 +428,28 @@ data class CustomGridState(
      * A tile whose target this build cannot read answers null: confirm does nothing on one, and a
      * hint promising otherwise is worse than no hint.
      */
-    val confirmLabel: String?
+    @get:StringRes
+    val confirmLabelRes: Int?
         get() = when (val target = focusedTile?.target) {
-            is HomeTileTargetRef.Game -> "Play"
-            is HomeTileTargetRef.Media -> "Play"
-            is HomeTileTargetRef.LocalMedia -> "Play"
-            is HomeTileTargetRef.App -> "Open"
-            is HomeTileTargetRef.Collection -> if (target.focusGameId != null) "Play" else "Open"
-            is HomeTileTargetRef.VirtualCollection -> "Open"
-            is HomeTileTargetRef.Feature ->
-                if (target.kind == FeatureTileKind.RA_SUMMARY) "Open" else "Play"
+            is HomeTileTargetRef.Game -> R.string.ui_custom_grid_confirm_play
+            is HomeTileTargetRef.Media -> R.string.ui_custom_grid_confirm_play
+            is HomeTileTargetRef.LocalMedia -> R.string.ui_custom_grid_confirm_play
+            is HomeTileTargetRef.App -> R.string.ui_custom_grid_confirm_open
+            is HomeTileTargetRef.Collection -> if (target.focusGameId != null) {
+                R.string.ui_custom_grid_confirm_play
+            } else {
+                R.string.ui_custom_grid_confirm_open
+            }
+            is HomeTileTargetRef.VirtualCollection -> R.string.ui_custom_grid_confirm_open
+            is HomeTileTargetRef.Feature -> when {
+                target.kind != FeatureTileKind.RA_SUMMARY -> R.string.ui_custom_grid_confirm_play
+                !raTile.signedIn -> R.string.ui_custom_grid_confirm_sign_in
+                raTile.tracksGame -> R.string.ui_custom_grid_confirm_play
+                raTile.browseCount > 0 -> R.string.ui_custom_grid_confirm_browse
+                else -> R.string.ui_custom_grid_confirm_library
+            }
             HomeTileTargetRef.Unresolvable -> null
-            null -> "Add"
+            null -> R.string.ui_custom_grid_confirm_add
         }
 
     /**
@@ -427,6 +489,12 @@ data class CustomGridState(
                 if (feature?.kind == FeatureTileKind.RANDOM_GAME) {
                     add(CustomTileMenuAction.EDIT_FILTERS)
                 }
+                if (feature?.kind == FeatureTileKind.RA_SUMMARY) {
+                    if (supportsRaTileSetup) add(CustomTileMenuAction.EDIT_TILE)
+                    if (raTile.tracksGame && raTile.browseCount > 0) {
+                        add(CustomTileMenuAction.BROWSE_ACHIEVEMENTS)
+                    }
+                }
                 focusedCollection?.let { collection ->
                     if (collection.focusGameId == null) {
                         add(CustomTileMenuAction.START_GAME_QUEUE)
@@ -448,14 +516,21 @@ data class CustomGridState(
         get() = menuActions.indexOf(CustomTileMenuAction.DELETE_PAGE).takeIf { it >= 0 }
 
     /**
+     * Whether the picker ends in the row that deletes the page. Naming a game for the
+     * RetroAchievements tile is a question about one tile, so that row stays out of it.
+     */
+    val pickerOffersDeletePage: Boolean
+        get() = canDeletePage && pickerPurpose == TilePickerPurpose.PLACE
+
+    /**
      * Rows the picker can focus. Deleting the page sits after the entries rather than among them,
      * so a search that empties the list still leaves it reachable.
      */
     val pickerFocusCount: Int
-        get() = pickerEntries.size + if (canDeletePage) 1 else 0
+        get() = pickerEntries.size + if (pickerOffersDeletePage) 1 else 0
 
     val isPickerDeletePageFocused: Boolean
-        get() = canDeletePage && pickerFocusIndex >= pickerEntries.size
+        get() = pickerOffersDeletePage && pickerFocusIndex >= pickerEntries.size
 
     /**
      * Whether the media setup is the thing input should be reaching. The download notice is drawn as
@@ -465,8 +540,13 @@ data class CustomGridState(
     val isMediaSetupOpen: Boolean
         get() = mediaSetup != null && mediaSetup.notice == null
 
+    /**
+     * Whether the feature setup is the thing input should be reaching. While the setup has handed
+     * the screen to the picker to name a game, the setup is still there to come back to but is not
+     * what a press lands on.
+     */
     val isFeatureSetupOpen: Boolean
-        get() = featureSetup != null
+        get() = featureSetup != null && pickerPurpose == TilePickerPurpose.PLACE
 
     val mediaTileNotice: MediaTileNotice?
         get() = mediaSetup?.notice

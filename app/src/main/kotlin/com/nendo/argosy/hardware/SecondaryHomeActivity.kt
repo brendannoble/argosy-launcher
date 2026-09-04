@@ -1319,7 +1319,7 @@ class SecondaryHomeActivity :
             prepareCollectionQueueUseCase = dsm.prepareCollectionQueueUseCase,
             sessionStateStore = dsm.sessionStateStore,
             homeTileRepository = dsm.homeTileRepository,
-            retroAchievementsRepository = dsm.raRepository,
+            raTileContentRepository = dsm.raTileContentRepository,
             homeGridPageRepository = dsm.homeGridPageRepository,
             homeTilePromptQueue = dsm.homeTilePromptQueue,
             appsRepository = dsm.appsRepository,

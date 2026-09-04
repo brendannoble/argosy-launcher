@@ -6,6 +6,7 @@ import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.domain.model.GridDirection2D
 import com.nendo.argosy.domain.model.HomeLayoutKind
 import com.nendo.argosy.ui.common.GridDirection
+import com.nendo.argosy.ui.common.browseGameId
 import com.nendo.argosy.ui.components.AutoGridMove
 import com.nendo.argosy.ui.components.TileEditMode
 import com.nendo.argosy.ui.screens.home.HomeRow
@@ -61,6 +62,18 @@ interface HomeInputActions {
     fun toggleEngagedPlayback()
 
     fun seekEngagedTile(forward: Boolean)
+
+    /**
+     * Moves an engaged RetroAchievements tile's cursor. False when the engaged tile is not one,
+     * which is how the caller knows to seek a playing tile instead.
+     */
+    fun stepEngagedTile(delta: Int): Boolean
+
+    fun browseFocusedRaTile(): Boolean
+
+    fun engageRaTileAt(index: Int): Boolean
+
+    fun openRaSignIn()
 
     fun openEngagedFullscreen()
     fun launchTileApp(packageName: String)
@@ -196,7 +209,7 @@ class HomeInputHandler(
 
     override fun onLeft(): InputResult {
         if (actions.uiState.value.customGrid.engagedTileId != null) {
-            actions.seekEngagedTile(false)
+            if (!actions.stepEngagedTile(-1)) actions.seekEngagedTile(false)
             return InputResult.HANDLED
         }
         if (actions.uiState.value.customGrid.pendingAdd != null) {
@@ -222,7 +235,7 @@ class HomeInputHandler(
 
     override fun onRight(): InputResult {
         if (actions.uiState.value.customGrid.engagedTileId != null) {
-            actions.seekEngagedTile(true)
+            if (!actions.stepEngagedTile(1)) actions.seekEngagedTile(true)
             return InputResult.HANDLED
         }
         if (actions.uiState.value.customGrid.pendingAdd != null) {
@@ -306,10 +319,34 @@ class HomeInputHandler(
             com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE -> {
                 state.continueGameId?.let { activateTileGame(it, state) }
             }
-            com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY -> {
-                state.raTileSummary?.latestGameId?.let { onGameSelect(it) }
-            }
+            com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY -> confirmRaTile(state)
         }
+    }
+
+    /**
+     * A press on the RetroAchievements tile when it is not engaged. Tracking a game plays it, the
+     * way every other tile carrying a game does; the account tile has already engaged by here, so
+     * what is left is the two states with nothing to browse.
+     */
+    private fun confirmRaTile(state: HomeUiState) {
+        when (val content = state.raTileSummary) {
+            null -> actions.openRaSignIn()
+            is com.nendo.argosy.domain.model.RaTileContent.TrackedGame ->
+                activateTileGame(content.gameId, state)
+            is com.nendo.argosy.domain.model.RaTileContent.Account ->
+                actions.navigateToLibrary(null, null)
+        }
+    }
+
+    /**
+     * A press while the tile is engaged opens whatever the cursor is on: the game an unlock was
+     * earned in, or the tracked game for one of its own achievements.
+     */
+    private fun confirmEngagedRaTile(state: HomeUiState): Boolean {
+        val content = state.raTileSummary ?: return false
+        val gameId = content.browseGameId(state.customGrid.engagedIndex) ?: return false
+        onGameSelect(gameId)
+        return true
     }
 
     private fun customMove(direction: GridDirection2D): InputResult {
@@ -344,7 +381,7 @@ class HomeInputHandler(
     override fun onConfirm(): InputResult {
         val state = actions.uiState.value
         if (state.customGrid.engagedTileId != null) {
-            actions.toggleEngagedPlayback()
+            if (!confirmEngagedRaTile(state)) actions.toggleEngagedPlayback()
             return InputResult.HANDLED
         }
         if (state.customGrid.pendingAdd != null) {

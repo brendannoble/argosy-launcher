@@ -654,6 +654,9 @@
     <!-- Heading of the modal that adds something to the curated home grid. Rendered in caps in
          English. -->
     <string name="ui_tile_picker_title">ADD TO GRID</string>
+    <!-- Heading of the same modal while it is choosing which game the RetroAchievements tile
+         tracks, instead of adding a fresh tile. Rendered in caps in English. -->
+    <string name="ui_tile_picker_title_track_game">TRACK A GAME</string>
     <!-- Second line under that heading while the list is filtered. %1$s is what was typed. -->
     <string name="ui_tile_picker_subtitle_matching">Matching \"%1$s\"</string>
     <!-- Shown on the games tab when nothing is on the device. -->
@@ -666,8 +669,21 @@
          and series. -->
     <string name="ui_tile_picker_empty_media">No titles to add</string>
     <string name="ui_tile_picker_empty_features">No widgets available</string>
+    <!-- Shown while choosing which game the RetroAchievements tile tracks, when RetroAchievements
+         does not recognize any game in the library. -->
+    <string name="ui_tile_picker_empty_ra_games">No games recognized by RetroAchievements</string>
     <!-- Filter setup for the random game tile. -->
     <string name="ui_feature_setup_title">Random game</string>
+    <!-- Heading of the setup panel for the RetroAchievements tile, whether placing it fresh or
+         editing one already on the grid. Proper name of an outside service, never translated. -->
+    <string name="ui_feature_setup_title_ra" translatable="false">RetroAchievements</string>
+    <!-- Second line of the setup modal while asking whether the RetroAchievements tile follows
+         the whole account or one game. -->
+    <string name="ui_feature_setup_step_mode">How should this tile work?</string>
+    <!-- Choice in that step: the tile follows the whole account. Noun phrase. -->
+    <string name="ui_feature_setup_mode_account">Account overview</string>
+    <!-- Choice in that step: the tile follows one game the user picks. Verb phrase. -->
+    <string name="ui_feature_setup_mode_track">Track a game</string>
     <string name="ui_feature_setup_step_filters">What it can pick from</string>
     <string name="ui_feature_setup_step_platforms">Platforms</string>
     <string name="ui_feature_setup_step_genres">Genres</string>
@@ -743,6 +759,30 @@
 
     <!-- Row at the end of the curated grid's pages. Verb phrase: makes another page. -->
     <string name="ui_custom_grid_add_page">Add a page</string>
+    <!-- Replaces the footer's usual confirm hint while a tile is being dragged to a new spot on
+         the curated grid. Verb. -->
+    <string name="ui_custom_grid_edit_move">Move</string>
+    <!-- Replaces the footer's usual confirm hint while a tile's edges are being dragged to a new
+         size. Verb. -->
+    <string name="ui_custom_grid_edit_resize">Resize</string>
+    <!-- Confirm-button label in the curated grid's footer when the focused tile launches
+         something, such as a game or a video. Verb. -->
+    <string name="ui_custom_grid_confirm_play">Play</string>
+    <!-- Confirm-button label when the focused tile opens something instead of playing it, such
+         as an app or a collection with nothing set to play next. Verb. -->
+    <string name="ui_custom_grid_confirm_open">Open</string>
+    <!-- Confirm-button label when the focused cell is empty and confirming places a new tile
+         there. Verb. -->
+    <string name="ui_custom_grid_confirm_add">Add</string>
+    <!-- Confirm-button label on the RetroAchievements tile when confirming steps through the
+         badges already earned. Verb. -->
+    <string name="ui_custom_grid_confirm_browse">Browse</string>
+    <!-- Confirm-button label on the RetroAchievements tile before the user has signed in. Verb
+         phrase. -->
+    <string name="ui_custom_grid_confirm_sign_in">Sign In</string>
+    <!-- Confirm-button label on the RetroAchievements tile when confirming opens the game
+         library rather than playing or browsing badges. Noun. -->
+    <string name="ui_custom_grid_confirm_library">Library</string>
 
     <!-- Row of the menu over a friend, shown when they are hosting a game that can be joined.
          Verb. -->

@@ -65,6 +65,7 @@ object ColorTokens {
         object AchievementTier {
             val hardcore = Color(0xFFFFD700)
             val softcore = Color(0xFFCD7F32)
+            val hardcoreHighlight = Color(0xFFFFF8DC)
         }
         object Completion {
             object Playing {

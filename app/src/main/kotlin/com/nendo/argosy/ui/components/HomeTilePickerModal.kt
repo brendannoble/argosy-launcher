@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -133,14 +134,20 @@ fun HomeTilePickerModal(
     category: TilePickerCategory = TilePickerCategory.GAMES,
     categories: List<TilePickerCategory> = TilePickerCategory.entries,
     onSelectCategory: (TilePickerCategory) -> Unit = {},
+    purpose: TilePickerPurpose = TilePickerPurpose.PLACE,
     canDeletePage: Boolean = false,
     onDeletePage: () -> Unit = {}
 ) {
     val listState = rememberLazyListState()
     FocusedScroll(listState = listState, focusedIndex = focusIndex)
+    val trackingGame = purpose == TilePickerPurpose.TRACK_RA_GAME
 
     Modal(
-        title = stringResource(R.string.ui_tile_picker_title),
+        title = if (trackingGame) {
+            stringResource(R.string.ui_tile_picker_title_track_game)
+        } else {
+            stringResource(R.string.ui_tile_picker_title)
+        },
         subtitle = if (searchActive || query.isBlank()) {
             null
         } else {
@@ -149,12 +156,14 @@ fun HomeTilePickerModal(
         baseWidth = Dimens.modalWidthXl,
         onDismiss = onDismiss
     ) {
-        TilePickerTabs(
-            category = category,
-            categories = categories,
-            onSelectCategory = onSelectCategory,
-            modifier = Modifier.padding(bottom = Dimens.spacingSm)
-        )
+        if (!trackingGame) {
+            TilePickerTabs(
+                category = category,
+                categories = categories,
+                onSelectCategory = onSelectCategory,
+                modifier = Modifier.padding(bottom = Dimens.spacingSm)
+            )
+        }
         if (searchActive) {
             ModalSearchField(
                 query = query,
@@ -165,17 +174,17 @@ fun HomeTilePickerModal(
         if (entries.isEmpty()) {
             Text(
                 text = if (query.isBlank()) {
-                    when (category) {
-                        TilePickerCategory.GAMES ->
+                    when {
+                        trackingGame -> stringResource(R.string.ui_tile_picker_empty_ra_games)
+                        category == TilePickerCategory.GAMES ->
                             stringResource(R.string.ui_tile_picker_empty_games)
-                        TilePickerCategory.COLLECTIONS ->
+                        category == TilePickerCategory.COLLECTIONS ->
                             stringResource(R.string.ui_tile_picker_empty_collections)
-                        TilePickerCategory.APPS ->
+                        category == TilePickerCategory.APPS ->
                             stringResource(R.string.ui_tile_picker_empty_apps)
-                        TilePickerCategory.MEDIA ->
+                        category == TilePickerCategory.MEDIA ->
                             stringResource(R.string.ui_tile_picker_empty_media)
-                        TilePickerCategory.FEATURES ->
-                            stringResource(R.string.ui_tile_picker_empty_features)
+                        else -> stringResource(R.string.ui_tile_picker_empty_features)
                     }
                 } else {
                     stringResource(R.string.ui_tile_picker_empty_search)
@@ -194,6 +203,7 @@ fun HomeTilePickerModal(
                     TilePickerRow(
                         entry = entry,
                         isFocused = index == focusIndex,
+                        showDownloadMark = trackingGame && !entry.isLocal,
                         onClick = { onSelect(entry) }
                     )
                 }
@@ -242,10 +252,15 @@ private fun TileDangerRow(
     )
 }
 
+/**
+ * One row of the list. [showDownloadMark] says the row would have to be fetched before it can be
+ * played, the same statement the media setup makes beside a season that is not on the device.
+ */
 @Composable
 private fun TilePickerRow(
     entry: TilePickerEntry,
     isFocused: Boolean,
+    showDownloadMark: Boolean,
     onClick: () -> Unit
 ) {
     val theme = LocalArgosyTheme.current
@@ -295,7 +310,7 @@ private fun TilePickerRow(
                 )
             }
         }
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = entry.title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -309,6 +324,14 @@ private fun TilePickerRow(
                 color = theme.textDim,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
+            )
+        }
+        if (showDownloadMark) {
+            Icon(
+                imageVector = Icons.Outlined.Download,
+                contentDescription = null,
+                tint = theme.textDim,
+                modifier = Modifier.size(Dimens.iconSm)
             )
         }
     }

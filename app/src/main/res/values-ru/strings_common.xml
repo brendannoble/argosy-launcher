@@ -343,13 +343,18 @@
     <string name="ui_media_tile_error_series_not_synced">Для этого сериала ещё не синхронизированы эпизоды</string>
 
     <string name="ui_tile_picker_title">ДОБАВИТЬ НА СЕТКУ</string>
+    <string name="ui_tile_picker_title_track_game">ОТСЛЕЖИВАТЬ ИГРУ</string>
     <string name="ui_tile_picker_subtitle_matching">Совпадения с \"%1$s\"</string>
     <string name="ui_tile_picker_empty_games">Нет установленных игр для добавления</string>
     <string name="ui_tile_picker_empty_collections">Пока нет коллекций</string>
     <string name="ui_tile_picker_empty_apps">Приложения не найдены</string>
     <string name="ui_tile_picker_empty_media">Нет доступных названий для добавления</string>
     <string name="ui_tile_picker_empty_features">Нет доступных виджетов</string>
+    <string name="ui_tile_picker_empty_ra_games">Нет игр, распознанных RetroAchievements</string>
     <string name="ui_feature_setup_title">Случайная игра</string>
+    <string name="ui_feature_setup_step_mode">Как должна работать эта плитка?</string>
+    <string name="ui_feature_setup_mode_account">Обзор аккаунта</string>
+    <string name="ui_feature_setup_mode_track">Отслеживать игру</string>
     <string name="ui_feature_setup_step_filters">Из чего выбирать</string>
     <string name="ui_feature_setup_step_platforms">Платформы</string>
     <string name="ui_feature_setup_step_genres">Жанры</string>
@@ -391,6 +396,14 @@
     <string name="ui_page_chooser_music_soundtracks_header">Ваши саундтреки</string>
 
     <string name="ui_custom_grid_add_page">Добавить страницу</string>
+    <string name="ui_custom_grid_edit_move">Переместить</string>
+    <string name="ui_custom_grid_edit_resize">Изменить размер</string>
+    <string name="ui_custom_grid_confirm_play">Играть</string>
+    <string name="ui_custom_grid_confirm_open">Открыть</string>
+    <string name="ui_custom_grid_confirm_add">Добавить</string>
+    <string name="ui_custom_grid_confirm_browse">Просмотр</string>
+    <string name="ui_custom_grid_confirm_sign_in">Войти</string>
+    <string name="ui_custom_grid_confirm_library">Библиотека</string>
 
     <string name="ui_friend_options_join">Присоединиться</string>
     <string name="ui_friend_options_view_profile">Просмотреть профиль</string>

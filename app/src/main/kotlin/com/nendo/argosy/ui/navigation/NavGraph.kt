@@ -86,6 +86,9 @@ fun NavGraph(
                     val section = action.section.name
                     navController.navigate(Screen.Settings.createRoute(section, action.actionKey))
                 },
+                onNavigateToSettings = { section ->
+                    navController.navigate(Screen.Settings.createRoute(section))
+                },
                 onPlayMedia = onPlayMedia,
                 onMediaSelect = { itemId ->
                     navController.navigate(Screen.MediaDetail.createRoute(itemId))

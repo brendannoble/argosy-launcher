@@ -17,6 +17,8 @@ import com.nendo.argosy.data.repository.DownloadQueueRepository
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.steam.SteamDownloadState
 import com.nendo.argosy.ui.common.appId
+import com.nendo.argosy.ui.common.groundGameId
+import com.nendo.argosy.ui.common.toGridStatus
 import com.nendo.argosy.ui.common.toIndicator
 import com.nendo.argosy.data.repository.CollectionRepository
 import com.nendo.argosy.data.repository.PlatformRepository
@@ -332,7 +334,7 @@ data class DualHomeUiState(
     val tileCollections: Map<Long, com.nendo.argosy.ui.components.TileCollectionUi> = emptyMap(),
     val tileApps: Map<String, String> = emptyMap(),
     val continueGameId: Long? = null,
-    val raTileSummary: com.nendo.argosy.domain.model.RaAccountSummary? = null,
+    val raTileSummary: com.nendo.argosy.domain.model.RaTileContent? = null,
     val currentSectionLabel: String = "",
     val libraryColumns: Int = LIBRARY_GRID_COLUMNS,
     val showFilterOverlay: Boolean = false,
@@ -511,7 +513,14 @@ data class DualHomeUiState(
                 )
             }
             is com.nendo.argosy.domain.model.HomeTileTargetRef.Feature ->
-                featureTileContent(target, context)
+                com.nendo.argosy.ui.common.featureTileContentFor(
+                    target = target,
+                    tileGames = tileGames,
+                    continueGameId = continueGameId,
+                    raSummary = raTileSummary,
+                    context = context,
+                    strings = DUAL_FEATURE_TILE_STRINGS
+                )
             is com.nendo.argosy.domain.model.HomeTileTargetRef.Media,
             is com.nendo.argosy.domain.model.HomeTileTargetRef.LocalMedia,
             com.nendo.argosy.domain.model.HomeTileTargetRef.Unresolvable ->
@@ -521,59 +530,46 @@ data class DualHomeUiState(
                     isMissing = true
                 )
         }
-
-    private fun featureTileContent(
-        target: com.nendo.argosy.domain.model.HomeTileTargetRef.Feature,
-        context: Context
-    ): com.nendo.argosy.ui.components.CustomGridTileContent = when (target.kind) {
-        com.nendo.argosy.domain.model.FeatureTileKind.RANDOM_GAME -> {
-            val game = target.pickedGameId?.let { tileGames[it] }
-            com.nendo.argosy.ui.components.CustomGridTileContent(
-                game = game,
-                label = game?.title ?: context.getString(R.string.dual_tile_feature_random_empty),
-                subtitle = context.getString(R.string.dual_tile_feature_random),
-                stats = game?.let { com.nendo.argosy.ui.components.tileStatsFor(it, context) }.orEmpty(),
-                isRandom = true
-            )
-        }
-        com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE -> {
-            val game = continueGameId?.let { tileGames[it] }
-            com.nendo.argosy.ui.components.CustomGridTileContent(
-                game = game,
-                label = game?.title ?: context.getString(R.string.dual_tile_feature_continue_empty),
-                subtitle = context.getString(R.string.dual_tile_feature_continue),
-                stats = game?.let { com.nendo.argosy.ui.components.tileStatsFor(it, context) }.orEmpty(),
-                isContinue = true
-            )
-        }
-        com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY -> {
-            val summary = raTileSummary
-            com.nendo.argosy.ui.components.CustomGridTileContent(
-                game = null,
-                isSummary = true,
-                label = summary?.username ?: context.getString(R.string.dual_tile_feature_ra),
-                subtitle = when {
-                    summary == null -> context.getString(R.string.dual_tile_feature_ra_signed_out)
-                    summary.latestTitle == null ->
-                        context.getString(R.string.dual_tile_feature_ra_no_unlocks)
-                    else -> context.getString(R.string.dual_tile_feature_ra_latest, summary.latestTitle)
-                },
-                stats = summary?.let {
-                    listOf(
-                        com.nendo.argosy.ui.components.TileStat(
-                            context.getString(R.string.dual_tile_stat_points),
-                            it.points.toString()
-                        ),
-                        com.nendo.argosy.ui.components.TileStat(
-                            context.getString(R.string.dual_tile_stat_unlocks),
-                            it.unlocks.toString()
-                        )
-                    )
-                }.orEmpty()
-            )
-        }
-    }
 }
+
+/**
+ * The words the companion lends the shared feature tiles. The mapping is written once in
+ * [com.nendo.argosy.ui.common.featureTileContentFor]; the keys stay this screen's own.
+ */
+private val DUAL_FEATURE_TILE_STRINGS = com.nendo.argosy.ui.common.FeatureTileStrings(
+    randomLabel = R.string.dual_tile_feature_random,
+    randomEmpty = R.string.dual_tile_feature_random_empty,
+    continueLabel = R.string.dual_tile_feature_continue,
+    continueEmpty = R.string.dual_tile_feature_continue_empty,
+    raLabel = R.string.dual_tile_feature_ra,
+    ra = com.nendo.argosy.ui.components.RaTileLabels(
+        signedOut = R.string.dual_tile_feature_ra_signed_out,
+        empty = R.string.dual_tile_feature_ra_no_unlocks,
+        latestHeading = R.string.dual_tile_ra_latest_heading,
+        nextHeading = R.string.dual_tile_ra_next_heading,
+        mastered = R.string.dual_tile_ra_mastered,
+        locked = R.string.dual_tile_ra_locked,
+        points = R.plurals.dual_tile_ra_points,
+        unlocks = R.plurals.dual_tile_ra_unlocks,
+        unlockMeta = R.string.dual_tile_ra_unlock_meta,
+        accountTally = R.string.dual_tile_ra_account_tally,
+        progress = R.string.dual_tile_ra_progress,
+        gameProgress = R.string.dual_tile_ra_game_progress
+    )
+)
+
+/**
+ * The widgets tab's rows in the companion's words. The list itself is written once in
+ * [com.nendo.argosy.ui.common.featureTilePickerEntries].
+ */
+private val DUAL_FEATURE_TILE_PICKER_STRINGS = com.nendo.argosy.ui.common.FeatureTilePickerStrings(
+    randomTitle = R.string.tile_picker_feature_random_title,
+    randomSubtitle = R.string.tile_picker_feature_random_subtitle,
+    continueTitle = R.string.tile_picker_feature_continue_title,
+    continueSubtitle = R.string.tile_picker_feature_continue_subtitle,
+    raTitle = R.string.tile_picker_feature_ra_title,
+    raSubtitle = R.string.tile_picker_feature_ra_subtitle
+)
 
 class DualHomeViewModel(
     private val gameRepository: GameRepository,
@@ -595,8 +591,8 @@ class DualHomeViewModel(
     private val getGamesForPinnedCollectionUseCase: GetGamesForPinnedCollectionUseCase? = null,
     private val sessionStateStore: SessionStateStore? = null,
     private val homeTileRepository: com.nendo.argosy.data.repository.HomeTileRepository? = null,
-    private val retroAchievementsRepository:
-        com.nendo.argosy.data.repository.RetroAchievementsRepository? = null,
+    private val raTileContentRepository:
+        com.nendo.argosy.data.repository.RaTileContentRepository? = null,
     private val homeGridPageRepository:
         com.nendo.argosy.data.repository.HomeGridPageRepository? = null,
     private val homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue? = null,
@@ -725,29 +721,11 @@ class DualHomeViewModel(
                     )
                 }
         com.nendo.argosy.ui.components.TilePickerCategory.MEDIA -> emptyList()
-        com.nendo.argosy.ui.components.TilePickerCategory.FEATURES -> listOf(
-            com.nendo.argosy.ui.components.TilePickerEntry(
-                target = com.nendo.argosy.domain.model.HomeTileTargetRef.Feature(
-                    com.nendo.argosy.domain.model.FeatureTileKind.RANDOM_GAME
-                ),
-                title = context.getString(R.string.tile_picker_feature_random_title),
-                subtitle = context.getString(R.string.tile_picker_feature_random_subtitle)
-            ),
-            com.nendo.argosy.ui.components.TilePickerEntry(
-                target = com.nendo.argosy.domain.model.HomeTileTargetRef.Feature(
-                    com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE
-                ),
-                title = context.getString(R.string.tile_picker_feature_continue_title),
-                subtitle = context.getString(R.string.tile_picker_feature_continue_subtitle)
-            ),
-            com.nendo.argosy.ui.components.TilePickerEntry(
-                target = com.nendo.argosy.domain.model.HomeTileTargetRef.Feature(
-                    com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY
-                ),
-                title = context.getString(R.string.tile_picker_feature_ra_title),
-                subtitle = context.getString(R.string.tile_picker_feature_ra_subtitle)
+        com.nendo.argosy.ui.components.TilePickerCategory.FEATURES ->
+            com.nendo.argosy.ui.common.featureTilePickerEntries(
+                context = context,
+                strings = DUAL_FEATURE_TILE_PICKER_STRINGS
             )
-        )
     }
 
     private var latestDownloads: Map<Long, com.nendo.argosy.data.local.entity.DownloadQueueEntity> = emptyMap()
@@ -2211,7 +2189,7 @@ class DualHomeViewModel(
                                     target.pickedGameId
                                 else -> null
                             }
-                        } + listOfNotNull(continueGameId)
+                        } + listOfNotNull(continueGameId, raSummary?.groundGameId)
                     ).distinct()
                     val games = if (gameIds.isEmpty()) {
                         emptyMap()
@@ -2252,6 +2230,7 @@ class DualHomeViewModel(
                             .associate { it.packageName to it.label }
                     }
                     customGrid.setTiles(rows)
+                    customGrid.setRaTile(raSummary.toGridStatus())
                     val gradients = gradientExtractionDelegate?.gradients?.value.orEmpty()
                     _uiState.update {
                         it.copy(
@@ -2278,6 +2257,9 @@ class DualHomeViewModel(
         val features = rows.mapNotNull {
             it.target as? com.nendo.argosy.domain.model.HomeTileTargetRef.Feature
         }
+        val raTile = features.firstOrNull {
+            it.kind == com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY
+        }
         return FeatureTileContent(
             continueGameId = if (
                 features.any { it.kind == com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE }
@@ -2286,13 +2268,7 @@ class DualHomeViewModel(
             } else {
                 null
             },
-            raSummary = if (
-                features.any { it.kind == com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY }
-            ) {
-                retroAchievementsRepository?.getAccountSummary()
-            } else {
-                null
-            }
+            raSummary = raTile?.let { raTileContentRepository?.load(it.pickedGameId) }
         )
     }
 
@@ -2303,14 +2279,21 @@ class DualHomeViewModel(
      */
     private suspend fun refreshFeatureTiles() {
         val feature = featureTileContent(companionTiles)
-        val continueGame = feature.continueGameId
-            ?.let { id -> gameRepository.getByIds(listOf(id)).associate { it.id to it.toUi() } }
-            .orEmpty()
+        val featureGameIds = listOfNotNull(
+            feature.continueGameId,
+            feature.raSummary?.groundGameId
+        ).distinct()
+        val featureGames = if (featureGameIds.isEmpty()) {
+            emptyMap()
+        } else {
+            gameRepository.getByIds(featureGameIds).associate { it.id to it.toUi() }
+        }
         val gradients = gradientExtractionDelegate?.gradients?.value.orEmpty()
+        customGrid.setRaTile(feature.raSummary.toGridStatus())
         _uiState.update {
             it.copy(
                 tileGames = it.tileGames +
-                    continueGame.mapValues { (_, game) -> game.applyGradient(gradients) },
+                    featureGames.mapValues { (_, game) -> game.applyGradient(gradients) },
                 continueGameId = feature.continueGameId,
                 raTileSummary = feature.raSummary
             )
@@ -2423,6 +2406,16 @@ class DualHomeViewModel(
         _uiState.value.customGrid.menuActions
 
     fun openTileMenu() = customGrid.openMenu()
+
+    fun engageFocusedTile(): Boolean = customGrid.engageFocusedTile()
+
+    fun disengageTile(): Boolean = customGrid.disengageTile()
+
+    fun stepEngagedTile(delta: Int): Boolean = customGrid.stepEngaged(delta)
+
+    fun browseFocusedRaTile(): Boolean = customGrid.browseFocusedRaTile()
+
+    fun engageRaTileAt(index: Int): Boolean = customGrid.engageRaTileAt(index)
 
     fun closeTileMenu() = customGrid.closeMenu()
 

@@ -10,6 +10,8 @@
     <string name="home_footer_grid_engaged_pause">暂停</string>
     <string name="home_footer_grid_engaged_seek">快进/快退</string>
     <string name="home_footer_grid_engaged_fullscreen">全屏</string>
+    <string name="home_footer_grid_engaged_browse">浏览</string>
+    <string name="home_footer_grid_engaged_details">详情</string>
     <string name="home_footer_grid_engaged_back">返回网格</string>
 
     <string name="home_footer_media_notice_choose">选择</string>
@@ -116,9 +118,20 @@
     <string name="home_grid_tile_feature_ra_label">RetroAchievements</string>
     <string name="home_grid_tile_feature_ra_signed_out">登录以查看你的解锁</string>
     <string name="home_grid_tile_feature_ra_no_unlocks">还没有解锁</string>
-    <string name="home_grid_tile_feature_ra_latest">最新：%1$s</string>
-    <string name="home_grid_tile_stat_points">分</string>
-    <string name="home_grid_tile_stat_unlocks">项解锁</string>
+    <string name="home_grid_tile_ra_latest_heading">最新</string>
+    <string name="home_grid_tile_ra_next_heading">接下来</string>
+    <string name="home_grid_tile_ra_mastered">已精通</string>
+    <string name="home_grid_tile_ra_locked">尚未解锁</string>
+    <plurals name="home_grid_tile_ra_points">
+        <item quantity="other">%d分</item>
+    </plurals>
+    <plurals name="home_grid_tile_ra_unlocks">
+        <item quantity="other">%d项解锁</item>
+    </plurals>
+    <string name="home_grid_tile_ra_unlock_meta">%1$s，%2$s</string>
+    <string name="home_grid_tile_ra_account_tally">%1$s，%2$s</string>
+    <string name="home_grid_tile_ra_progress">%1$d/%2$d</string>
+    <string name="home_grid_tile_ra_game_progress">%1$s %2$d/%3$d</string>
 
     <string name="home_notice_game_data_refreshed">游戏数据已刷新</string>
     <string name="home_notice_android_data_refreshed">游戏数据已刷新</string>
@@ -139,6 +152,7 @@
     <plurals name="home_tile_picker_collection_game_count">
         <item quantity="other">%d个游戏</item>
     </plurals>
+    <string name="home_tile_picker_ra_progress">%1$s（%2$d/%3$d项成就）</string>
     <string name="home_tile_picker_app_emulator">模拟器</string>
     <string name="home_tile_picker_app_other">应用</string>
 

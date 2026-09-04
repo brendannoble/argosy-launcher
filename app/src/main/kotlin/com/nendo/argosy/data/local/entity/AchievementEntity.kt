@@ -49,6 +49,17 @@ data class AchievementEntity(
     val isUnlocked: Boolean
         get() = unlockedAt != null || unlockedHardcoreAt != null
 
+    /**
+     * The badge for the row's state: the cached file when one exists, else the remote url. A locked
+     * row with no lock art borrows the unlocked art rather than drawing nothing.
+     */
+    val badgePath: String?
+        get() = if (isUnlocked) {
+            cachedBadgeUrl ?: badgeUrl
+        } else {
+            cachedBadgeUrlLock ?: badgeUrlLock ?: cachedBadgeUrl ?: badgeUrl
+        }
+
     companion object {
         /**
          * Owner stamp for rows that predate accounts, and for a device with no RomM account.

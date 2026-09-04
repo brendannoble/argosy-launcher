@@ -174,6 +174,7 @@ fun HomeScreen(
     onNavigateToDefault: () -> Unit,
     onDrawerToggle: () -> Unit,
     onChangelogAction: (RequiredAction) -> Unit = {},
+    onNavigateToSettings: (String) -> Unit = {},
     onPlayMedia: (itemId: String, startOver: Boolean) -> Unit = { _, _ -> },
     onMediaSelect: (String) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
@@ -260,6 +261,7 @@ fun HomeScreen(
                     onNavigateToLibrary(event.platformId, event.sourceFilter)
                 }
                 is HomeEvent.NavigateToCollections -> onNavigateToCollections()
+                is HomeEvent.NavigateToSettings -> onNavigateToSettings(event.section)
                 is HomeEvent.PlayMedia -> onPlayMedia(event.itemId, event.startOver)
                 is HomeEvent.NavigateToMediaDetail -> onMediaSelect(event.itemId)
             }
@@ -800,6 +802,8 @@ fun HomeScreen(
                                     viewModel.setCustomGridCell(cell)
                                     viewModel.openTileMenu()
                                 },
+                                onBadgeTap = { index -> viewModel.engageRaTileAt(index) },
+                                onBandTap = { inputHandler.onConfirm() },
                                 downloadIndicatorFor = { uiState.downloadIndicatorFor(it) },
                                 onCoverLoadFailed = viewModel::repairCoverImage,
                                 onCoverLoaded = viewModel::extractGradientForGame,
@@ -907,6 +911,14 @@ fun HomeScreen(
                         com.nendo.argosy.domain.model.HomeTileTargetRef.Media
                     FooterHints(
                         hints = when {
+                            grid.engagedRaTile -> listOf(
+                                InputButton.DPAD_HORIZONTAL to
+                                    stringResource(R.string.home_footer_grid_engaged_browse),
+                                InputButton.A to
+                                    stringResource(R.string.home_footer_grid_engaged_details),
+                                InputButton.B to
+                                    stringResource(R.string.home_footer_grid_engaged_back)
+                            )
                             grid.engagedTileId != null -> listOfNotNull(
                                 InputButton.A to if (grid.engagedPaused) {
                                     stringResource(R.string.home_footer_grid_engaged_play)
@@ -953,7 +965,8 @@ fun HomeScreen(
                                     stringResource(R.string.home_footer_tile_picker_search)
                             )
                             grid.isEditing -> listOf(
-                                InputButton.DPAD to grid.editLabel.orEmpty(),
+                                InputButton.DPAD to
+                                    grid.editLabelRes?.let { stringResource(it) }.orEmpty(),
                                 InputButton.X to if (grid.editMode == TileEditMode.MOVE) {
                                     stringResource(R.string.home_footer_grid_edit_resize)
                                 } else {
@@ -966,7 +979,9 @@ fun HomeScreen(
                             )
                             else -> buildList {
                                 add(InputButton.LB_RB to gridPageLabel)
-                                grid.confirmLabel?.let { add(InputButton.A to it) }
+                                grid.confirmLabelRes?.let {
+                                    add(InputButton.A to stringResource(it))
+                                }
                                 if (grid.focusedCollection?.focusGameId != null) {
                                     add(InputButton.Y to gridFinishedLabel)
                                 }

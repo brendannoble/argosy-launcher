@@ -10,6 +10,8 @@
     <string name="home_footer_grid_engaged_pause">Pause</string>
     <string name="home_footer_grid_engaged_seek">Avancer/reculer</string>
     <string name="home_footer_grid_engaged_fullscreen">Plein écran</string>
+    <string name="home_footer_grid_engaged_browse">Parcourir</string>
+    <string name="home_footer_grid_engaged_details">Détails</string>
     <string name="home_footer_grid_engaged_back">Retour à la grille</string>
 
     <string name="home_footer_media_notice_choose">Choisir</string>
@@ -116,9 +118,24 @@
     <string name="home_grid_tile_feature_ra_label">RetroAchievements</string>
     <string name="home_grid_tile_feature_ra_signed_out">Connectez-vous pour voir vos succès</string>
     <string name="home_grid_tile_feature_ra_no_unlocks">Aucun succès pour l\'instant</string>
-    <string name="home_grid_tile_feature_ra_latest">Dernier : %1$s</string>
-    <string name="home_grid_tile_stat_points">points</string>
-    <string name="home_grid_tile_stat_unlocks">succès</string>
+    <string name="home_grid_tile_ra_latest_heading">Dernier</string>
+    <string name="home_grid_tile_ra_next_heading">Suivant</string>
+    <string name="home_grid_tile_ra_mastered">Maîtrisé</string>
+    <string name="home_grid_tile_ra_locked">Pas encore débloqué</string>
+    <plurals name="home_grid_tile_ra_points">
+        <item quantity="one">%d point</item>
+        <item quantity="many">%d points</item>
+        <item quantity="other">%d points</item>
+    </plurals>
+    <plurals name="home_grid_tile_ra_unlocks">
+        <item quantity="one">%d succès</item>
+        <item quantity="many">%d succès</item>
+        <item quantity="other">%d succès</item>
+    </plurals>
+    <string name="home_grid_tile_ra_unlock_meta">%1$s, %2$s</string>
+    <string name="home_grid_tile_ra_account_tally">%1$s, %2$s</string>
+    <string name="home_grid_tile_ra_progress">%1$d/%2$d</string>
+    <string name="home_grid_tile_ra_game_progress">%1$s %2$d/%3$d</string>
 
     <string name="home_notice_game_data_refreshed">Données du jeu actualisées</string>
     <string name="home_notice_android_data_refreshed">Données du jeu actualisées</string>
@@ -143,6 +160,7 @@
         <item quantity="many">%d jeux</item>
         <item quantity="other">%d jeux</item>
     </plurals>
+    <string name="home_tile_picker_ra_progress">%1$s (%2$d/%3$d succès)</string>
     <string name="home_tile_picker_app_emulator">Émulateur</string>
     <string name="home_tile_picker_app_other">Application</string>
 

@@ -24,17 +24,29 @@ class FetchAchievementsUseCase @Inject constructor(
     private val overlayWriter: com.nendo.argosy.data.repository.GameUserOverlayWriter,
     private val imageCacheManager: ImageCacheManager
 ) {
-    suspend operator fun invoke(gameId: Long, rommId: Long? = null, raId: Long? = null): AchievementCounts? {
-        // Fetch RA data from RomM (which syncs with RA server-side using its API key).
-        // Never call RA directly for UI display -- that's only for in-game sessions.
+    /**
+     * Reads the rom's achievement list and the account's progression from RomM, never from
+     * RetroAchievements directly. [refreshProgression] false trusts the progression already cached
+     * this session, for a caller that has just refreshed it once for several games.
+     */
+    suspend operator fun invoke(
+        gameId: Long,
+        rommId: Long? = null,
+        raId: Long? = null,
+        refreshProgression: Boolean = true
+    ): AchievementCounts? {
         if (rommId != null) {
-            return fetchFromRomM(rommId, gameId)
+            return fetchFromRomM(rommId, gameId, refreshProgression)
         }
 
         return null
     }
 
-    private suspend fun fetchFromRomM(rommId: Long, gameId: Long): AchievementCounts? {
+    private suspend fun fetchFromRomM(
+        rommId: Long,
+        gameId: Long,
+        refreshProgression: Boolean
+    ): AchievementCounts? {
         return when (val result = romMRepository.getRom(rommId)) {
             is RomMResult.Success -> {
                 val rom = result.data
@@ -42,7 +54,7 @@ class FetchAchievementsUseCase @Inject constructor(
                 if (apiAchievements.isNullOrEmpty()) return null
 
                 val rommEarnedByBadgeId = if (rom.raId != null) {
-                    romMRepository.refreshRAProgressionIfNeeded(force = true)
+                    if (refreshProgression) romMRepository.refreshRAProgressionIfNeeded(force = true)
                     romMRepository.getEarnedAchievements(rom.raId).toRommEarnedByBadgeId()
                 } else {
                     emptyMap()

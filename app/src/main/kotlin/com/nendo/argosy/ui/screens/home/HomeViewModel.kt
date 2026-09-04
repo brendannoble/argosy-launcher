@@ -26,6 +26,8 @@ import com.nendo.argosy.hardware.AmbientLedContext
 import com.nendo.argosy.hardware.AmbientLedManager
 import com.nendo.argosy.ui.common.GridDirection
 import com.nendo.argosy.ui.common.GridFocusNavigator
+import com.nendo.argosy.ui.common.groundGameId
+import com.nendo.argosy.ui.common.toGridStatus
 import com.nendo.argosy.domain.model.FeatureTileContent
 import com.nendo.argosy.domain.model.FeatureTileKind
 import com.nendo.argosy.domain.model.HomeLayoutKind
@@ -62,6 +64,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * The widgets tab's rows in this surface's words. The list itself is written once in
+ * [com.nendo.argosy.ui.common.featureTilePickerEntries].
+ */
+private val HOME_FEATURE_TILE_PICKER_STRINGS = com.nendo.argosy.ui.common.FeatureTilePickerStrings(
+    randomTitle = R.string.tile_picker_feature_random_title,
+    randomSubtitle = R.string.tile_picker_feature_random_subtitle,
+    continueTitle = R.string.tile_picker_feature_continue_title,
+    continueSubtitle = R.string.tile_picker_feature_continue_subtitle,
+    raTitle = R.string.tile_picker_feature_ra_title,
+    raSubtitle = R.string.tile_picker_feature_ra_subtitle
+)
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
@@ -93,7 +108,7 @@ class HomeViewModel @Inject constructor(
     private val appsRepository: com.nendo.argosy.data.repository.AppsRepository,
     private val homeTileRepository: com.nendo.argosy.data.repository.HomeTileRepository,
     private val homeGridPageRepository: com.nendo.argosy.data.repository.HomeGridPageRepository,
-    private val retroAchievementsRepository: com.nendo.argosy.data.repository.RetroAchievementsRepository,
+    private val raTileContentRepository: com.nendo.argosy.data.repository.RaTileContentRepository,
     private val pageChooserEntrySource: com.nendo.argosy.ui.home.grid.PageChooserEntrySource,
     private val collectionRepository: com.nendo.argosy.data.repository.CollectionRepository,
     private val advanceCollectionFocusUseCase:
@@ -146,6 +161,7 @@ class HomeViewModel @Inject constructor(
                 genres = gameRepository.getDistinctGenres()
             )
         },
+        raGamePickerEntries = { query -> libraryDelegate.searchRaCompatibleForTiles(query) },
         read = { _uiState.value.customGrid },
         write = { transform -> _uiState.update { it.copy(customGrid = transform(it.customGrid)) } }
     )
@@ -800,7 +816,7 @@ class HomeViewModel @Inject constructor(
                         is HomeTileTargetRef.Feature -> target.pickedGameId
                         else -> null
                     }
-                } + listOfNotNull(feature.continueGameId)
+                } + listOfNotNull(feature.continueGameId, feature.raSummary?.groundGameId)
             ).distinct()
         )
         val collections = libraryDelegate.resolveTileCollections(
@@ -813,6 +829,7 @@ class HomeViewModel @Inject constructor(
             shown.mapNotNull { (it.target as? HomeTileTargetRef.Media)?.itemId }.distinct()
         )
         customGrid.setTiles(shown)
+        customGrid.setRaTile(feature.raSummary.toGridStatus())
         val gradients = gradientExtractionDelegate.gradients.value
         _uiState.update {
             it.copy(
@@ -841,17 +858,14 @@ class HomeViewModel @Inject constructor(
         shown: List<com.nendo.argosy.domain.model.HomeTile>
     ): FeatureTileContent {
         val features = shown.mapNotNull { it.target as? HomeTileTargetRef.Feature }
+        val raTile = features.firstOrNull { it.kind == FeatureTileKind.RA_SUMMARY }
         return FeatureTileContent(
             continueGameId = if (features.any { it.kind == FeatureTileKind.CONTINUE }) {
                 gameRepository.getRecentlyPlayed(1).firstOrNull()?.id
             } else {
                 null
             },
-            raSummary = if (features.any { it.kind == FeatureTileKind.RA_SUMMARY }) {
-                retroAchievementsRepository.getAccountSummary()
-            } else {
-                null
-            }
+            raSummary = raTile?.let { raTileContentRepository.load(it.pickedGameId) }
         )
     }
 
@@ -864,14 +878,15 @@ class HomeViewModel @Inject constructor(
     private fun refreshFeatureTiles() {
         viewModelScope.launch {
             val feature = featureTileContent(shownTiles(storedTiles))
-            val continueGame = feature.continueGameId
-                ?.let { libraryDelegate.resolveTileGames(listOf(it)) }
-                .orEmpty()
+            val resolved = libraryDelegate.resolveTileGames(
+                listOfNotNull(feature.continueGameId, feature.raSummary?.groundGameId).distinct()
+            )
             val gradients = gradientExtractionDelegate.gradients.value
+            customGrid.setRaTile(feature.raSummary.toGridStatus())
             _uiState.update {
                 it.copy(
                     tileGames = it.tileGames +
-                        continueGame.mapValues { (_, game) -> game.applyGradient(gradients) },
+                        resolved.mapValues { (_, game) -> game.applyGradient(gradients) },
                     continueGameId = feature.continueGameId,
                     raTileSummary = feature.raSummary
                 )
@@ -898,23 +913,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun featureTileEntries(): List<com.nendo.argosy.ui.components.TilePickerEntry> = listOf(
-        com.nendo.argosy.ui.components.TilePickerEntry(
-            target = HomeTileTargetRef.Feature(FeatureTileKind.RANDOM_GAME),
-            title = context.getString(R.string.tile_picker_feature_random_title),
-            subtitle = context.getString(R.string.tile_picker_feature_random_subtitle)
-        ),
-        com.nendo.argosy.ui.components.TilePickerEntry(
-            target = HomeTileTargetRef.Feature(FeatureTileKind.CONTINUE),
-            title = context.getString(R.string.tile_picker_feature_continue_title),
-            subtitle = context.getString(R.string.tile_picker_feature_continue_subtitle)
-        ),
-        com.nendo.argosy.ui.components.TilePickerEntry(
-            target = HomeTileTargetRef.Feature(FeatureTileKind.RA_SUMMARY),
-            title = context.getString(R.string.tile_picker_feature_ra_title),
-            subtitle = context.getString(R.string.tile_picker_feature_ra_subtitle)
+    private fun featureTileEntries(): List<com.nendo.argosy.ui.components.TilePickerEntry> =
+        com.nendo.argosy.ui.common.featureTilePickerEntries(
+            context = context,
+            strings = HOME_FEATURE_TILE_PICKER_STRINGS
         )
-    )
 
     override fun rerollRandomTile() {
         val tile = _uiState.value.customGrid.focusedTile ?: return
@@ -1160,6 +1163,22 @@ class HomeViewModel @Inject constructor(
     override fun toggleEngagedPlayback() = customGrid.toggleEngagedPlayback()
 
     override fun seekEngagedTile(forward: Boolean) = customGrid.seekEngagedTile(forward)
+
+    override fun stepEngagedTile(delta: Int): Boolean = customGrid.stepEngaged(delta)
+
+    override fun browseFocusedRaTile(): Boolean = customGrid.browseFocusedRaTile()
+
+    override fun engageRaTileAt(index: Int): Boolean = customGrid.engageRaTileAt(index)
+
+    override fun openRaSignIn() {
+        viewModelScope.launch {
+            _events.emit(
+                HomeEvent.NavigateToSettings(
+                    com.nendo.argosy.ui.screens.settings.SettingsSection.RETRO_ACHIEVEMENTS.name
+                )
+            )
+        }
+    }
 
     fun rememberTilePlaybackPosition(filePath: String, positionMs: Long) =
         customGrid.rememberPlaybackPosition(filePath, positionMs)

@@ -347,13 +347,18 @@
     <string name="ui_media_tile_error_series_not_synced">Aucun épisode n\'a encore été synchronisé pour cette série</string>
 
     <string name="ui_tile_picker_title">AJOUTER À LA GRILLE</string>
+    <string name="ui_tile_picker_title_track_game">SUIVRE UN JEU</string>
     <string name="ui_tile_picker_subtitle_matching">Correspond à \"%1$s\"</string>
     <string name="ui_tile_picker_empty_games">Aucun jeu installé à ajouter</string>
     <string name="ui_tile_picker_empty_collections">Aucune collection pour l\'instant</string>
     <string name="ui_tile_picker_empty_apps">Aucune application trouvée</string>
     <string name="ui_tile_picker_empty_media">Aucun titre à ajouter</string>
     <string name="ui_tile_picker_empty_features">Aucun widget disponible</string>
+    <string name="ui_tile_picker_empty_ra_games">Aucun jeu reconnu par RetroAchievements</string>
     <string name="ui_feature_setup_title">Jeu aléatoire</string>
+    <string name="ui_feature_setup_step_mode">Comment cette tuile doit-elle fonctionner ?</string>
+    <string name="ui_feature_setup_mode_account">Aperçu du compte</string>
+    <string name="ui_feature_setup_mode_track">Suivre un jeu</string>
     <string name="ui_feature_setup_step_filters">Parmi quoi choisir</string>
     <string name="ui_feature_setup_step_platforms">Plateformes</string>
     <string name="ui_feature_setup_step_genres">Genres</string>
@@ -395,6 +400,14 @@
     <string name="ui_page_chooser_music_soundtracks_header">Vos bandes originales</string>
 
     <string name="ui_custom_grid_add_page">Ajouter une page</string>
+    <string name="ui_custom_grid_edit_move">Déplacer</string>
+    <string name="ui_custom_grid_edit_resize">Redimensionner</string>
+    <string name="ui_custom_grid_confirm_play">Jouer</string>
+    <string name="ui_custom_grid_confirm_open">Ouvrir</string>
+    <string name="ui_custom_grid_confirm_add">Ajouter</string>
+    <string name="ui_custom_grid_confirm_browse">Parcourir</string>
+    <string name="ui_custom_grid_confirm_sign_in">Se connecter</string>
+    <string name="ui_custom_grid_confirm_library">Bibliothèque</string>
 
     <string name="ui_friend_options_join">Rejoindre</string>
     <string name="ui_friend_options_view_profile">Voir le profil</string>

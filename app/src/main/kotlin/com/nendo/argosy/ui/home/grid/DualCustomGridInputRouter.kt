@@ -5,7 +5,10 @@ import com.nendo.argosy.domain.model.FeatureTileKind
 import com.nendo.argosy.domain.model.GridDirection2D
 import com.nendo.argosy.domain.model.HomeLayoutKind
 import com.nendo.argosy.domain.model.HomeTileTargetRef
+import com.nendo.argosy.domain.model.RaTileContent
+import com.nendo.argosy.ui.common.browseGameId
 import com.nendo.argosy.ui.components.TileEditMode
+import com.nendo.argosy.ui.dualscreen.home.DualHomeUiState
 import com.nendo.argosy.ui.dualscreen.home.DualHomeViewModel
 import com.nendo.argosy.ui.input.GamepadEvent
 import com.nendo.argosy.ui.input.InputResult
@@ -42,12 +45,32 @@ class DualCustomGridInputRouter(
         val grid = state.customGrid
 
         return when (event) {
-            GamepadEvent.Up -> move(GridDirection2D.UP)
-            GamepadEvent.Down -> move(GridDirection2D.DOWN)
-            GamepadEvent.Left -> move(GridDirection2D.LEFT)
-            GamepadEvent.Right -> move(GridDirection2D.RIGHT)
+            GamepadEvent.Up -> if (grid.engagedRaTile) {
+                InputResult.handled(SoundType.BOUNDARY)
+            } else {
+                move(GridDirection2D.UP)
+            }
+            GamepadEvent.Down -> if (grid.engagedRaTile) {
+                InputResult.handled(SoundType.BOUNDARY)
+            } else {
+                move(GridDirection2D.DOWN)
+            }
+            GamepadEvent.Left -> if (viewModel.stepEngagedTile(-1)) {
+                InputResult.HANDLED
+            } else {
+                move(GridDirection2D.LEFT)
+            }
+            GamepadEvent.Right -> if (viewModel.stepEngagedTile(1)) {
+                InputResult.HANDLED
+            } else {
+                move(GridDirection2D.RIGHT)
+            }
 
             GamepadEvent.Confirm -> when {
+                grid.engagedRaTile -> {
+                    confirmEngagedRaTile(state)
+                    InputResult.HANDLED
+                }
                 grid.pageChooser != null -> {
                     viewModel.confirmPageChooser()
                     InputResult.HANDLED
@@ -92,6 +115,10 @@ class DualCustomGridInputRouter(
             }
 
             GamepadEvent.Back -> when {
+                grid.engagedRaTile -> {
+                    viewModel.disengageTile()
+                    InputResult.handled(SoundType.CLOSE_MODAL)
+                }
                 grid.pageChooser != null -> {
                     viewModel.closePageChooser()
                     InputResult.handled(SoundType.CLOSE_MODAL)
@@ -249,12 +276,33 @@ class DualCustomGridInputRouter(
                 FeatureTileKind.CONTINUE -> {
                     state.continueGameId?.let { state.tileGames[it] }?.let(onLaunchGame)
                 }
-                FeatureTileKind.RA_SUMMARY -> {
-                    state.raTileSummary?.latestGameId?.let(onOpenDetails)
-                }
+                FeatureTileKind.RA_SUMMARY -> confirmRaTile(state)
             }
             else -> viewModel.openTilePicker()
         }
         return InputResult.HANDLED
+    }
+
+    /**
+     * The achievements tile on the companion. Tracking a game plays it like any other tile with a
+     * game on it; the account tile hands the d-pad its badges instead, and with nothing to show
+     * there is nothing to press.
+     */
+    private fun confirmRaTile(state: DualHomeUiState) {
+        val content = state.raTileSummary
+        if (content is RaTileContent.TrackedGame) {
+            state.tileGames[content.gameId]?.let(onLaunchGame)
+            return
+        }
+        viewModel.engageFocusedTile()
+    }
+
+    /**
+     * A press while browsing opens whatever the cursor is on: the game an unlock was earned in, or
+     * the tracked game for one of its own achievements.
+     */
+    private fun confirmEngagedRaTile(state: DualHomeUiState) {
+        val content = state.raTileSummary ?: return
+        content.browseGameId(state.customGrid.engagedIndex)?.let(onOpenDetails)
     }
 }

@@ -249,9 +249,20 @@
     <string name="dual_tile_feature_continue_empty">還沒有玩過任何遊戲</string>
     <string name="dual_tile_feature_ra_signed_out">登入以查看你的解鎖</string>
     <string name="dual_tile_feature_ra_no_unlocks">還沒有解鎖</string>
-    <string name="dual_tile_feature_ra_latest">最新：%1$s</string>
-    <string name="dual_tile_stat_points">分</string>
-    <string name="dual_tile_stat_unlocks">項解鎖</string>
+    <string name="dual_tile_ra_latest_heading">最新</string>
+    <string name="dual_tile_ra_next_heading">接下來</string>
+    <string name="dual_tile_ra_mastered">已精通</string>
+    <string name="dual_tile_ra_locked">尚未解鎖</string>
+    <plurals name="dual_tile_ra_points">
+        <item quantity="other">%d分</item>
+    </plurals>
+    <plurals name="dual_tile_ra_unlocks">
+        <item quantity="other">%d項解鎖</item>
+    </plurals>
+    <string name="dual_tile_ra_unlock_meta">%1$s，%2$s</string>
+    <string name="dual_tile_ra_account_tally">%1$s，%2$s</string>
+    <string name="dual_tile_ra_progress">%1$d/%2$d</string>
+    <string name="dual_tile_ra_game_progress">%1$s %2$d/%3$d</string>
 
     <plurals name="dual_tile_picker_collection_game_count">
         <item quantity="other">%d款遊戲</item>

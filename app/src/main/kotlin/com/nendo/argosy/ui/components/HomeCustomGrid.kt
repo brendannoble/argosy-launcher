@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Casino
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material3.Icon
@@ -157,11 +156,10 @@ data class CustomGridTileContent(
      */
     val isContinue: Boolean = false,
     /**
-     * Marks a tile that is a card of numbers rather than a thing with a cover. It keeps the
-     * icon-and-text layout in every cell shape instead of taking the wide cover-plus-facts layout
-     * a game would.
+     * What a RetroAchievements tile draws, in place of every other field here. Present only on
+     * that tile, which owns its own layout in each cell shape rather than borrowing one.
      */
-    val isSummary: Boolean = false
+    val ra: RaTileUi? = null
 )
 
 /**
@@ -212,6 +210,9 @@ fun HomeCustomGridPage(
     engagedTileId: Long? = null,
     engagedPaused: Boolean = false,
     engagedSeekTicks: Int = 0,
+    engagedIndex: Int = 0,
+    onBadgeTap: ((Int) -> Unit)? = null,
+    onBandTap: (() -> Unit)? = null,
     playbackPositions: Map<String, Long> = emptyMap(),
     onPlaybackPosition: (String, Long) -> Unit = { _, _ -> },
     onTakeAudio: () -> Unit = {},
@@ -300,6 +301,9 @@ fun HomeCustomGridPage(
                 isEngaged = tile.id == engagedTileId,
                 isPaused = tile.id == engagedTileId && engagedPaused,
                 seekTicks = if (tile.id == engagedTileId) engagedSeekTicks else 0,
+                engagedIndex = if (tile.id == engagedTileId) engagedIndex else 0,
+                onBadgeTap = onBadgeTap,
+                onBandTap = onBandTap,
                 startPositionMs = tilePlayback[tile.id]?.let { playbackPositions[it] } ?: 0L,
                 onPlaybackPosition = onPlaybackPosition,
                 onTakeAudio = onTakeAudio,
@@ -352,6 +356,9 @@ private fun CustomGridCellBox(
     isEngaged: Boolean = false,
     isPaused: Boolean = false,
     seekTicks: Int = 0,
+    engagedIndex: Int = 0,
+    onBadgeTap: ((Int) -> Unit)? = null,
+    onBandTap: (() -> Unit)? = null,
     startPositionMs: Long = 0L,
     onPlaybackPosition: (String, Long) -> Unit = { _, _ -> },
     onTakeAudio: () -> Unit = {},
@@ -373,6 +380,26 @@ private fun CustomGridCellBox(
             translationY = dragOffset.y
         }
         .size(width, height)
+
+    val ra = content?.ra
+    if (ra != null) {
+        RaTileBox(
+            placement = placement,
+            rect = rect,
+            ra = ra,
+            isFocused = isFocused,
+            isOverlapped = isOverlapped,
+            isEngaged = isEngaged,
+            engagedIndex = engagedIndex,
+            editModeLabel = editModeLabel,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            onBadgeTap = onBadgeTap,
+            onBandTap = onBandTap,
+            onCoverLoaded = onCoverLoaded
+        )
+        return
+    }
 
     if (playbackPath != null && content?.media != null) {
         Box(modifier = placement, contentAlignment = Alignment.Center) {
@@ -411,7 +438,7 @@ private fun CustomGridCellBox(
         return
     }
 
-    if (rect.columnSpan > rect.rowSpan && content != null && !content.isMissing && !content.isSummary) {
+    if (rect.columnSpan > rect.rowSpan && content != null && !content.isMissing) {
         WideTileBox(
             placement = placement,
             content = content,
@@ -612,12 +639,6 @@ private fun CustomGridCellBox(
                         tint = theme.textDim,
                         modifier = Modifier.size(Dimens.iconXl)
                     )
-                    content.isSummary -> Icon(
-                        imageVector = Icons.Filled.EmojiEvents,
-                        contentDescription = null,
-                        tint = theme.textDim,
-                        modifier = Modifier.size(Dimens.iconXl)
-                    )
                 }
                 Text(
                     text = content.label,
@@ -752,7 +773,7 @@ private const val DOT_IDLE_ALPHA = 0.35f
  * wrapping that in an alpha layer flattens it to black instead of fading it.
  */
 private const val COLLECTION_BADGE_SCRIM_ALPHA = 0.7f
-private const val OVERLAPPED_ALPHA = 0.6f
+internal const val OVERLAPPED_ALPHA = 0.6f
 private const val OVERLAPPED_SATURATION = 0.15f
 
 /**
@@ -840,7 +861,7 @@ private const val REROLL_SQUEEZE_SCALE = 0.9f
  * rather than to the game, so it reads as attached from outside.
  */
 @Composable
-private fun TileModeTab(label: String, modifier: Modifier = Modifier) {
+internal fun TileModeTab(label: String, modifier: Modifier = Modifier) {
     val theme = LocalArgosyTheme.current
     val shape = RoundedCornerShape(Dimens.radiusSm)
     Text(
@@ -861,7 +882,7 @@ private fun TileModeTab(label: String, modifier: Modifier = Modifier) {
  * longest span keeps the growth a constant distance whatever the tile's size, which is both what a
  * cursor should look like and what the page reserved room for.
  */
-private fun focusScaleForSpan(rect: TileRect): Float {
+internal fun focusScaleForSpan(rect: TileRect): Float {
     val span = maxOf(rect.columnSpan, rect.rowSpan).coerceAtLeast(1)
     return 1f + (ComponentDefaults.Focus.scaleFocused - 1f) / span
 }
@@ -871,7 +892,7 @@ private fun focusScaleForSpan(rect: TileRect): Float {
  * game: the cover's own gradient for the gradient and glass styles, the accent pair when the cover
  * has none. Solid returns null because [boxArtFrame] already draws that one.
  */
-private fun wideTileBorderBrush(
+internal fun wideTileBorderBrush(
     style: BoxArtBorderStyle,
     gradientColors: Pair<Color, Color>?,
     accent: Color,

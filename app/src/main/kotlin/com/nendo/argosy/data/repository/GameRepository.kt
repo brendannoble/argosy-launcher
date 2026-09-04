@@ -1042,6 +1042,18 @@ class GameRepository @Inject constructor(
         )
     }
 
+    fun searchRaCompatible(query: String, limit: Int): Flow<List<GameEntity>> = flow {
+        emitAll(
+            gameDao.searchRaCompatible(
+                com.nendo.argosy.util.SearchNormalizer.normalize(query),
+                hiddenOwnerId(),
+                limit
+            )
+        )
+    }
+
+    suspend fun getByRaId(raId: Long): GameEntity? = gameDao.getByRaId(raId)
+
     suspend fun getLocalGamesNeedingGradients(): List<com.nendo.argosy.data.local.dao.GradientExtractionCandidate> =
         gameDao.getLocalGamesNeedingGradients(hiddenOwnerId())
 

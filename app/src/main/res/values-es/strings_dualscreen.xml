@@ -292,9 +292,24 @@
     <string name="dual_tile_feature_continue_empty">Aún no has jugado nada</string>
     <string name="dual_tile_feature_ra_signed_out">Inicia sesión para ver tus logros</string>
     <string name="dual_tile_feature_ra_no_unlocks">Aún sin logros</string>
-    <string name="dual_tile_feature_ra_latest">Último: %1$s</string>
-    <string name="dual_tile_stat_points">puntos</string>
-    <string name="dual_tile_stat_unlocks">logros</string>
+    <string name="dual_tile_ra_latest_heading">Último</string>
+    <string name="dual_tile_ra_next_heading">Siguiente</string>
+    <string name="dual_tile_ra_mastered">Maestría</string>
+    <string name="dual_tile_ra_locked">Aún no desbloqueado</string>
+    <plurals name="dual_tile_ra_points">
+        <item quantity="one">%d punto</item>
+        <item quantity="many">%d puntos</item>
+        <item quantity="other">%d puntos</item>
+    </plurals>
+    <plurals name="dual_tile_ra_unlocks">
+        <item quantity="one">%d logro</item>
+        <item quantity="many">%d logros</item>
+        <item quantity="other">%d logros</item>
+    </plurals>
+    <string name="dual_tile_ra_unlock_meta">%1$s, %2$s</string>
+    <string name="dual_tile_ra_account_tally">%1$s, %2$s</string>
+    <string name="dual_tile_ra_progress">%1$d/%2$d</string>
+    <string name="dual_tile_ra_game_progress">%1$s %2$d/%3$d</string>
 
     <plurals name="dual_tile_picker_collection_game_count">
         <item quantity="one">%d juego</item>

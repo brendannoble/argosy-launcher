@@ -314,13 +314,18 @@
     <string name="ui_media_tile_error_series_not_synced">此影集尚未同步任何集數</string>
 
     <string name="ui_tile_picker_title">加入網格</string>
+    <string name="ui_tile_picker_title_track_game">追蹤一款遊戲</string>
     <string name="ui_tile_picker_subtitle_matching">符合「%1$s」</string>
     <string name="ui_tile_picker_empty_games">沒有已安裝的遊戲可以加入</string>
     <string name="ui_tile_picker_empty_collections">尚無合輯</string>
     <string name="ui_tile_picker_empty_apps">找不到應用程式</string>
     <string name="ui_tile_picker_empty_media">沒有可加入的作品</string>
     <string name="ui_tile_picker_empty_features">沒有可用的小工具</string>
+    <string name="ui_tile_picker_empty_ra_games">RetroAchievements 未識別任何遊戲</string>
     <string name="ui_feature_setup_title">隨機遊戲</string>
+    <string name="ui_feature_setup_step_mode">這個圖塊要如何運作？</string>
+    <string name="ui_feature_setup_mode_account">帳號總覽</string>
+    <string name="ui_feature_setup_mode_track">追蹤一款遊戲</string>
     <string name="ui_feature_setup_step_filters">可從哪些遊戲中選擇</string>
     <string name="ui_feature_setup_step_platforms">平台</string>
     <string name="ui_feature_setup_step_genres">類型</string>
@@ -362,6 +367,14 @@
     <string name="ui_page_chooser_music_soundtracks_header">您的原聲帶</string>
 
     <string name="ui_custom_grid_add_page">新增頁面</string>
+    <string name="ui_custom_grid_edit_move">移動</string>
+    <string name="ui_custom_grid_edit_resize">調整大小</string>
+    <string name="ui_custom_grid_confirm_play">遊玩</string>
+    <string name="ui_custom_grid_confirm_open">開啟</string>
+    <string name="ui_custom_grid_confirm_add">新增</string>
+    <string name="ui_custom_grid_confirm_browse">瀏覽</string>
+    <string name="ui_custom_grid_confirm_sign_in">登入</string>
+    <string name="ui_custom_grid_confirm_library">遊戲庫</string>
 
     <string name="ui_friend_options_join">加入</string>
     <string name="ui_friend_options_view_profile">檢視個人檔案</string>

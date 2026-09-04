@@ -286,9 +286,22 @@
     <string name="dual_tile_feature_continue_empty">Noch nichts gespielt</string>
     <string name="dual_tile_feature_ra_signed_out">Anmelden, um deine Freischaltungen zu sehen</string>
     <string name="dual_tile_feature_ra_no_unlocks">Noch keine Freischaltungen</string>
-    <string name="dual_tile_feature_ra_latest">Zuletzt: %1$s</string>
-    <string name="dual_tile_stat_points">Punkte</string>
-    <string name="dual_tile_stat_unlocks">Freischaltungen</string>
+    <string name="dual_tile_ra_latest_heading">Zuletzt</string>
+    <string name="dual_tile_ra_next_heading">Nächste</string>
+    <string name="dual_tile_ra_mastered">Gemeistert</string>
+    <string name="dual_tile_ra_locked">Noch nicht freigeschaltet</string>
+    <plurals name="dual_tile_ra_points">
+        <item quantity="one">%d Punkt</item>
+        <item quantity="other">%d Punkte</item>
+    </plurals>
+    <plurals name="dual_tile_ra_unlocks">
+        <item quantity="one">%d Freischaltung</item>
+        <item quantity="other">%d Freischaltungen</item>
+    </plurals>
+    <string name="dual_tile_ra_unlock_meta">%1$s, %2$s</string>
+    <string name="dual_tile_ra_account_tally">%1$s, %2$s</string>
+    <string name="dual_tile_ra_progress">%1$d/%2$d</string>
+    <string name="dual_tile_ra_game_progress">%1$s %2$d/%3$d</string>
 
     <plurals name="dual_tile_picker_collection_game_count">
         <item quantity="one">%d Spiel</item>
