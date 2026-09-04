@@ -244,6 +244,10 @@
     <string name="dual_filter_category_source">Source</string>
     <string name="dual_filter_category_genre">Genre</string>
     <string name="dual_filter_category_players">Joueurs</string>
+    <string name="dual_filter_players_one">1</string>
+    <string name="dual_filter_players_two">2</string>
+    <string name="dual_filter_players_three">3</string>
+    <string name="dual_filter_players_four_plus">4+</string>
     <string name="dual_filter_category_franchise">Franchise</string>
 
     <string name="dual_filter_search_placeholder">Rechercher des jeux...</string>
@@ -260,6 +264,16 @@
     <string name="dual_library_platform_filter_all">Toutes</string>
     <string name="dual_library_grid_platform_fallback">Tout</string>
     <string name="dual_library_grid_header">%1$s (%2$d)</string>
+    <string name="dual_library_grid_active_filters_label">Filtres :</string>
+    <string name="dual_library_grid_empty_title">Aucun jeu pour l\'instant</string>
+    <string name="dual_library_grid_empty_body">Synchronisez votre bibliothèque depuis Rom Manager dans les paramètres</string>
+    <string name="dual_library_grid_empty_filtered_body">Filtré par %1$s</string>
+    <string name="dual_library_grid_empty_filtered_hint">Modifier les filtres</string>
+    <plurals name="dual_library_grid_filter_count">
+        <item quantity="one">%d filtre</item>
+        <item quantity="many">%d filtres</item>
+        <item quantity="other">%d filtres</item>
+    </plurals>
     <string name="dual_home_carousel_header">%1$s (%2$d)</string>
 
     <!-- ===== Curated grid tiles on the companion screen ===== -->

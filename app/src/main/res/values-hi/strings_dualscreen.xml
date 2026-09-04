@@ -239,6 +239,10 @@
     <string name="dual_filter_category_source">सोर्स</string>
     <string name="dual_filter_category_genre">जॉनर</string>
     <string name="dual_filter_category_players">प्लेयर</string>
+    <string name="dual_filter_players_one">1</string>
+    <string name="dual_filter_players_two">2</string>
+    <string name="dual_filter_players_three">3</string>
+    <string name="dual_filter_players_four_plus">4+</string>
     <string name="dual_filter_category_franchise">फ्रेंचाइज़</string>
 
     <string name="dual_filter_search_placeholder">गेम खोजें...</string>
@@ -255,6 +259,15 @@
     <string name="dual_library_platform_filter_all">सभी</string>
     <string name="dual_library_grid_platform_fallback">सभी</string>
     <string name="dual_library_grid_header">%1$s (%2$d)</string>
+    <string name="dual_library_grid_active_filters_label">फ़िल्टर:</string>
+    <string name="dual_library_grid_empty_title">अभी तक कोई गेम नहीं</string>
+    <string name="dual_library_grid_empty_body">सेटिंग्स में Rom Manager से अपनी लाइब्रेरी सिंक करें</string>
+    <string name="dual_library_grid_empty_filtered_body">%1$s द्वारा फ़िल्टर किया गया</string>
+    <string name="dual_library_grid_empty_filtered_hint">फ़िल्टर बदलें</string>
+    <plurals name="dual_library_grid_filter_count">
+        <item quantity="one">%d फ़िल्टर</item>
+        <item quantity="other">%d फ़िल्टर</item>
+    </plurals>
     <string name="dual_home_carousel_header">%1$s (%2$d)</string>
 
     <!-- ===== Curated grid tiles on the companion screen ===== -->

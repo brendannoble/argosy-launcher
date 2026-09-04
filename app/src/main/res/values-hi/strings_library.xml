@@ -4,6 +4,7 @@
     <string name="library_header_all_platforms">सभी प्लेटफ़ॉर्म</string>
     <string name="library_header_previous_platform">पिछला प्लेटफ़ॉर्म</string>
     <string name="library_header_next_platform">अगला प्लेटफ़ॉर्म</string>
+    <string name="library_header_active_filters_label">फ़िल्टर:</string>
     <plurals name="library_header_game_count">
         <item quantity="one">%d गेम</item>
         <item quantity="other">%d गेम</item>
@@ -39,6 +40,8 @@
     <string name="library_empty_title_platform">कोई %1$s गेम नहीं मिला</string>
     <string name="library_empty_title_all">अभी तक कोई गेम नहीं</string>
     <string name="library_empty_body">सेटिंग्स में Rom Manager से अपनी लाइब्रेरी सिंक करें</string>
+    <string name="library_empty_filtered_body">%1$s द्वारा फ़िल्टर किया गया</string>
+    <string name="library_empty_filtered_hint">फ़िल्टर बदलें</string>
 
     <string name="library_filter_title">गेम फ़िल्टर करें</string>
     <string name="library_filter_active_summary">सक्रिय: %1$s</string>
@@ -51,6 +54,10 @@
     <string name="library_filter_category_platform">प्लेटफ़ॉर्म</string>
     <string name="library_filter_category_genre">जॉनर</string>
     <string name="library_filter_category_players">प्लेयर</string>
+    <string name="library_filter_players_one">1</string>
+    <string name="library_filter_players_two">2</string>
+    <string name="library_filter_players_three">3</string>
+    <string name="library_filter_players_four_plus">4+</string>
     <string name="library_filter_category_series">सीरीज़</string>
 
     <string name="library_filter_hint_clear">साफ़ करें</string>

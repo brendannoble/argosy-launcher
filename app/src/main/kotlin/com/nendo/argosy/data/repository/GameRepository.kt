@@ -899,8 +899,6 @@ class GameRepository @Inject constructor(
 
     suspend fun getDistinctGenres(): List<String> = gameDao.getDistinctGenres(hiddenOwnerId())
 
-    suspend fun getDistinctGameModes(): List<String> = gameDao.getDistinctGameModes(hiddenOwnerId())
-
     fun observeHiddenByPlatformList(platformId: Long): Flow<List<GameListItem>> = flow {
         emitAll(gameDao.observeHiddenByPlatformList(platformId, hiddenOwnerId()))
     }

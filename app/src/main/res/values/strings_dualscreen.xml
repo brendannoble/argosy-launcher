@@ -483,6 +483,12 @@
     <string name="dual_filter_category_genre">Genre</string>
     <!-- Tab in the filter panel. Noun, plural: how many people can play at once. -->
     <string name="dual_filter_category_players">Players</string>
+    <!-- Options on the Players tab. Each shows games that support at least this many players;
+         the last one means four or more. Numerals, kept short because they sit in a narrow row. -->
+    <string name="dual_filter_players_one">1</string>
+    <string name="dual_filter_players_two">2</string>
+    <string name="dual_filter_players_three">3</string>
+    <string name="dual_filter_players_four_plus">4+</string>
     <!-- Tab in the filter panel. Noun: the series of games a title belongs to. -->
     <string name="dual_filter_category_franchise">Franchise</string>
 
@@ -514,6 +520,26 @@
     <!-- Line above the library grid. %1$s is the platform's name, %2$d how many games are
          listed. -->
     <string name="dual_library_grid_header">%1$s (%2$d)</string>
+    <!-- Label at the start of the row under that line listing the filters currently on, one chip
+         per filter. Noun, plural, ending in a colon; the chips follow it on the same line. -->
+    <string name="dual_library_grid_active_filters_label">Filters:</string>
+    <!-- Heading in place of the library grid when it holds nothing. -->
+    <string name="dual_library_grid_empty_title">No games yet</string>
+    <!-- Body under that heading when no filter is on. "Rom Manager" is the name of the server
+         product and stays untranslated; "Settings" names Argosy's own settings screen. -->
+    <string name="dual_library_grid_empty_body">Sync your library from Rom Manager in Settings</string>
+    <!-- Body under that heading when filters emptied the grid. %1$s names the filters: one
+         filter's own value such as "Playable" or a search term in quotes, or a count such as
+         "3 filters", assembled elsewhere and not translated here. -->
+    <string name="dual_library_grid_empty_filtered_body">Filtered by %1$s</string>
+    <!-- Button hint under that body. Verb phrase, opens the filter panel. The button itself is
+         drawn as an icon beside this text, so do not name a button. -->
+    <string name="dual_library_grid_empty_filtered_hint">Change filters</string>
+    <!-- Stands in for naming every filter in that body when more than one selection is on. -->
+    <plurals name="dual_library_grid_filter_count">
+        <item quantity="one">%d filter</item>
+        <item quantity="other">%d filters</item>
+    </plurals>
     <!-- Line above the home carousel naming the row under the cursor. %1$s is the row's name,
          %2$d how many things it holds. -->
     <string name="dual_home_carousel_header">%1$s (%2$d)</string>

@@ -4,6 +4,7 @@
     <string name="library_header_all_platforms">Alle Plattformen</string>
     <string name="library_header_previous_platform">Vorherige Plattform</string>
     <string name="library_header_next_platform">Nächste Plattform</string>
+    <string name="library_header_active_filters_label">Filter:</string>
     <plurals name="library_header_game_count">
         <item quantity="one">%d Spiel</item>
         <item quantity="other">%d Spiele</item>
@@ -39,6 +40,8 @@
     <string name="library_empty_title_platform">Keine %1$s-Spiele gefunden</string>
     <string name="library_empty_title_all">Noch keine Spiele</string>
     <string name="library_empty_body">Synchronisieren Sie Ihre Bibliothek über Rom Manager in den Einstellungen</string>
+    <string name="library_empty_filtered_body">Gefiltert nach %1$s</string>
+    <string name="library_empty_filtered_hint">Filter ändern</string>
 
     <string name="library_filter_title">SPIELE FILTERN</string>
     <string name="library_filter_active_summary">Aktiv: %1$s</string>
@@ -51,6 +54,10 @@
     <string name="library_filter_category_platform">Plattform</string>
     <string name="library_filter_category_genre">Genre</string>
     <string name="library_filter_category_players">Spieler</string>
+    <string name="library_filter_players_one">1</string>
+    <string name="library_filter_players_two">2</string>
+    <string name="library_filter_players_three">3</string>
+    <string name="library_filter_players_four_plus">4+</string>
     <string name="library_filter_category_series">Reihen</string>
 
     <string name="library_filter_hint_clear">Leeren</string>

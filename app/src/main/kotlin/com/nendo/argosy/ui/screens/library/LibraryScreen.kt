@@ -95,7 +95,11 @@ import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.preferences.GridDensity
 import com.nendo.argosy.ui.components.FocusedScroll
 import com.nendo.argosy.ui.components.fastAnimateScrollToItem
+import com.nendo.argosy.ui.components.ActiveFilterChipRow
+import com.nendo.argosy.ui.components.ActiveFilterChipUi
 import com.nendo.argosy.ui.components.AddToCollectionModal
+import com.nendo.argosy.ui.components.FooterHint
+import androidx.compose.ui.text.style.TextAlign
 import com.nendo.argosy.ui.components.AlphabetSidebar
 import com.nendo.argosy.ui.components.CollectionItem
 import com.nendo.argosy.ui.components.FooterHints
@@ -360,7 +364,8 @@ fun LibraryScreen(
                     }
                     uiState.games.isEmpty() -> {
                         EmptyLibrary(
-                            platformName = uiState.currentPlatform?.name
+                            platformName = uiState.currentPlatform?.name,
+                            activeFilters = uiState.activeFilters
                         )
                     }
                     else -> {
@@ -470,10 +475,12 @@ fun LibraryScreen(
                         mediaLibraryCount = uiState.mediaCellCount
                     )
                 } else {
+                    val activeFilterChips = remember(uiState.activeFilters) { uiState.activeFilters.chips }
                     LibraryHeader(
                         platformName = uiState.currentPlatform?.displayName
                             ?: stringResource(R.string.library_header_all_platforms),
                         gameCount = uiState.games.size,
+                        activeFilterChips = activeFilterChips,
                         focusedGameTitle = uiState.focusedGame?.title,
                         onPreviousPlatform = { viewModel.previousPlatform() },
                         onNextPlatform = { viewModel.nextPlatform() }
@@ -787,6 +794,7 @@ fun LibraryScreen(
 private fun LibraryHeader(
     platformName: String,
     gameCount: Int,
+    activeFilterChips: List<ActiveFilterChipUi> = emptyList(),
     focusedGameTitle: String? = null,
     onPreviousPlatform: () -> Unit = {},
     onNextPlatform: () -> Unit = {}
@@ -891,6 +899,14 @@ private fun LibraryHeader(
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (activeFilterChips.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(Dimens.spacingXs))
+                ActiveFilterChipRow(
+                    label = stringResource(R.string.library_header_active_filters_label),
+                    chips = activeFilterChips
                 )
             }
 
@@ -1248,7 +1264,8 @@ private fun SectionDivider(
 }
 
 @Composable
-private fun EmptyLibrary(platformName: String?) {
+private fun EmptyLibrary(platformName: String?, activeFilters: ActiveFilters) {
+    val isFiltered = activeFilters.activeCount > 0
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -1265,10 +1282,25 @@ private fun EmptyLibrary(platformName: String?) {
             )
             Spacer(modifier = Modifier.height(Dimens.spacingSm))
             Text(
-                text = stringResource(R.string.library_empty_body),
+                text = if (isFiltered) {
+                    stringResource(
+                        R.string.library_empty_filtered_body,
+                        activeFilters.summary(LocalContext.current)
+                    )
+                } else {
+                    stringResource(R.string.library_empty_body)
+                },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
             )
+            if (isFiltered) {
+                Spacer(modifier = Modifier.height(Dimens.spacingMd))
+                FooterHint(
+                    button = InputButton.X,
+                    action = stringResource(R.string.library_empty_filtered_hint)
+                )
+            }
         }
     }
 }
@@ -1358,15 +1390,7 @@ private fun FilterMenuOverlay(
             ) {
                 categories.forEach { category ->
                     val isCurrent = category == uiState.currentFilterCategory
-                    val hasActiveFilters = when (category) {
-                        FilterCategory.SORT -> uiState.activeFilters.sort.option != com.nendo.argosy.data.model.SortOption.TITLE
-                        FilterCategory.SEARCH -> uiState.activeFilters.searchQuery.isNotEmpty()
-                        FilterCategory.SOURCE -> uiState.activeFilters.source != SourceFilter.ALL
-                        FilterCategory.PLATFORM -> uiState.activeFilters.platforms.isNotEmpty()
-                        FilterCategory.GENRE -> uiState.activeFilters.genres.isNotEmpty()
-                        FilterCategory.PLAYERS -> uiState.activeFilters.players.isNotEmpty()
-                        FilterCategory.SERIES -> uiState.activeFilters.series.isNotEmpty()
-                    }
+                    val hasActiveFilters = uiState.activeFilters.isActive(category)
 
                     Box(
                         modifier = Modifier
@@ -1496,6 +1520,7 @@ private fun FilterMenuOverlay(
                         val isSelected = when {
                             isMultiSelect -> option in selectedOptions
                             uiState.currentFilterCategory == FilterCategory.SORT -> index == uiState.selectedSortIndex
+                            uiState.currentFilterCategory == FilterCategory.PLAYERS -> index == uiState.selectedPlayersIndex
                             else -> index == uiState.selectedSourceIndex
                         }
                         FilterOptionItem(

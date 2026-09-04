@@ -79,7 +79,6 @@ data class HomeGameUi(
     val isNew: Boolean = false,
     val isHidden: Boolean = false,
     val sortTitle: String = "",
-    val gameModes: String? = null,
     val franchises: String? = null,
     val addedAt: Long? = null,
     val playCount: Int = 0,

@@ -202,7 +202,7 @@ data class GameListItem(
     val playTimeMinutes: Int,
     val lastPlayed: Instant?,
     val genre: String?,
-    val gameModes: String?,
+    val players: String?,
     val rating: Float?,
     val userRating: Int,
     val userDifficulty: Int,

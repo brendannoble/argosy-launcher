@@ -225,6 +225,10 @@
     <string name="dual_filter_category_source">Источник</string>
     <string name="dual_filter_category_genre">Жанр</string>
     <string name="dual_filter_category_players">Игроки</string>
+    <string name="dual_filter_players_one">1</string>
+    <string name="dual_filter_players_two">2</string>
+    <string name="dual_filter_players_three">3</string>
+    <string name="dual_filter_players_four_plus">4+</string>
     <string name="dual_filter_category_franchise">Франшиза</string>
 
     <string name="dual_filter_search_placeholder">Поиск игр...</string>
@@ -237,6 +241,17 @@
     <string name="dual_library_platform_filter_all">Все</string>
     <string name="dual_library_grid_platform_fallback">Все</string>
     <string name="dual_library_grid_header">%1$s (%2$d)</string>
+    <string name="dual_library_grid_active_filters_label">Фильтры:</string>
+    <string name="dual_library_grid_empty_title">Пока нет игр</string>
+    <string name="dual_library_grid_empty_body">Синхронизируйте библиотеку с Rom Manager в настройках</string>
+    <string name="dual_library_grid_empty_filtered_body">Фильтрация: %1$s</string>
+    <string name="dual_library_grid_empty_filtered_hint">Изменить фильтры</string>
+    <plurals name="dual_library_grid_filter_count">
+        <item quantity="one">%d фильтр</item>
+        <item quantity="few">%d фильтра</item>
+        <item quantity="many">%d фильтров</item>
+        <item quantity="other">%d фильтра</item>
+    </plurals>
     <string name="dual_home_carousel_header">%1$s (%2$d)</string>
 
     <string name="dual_tile_missing_game">Игра отсутствует</string>

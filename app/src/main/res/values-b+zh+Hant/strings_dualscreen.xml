@@ -209,6 +209,10 @@
     <string name="dual_filter_category_source">來源</string>
     <string name="dual_filter_category_genre">類型</string>
     <string name="dual_filter_category_players">玩家人數</string>
+    <string name="dual_filter_players_one">1</string>
+    <string name="dual_filter_players_two">2</string>
+    <string name="dual_filter_players_three">3</string>
+    <string name="dual_filter_players_four_plus">4+</string>
     <string name="dual_filter_category_franchise">系列作</string>
 
     <string name="dual_filter_search_placeholder">搜尋遊戲...</string>
@@ -221,6 +225,14 @@
     <string name="dual_library_platform_filter_all">全部</string>
     <string name="dual_library_grid_platform_fallback">全部</string>
     <string name="dual_library_grid_header">%1$s（%2$d）</string>
+    <string name="dual_library_grid_active_filters_label">篩選：</string>
+    <string name="dual_library_grid_empty_title">尚無遊戲</string>
+    <string name="dual_library_grid_empty_body">請在設定中從Rom Manager同步您的遊戲庫</string>
+    <string name="dual_library_grid_empty_filtered_body">篩選條件：%1$s</string>
+    <string name="dual_library_grid_empty_filtered_hint">變更篩選</string>
+    <plurals name="dual_library_grid_filter_count">
+        <item quantity="other">%d個篩選條件</item>
+    </plurals>
     <string name="dual_home_carousel_header">%1$s（%2$d）</string>
 
     <string name="dual_tile_missing_game">找不到遊戲</string>

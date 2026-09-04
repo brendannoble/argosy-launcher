@@ -71,7 +71,6 @@ suspend fun GameEntity.toHomeGameUi(
         youtubeVideoId = youtubeVideoId,
         isNew = addedAt.isAfter(newThreshold) && lastPlayed == null,
         sortTitle = sortTitle,
-        gameModes = gameModes,
         franchises = franchises,
         addedAt = addedAt.toEpochMilli(),
         playCount = playCount,
@@ -147,12 +146,12 @@ suspend fun GameListItem.toHomeGameUi(
         isNew = addedAt.isAfter(newThreshold) && lastPlayed == null,
         isHidden = isHidden,
         sortTitle = sortTitle,
-        gameModes = gameModes,
         addedAt = addedAt.toEpochMilli(),
         playCount = playCount,
         playTimeMinutes = playTimeMinutes,
         lastPlayedAt = lastPlayed?.toEpochMilli(),
-        isPlayable = downloaded
+        isPlayable = downloaded,
+        players = players
     )
 }
 

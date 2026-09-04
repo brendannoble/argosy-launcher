@@ -250,6 +250,8 @@ class SessionStateStore(context: Context) {
      * upper and lower screens on different games. Legacy index fields remain
      * populated for graceful fallback before any id-context exists; the media id
      * fields read back as empty from a context written before they existed.
+     * [playerBucket] is the stored name of the chosen player-count bucket, or null
+     * when none is chosen.
      */
     data class CarouselNavContext(
         val hasContext: Boolean,
@@ -267,7 +269,7 @@ class SessionStateStore(context: Context) {
         val sortOption: String,
         val sortDescending: Boolean,
         val genres: Set<String>,
-        val players: Set<String>,
+        val playerBucket: String?,
         val franchises: Set<String>
     )
 
@@ -288,7 +290,7 @@ class SessionStateStore(context: Context) {
             .putString(KEY_CAROUSEL_SORT_OPTION, ctx.sortOption)
             .putBoolean(KEY_CAROUSEL_SORT_DESC, ctx.sortDescending)
             .putStringSet(KEY_CAROUSEL_GENRES, ctx.genres)
-            .putStringSet(KEY_CAROUSEL_PLAYERS, ctx.players)
+            .putString(KEY_CAROUSEL_PLAYER_BUCKET, ctx.playerBucket)
             .putStringSet(KEY_CAROUSEL_FRANCHISES, ctx.franchises)
             .apply()
     }
@@ -310,7 +312,7 @@ class SessionStateStore(context: Context) {
             sortOption = prefs.getString(KEY_CAROUSEL_SORT_OPTION, "") ?: "",
             sortDescending = prefs.getBoolean(KEY_CAROUSEL_SORT_DESC, false),
             genres = prefs.getStringSet(KEY_CAROUSEL_GENRES, emptySet()) ?: emptySet(),
-            players = prefs.getStringSet(KEY_CAROUSEL_PLAYERS, emptySet()) ?: emptySet(),
+            playerBucket = prefs.getString(KEY_CAROUSEL_PLAYER_BUCKET, null),
             franchises = prefs.getStringSet(KEY_CAROUSEL_FRANCHISES, emptySet()) ?: emptySet()
         )
 
@@ -419,7 +421,7 @@ class SessionStateStore(context: Context) {
         private const val KEY_CAROUSEL_SORT_OPTION = "carousel_sort_option"
         private const val KEY_CAROUSEL_SORT_DESC = "carousel_sort_desc"
         private const val KEY_CAROUSEL_GENRES = "carousel_filter_genres"
-        private const val KEY_CAROUSEL_PLAYERS = "carousel_filter_players"
+        private const val KEY_CAROUSEL_PLAYER_BUCKET = "carousel_filter_player_bucket"
         private const val KEY_CAROUSEL_FRANCHISES = "carousel_filter_franchises"
         private const val KEY_SESSION_START_TIME = "session_start_time"
         private const val KEY_EMULATOR_PACKAGE = "emulator_package"

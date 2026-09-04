@@ -209,6 +209,10 @@
     <string name="dual_filter_category_source">来源</string>
     <string name="dual_filter_category_genre">类型</string>
     <string name="dual_filter_category_players">玩家人数</string>
+    <string name="dual_filter_players_one">1</string>
+    <string name="dual_filter_players_two">2</string>
+    <string name="dual_filter_players_three">3</string>
+    <string name="dual_filter_players_four_plus">4+</string>
     <string name="dual_filter_category_franchise">系列</string>
 
     <string name="dual_filter_search_placeholder">搜索游戏...</string>
@@ -221,6 +225,14 @@
     <string name="dual_library_platform_filter_all">全部</string>
     <string name="dual_library_grid_platform_fallback">全部</string>
     <string name="dual_library_grid_header">%1$s（%2$d）</string>
+    <string name="dual_library_grid_active_filters_label">筛选：</string>
+    <string name="dual_library_grid_empty_title">还没有游戏</string>
+    <string name="dual_library_grid_empty_body">在设置中从Rom Manager同步你的游戏库</string>
+    <string name="dual_library_grid_empty_filtered_body">筛选条件：%1$s</string>
+    <string name="dual_library_grid_empty_filtered_hint">更改筛选</string>
+    <plurals name="dual_library_grid_filter_count">
+        <item quantity="other">%d个筛选条件</item>
+    </plurals>
     <string name="dual_home_carousel_header">%1$s（%2$d）</string>
 
     <string name="dual_tile_missing_game">缺失的游戏</string>

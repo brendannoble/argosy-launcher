@@ -25,6 +25,8 @@ import com.nendo.argosy.data.local.entity.PlatformEntity
 import com.nendo.argosy.data.platform.LocalPlatformIds
 import com.nendo.argosy.domain.model.HomeSectionKind
 import com.nendo.argosy.domain.model.PinnedCollection
+import com.nendo.argosy.domain.model.PlayerCount
+import com.nendo.argosy.domain.model.PlayerCountBucket
 import com.nendo.argosy.domain.usecase.collection.GetGamesForPinnedCollectionUseCase
 import com.nendo.argosy.domain.usecase.collection.GetPinnedCollectionsUseCase
 import com.nendo.argosy.data.local.entity.GameEntity
@@ -57,6 +59,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
+import com.nendo.argosy.ui.common.dualLabelRes
 import com.nendo.argosy.ui.common.labelRes
 import com.nendo.argosy.ui.screens.library.SourceFilter
 import kotlinx.coroutines.flow.first
@@ -229,7 +232,7 @@ enum class DualFilterCategory(@StringRes val labelRes: Int) {
 /**
  * A row in the dual-screen filter list. [label] is what the row reads; [value] is what
  * selecting it stores. They coincide for genres, where the text is library data, and differ
- * for the source rows, which store an enum name.
+ * for the source and players rows, which store an enum name.
  */
 data class DualFilterOption(
     val label: String,
@@ -237,15 +240,43 @@ data class DualFilterOption(
     val value: String = label
 )
 
+/**
+ * One filter tab that is on: the tab, the label or text naming its value, and how many
+ * selections it holds. [DualActiveFilters.entries] is the only reading of "which filters are
+ * active" on the companion; the platform stepper is not a filter and never appears here.
+ */
+data class DualActiveFilterEntry(
+    val category: DualFilterCategory,
+    @StringRes val labelRes: Int? = null,
+    val text: String? = null,
+    val count: Int = 1
+)
+
 data class DualActiveFilters(
     val source: String = "ALL",
     val genres: Set<String> = emptySet(),
-    val players: Set<String> = emptySet(),
+    val players: PlayerCountBucket? = null,
     val franchises: Set<String> = emptySet(),
     val searchQuery: String = "",
     val platformId: Long? = null,
     val sort: ActiveSort = ActiveSort()
-)
+) {
+    val entries: List<DualActiveFilterEntry>
+        get() = listOfNotNull(
+            sort.option.takeIf { it != SortOption.TITLE }
+                ?.let { DualActiveFilterEntry(DualFilterCategory.SORT, labelRes = it.labelRes) },
+            searchQuery.takeIf { it.isNotEmpty() }
+                ?.let { DualActiveFilterEntry(DualFilterCategory.SEARCH, text = it) },
+            SourceFilter.entries.firstOrNull { it != SourceFilter.ALL && it.name == source }
+                ?.let { DualActiveFilterEntry(DualFilterCategory.SOURCE, labelRes = it.labelRes) },
+            multiSelectEntry(DualFilterCategory.GENRE, genres),
+            players?.let { DualActiveFilterEntry(DualFilterCategory.PLAYERS, labelRes = it.dualLabelRes) },
+            multiSelectEntry(DualFilterCategory.FRANCHISE, franchises)
+        )
+
+    private fun multiSelectEntry(category: DualFilterCategory, values: Set<String>): DualActiveFilterEntry? =
+        values.firstOrNull()?.let { DualActiveFilterEntry(category, text = it, count = values.size) }
+}
 
 sealed interface DualLibraryGridItem {
     data class Header(val label: String) : DualLibraryGridItem
@@ -1875,7 +1906,7 @@ class DualHomeViewModel(
         DualActiveFilters(
             source = filterSource,
             genres = genres,
-            players = players,
+            players = PlayerCountBucket.fromName(playerBucket),
             franchises = franchises,
             searchQuery = filterSearch,
             platformId = filterPlatformId.takeIf { it > 0 },
@@ -2038,7 +2069,7 @@ class DualHomeViewModel(
             sortOption = filters.sort.option.name,
             sortDescending = filters.sort.descending,
             genres = filters.genres,
-            players = filters.players,
+            playerBucket = filters.players?.name,
             franchises = filters.franchises
         )
     }
@@ -3147,10 +3178,8 @@ class DualHomeViewModel(
                 state.activeFilters.copy(genres = updated)
             }
             DualFilterCategory.PLAYERS -> {
-                val updated = if (state.activeFilters.players.contains(label))
-                    state.activeFilters.players - label
-                else
-                    state.activeFilters.players + label
+                val bucket = PlayerCountBucket.fromName(option.value) ?: return
+                val updated = if (bucket == state.activeFilters.players) null else bucket
                 state.activeFilters.copy(players = updated)
             }
             DualFilterCategory.FRANCHISE -> {
@@ -3178,7 +3207,7 @@ class DualHomeViewModel(
             DualFilterCategory.SORT -> state.activeFilters.copy(sort = ActiveSort())
             DualFilterCategory.SOURCE -> state.activeFilters.copy(source = "ALL")
             DualFilterCategory.GENRE -> state.activeFilters.copy(genres = emptySet())
-            DualFilterCategory.PLAYERS -> state.activeFilters.copy(players = emptySet())
+            DualFilterCategory.PLAYERS -> state.activeFilters.copy(players = null)
             DualFilterCategory.FRANCHISE -> state.activeFilters.copy(franchises = emptySet())
             DualFilterCategory.SEARCH -> state.activeFilters.copy(searchQuery = "")
         }
@@ -3394,10 +3423,7 @@ class DualHomeViewModel(
                 game.title.contains(filters.searchQuery, ignoreCase = true)
             val matchesGenre = filters.genres.isEmpty() ||
                 filters.genres.contains(game.genre)
-            val matchesPlayers = filters.players.isEmpty() ||
-                game.gameModes?.split(",")
-                    ?.map { it.trim() }
-                    ?.any { it in filters.players } == true
+            val matchesPlayers = filters.players?.admits(PlayerCount.parse(game.players)) ?: true
             val matchesFranchise = filters.franchises.isEmpty() ||
                 game.franchises?.split(",")
                     ?.map { it.trim() }
@@ -3437,15 +3463,12 @@ class DualHomeViewModel(
                     .sorted()
                 genres.map { DualFilterOption(it, filters.genres.contains(it)) }
             }
-            DualFilterCategory.PLAYERS -> {
-                val players = allLibraryGames
-                    .mapNotNull { it.gameModes }
-                    .flatMap { it.split(",") }
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() }
-                    .distinct()
-                    .sorted()
-                players.map { DualFilterOption(it, filters.players.contains(it)) }
+            DualFilterCategory.PLAYERS -> PlayerCountBucket.entries.map { bucket ->
+                DualFilterOption(
+                    label = context.getString(bucket.dualLabelRes),
+                    isSelected = filters.players == bucket,
+                    value = bucket.name
+                )
             }
             DualFilterCategory.FRANCHISE -> {
                 val franchises = allLibraryGames

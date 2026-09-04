@@ -220,6 +220,9 @@ fun DualHomeLowerContent(
                         onSearchQueryChange = onSearchQueryChange
                     )
                 } else {
+                    val activeFilterChips = androidx.compose.runtime.remember(uiState.activeFilters) {
+                        uiState.activeFilters.chips
+                    }
                     DualHomeLibraryGrid(
                         gridItems = uiState.libraryGridItems,
                         focusedIndex = uiState.libraryFocusedIndex,
@@ -227,6 +230,8 @@ fun DualHomeLowerContent(
                         sectionLabels = uiState.sectionLabels,
                         currentSectionLabel = uiState.currentSectionLabel,
                         platformLabel = uiState.libraryPlatformLabel,
+                        activeFilterChips = activeFilterChips,
+                        showEmptyState = !uiState.isLoading,
                         showSectionOverlay = uiState.showSectionOverlay,
                         overlaySectionLabel = uiState.overlaySectionLabel,
                         repairedCoverPaths = uiState.repairedCoverPaths,

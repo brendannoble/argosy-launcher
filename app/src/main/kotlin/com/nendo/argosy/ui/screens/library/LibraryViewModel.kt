@@ -37,6 +37,8 @@ import com.nendo.argosy.data.preferences.GridDensity
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.remote.romm.RomMResult
+import com.nendo.argosy.domain.model.PlayerCount
+import com.nendo.argosy.domain.model.PlayerCountBucket
 import com.nendo.argosy.domain.usecase.cache.RepairImageCacheUseCase
 import com.nendo.argosy.domain.usecase.download.DownloadResult
 import com.nendo.argosy.domain.usecase.sync.SyncPlatformUseCase
@@ -44,6 +46,7 @@ import android.content.Context
 import com.nendo.argosy.ui.common.GridDirection
 import com.nendo.argosy.ui.common.GridFocusNavigator
 import com.nendo.argosy.ui.common.labelRes
+import com.nendo.argosy.ui.components.activeFilterSummary
 import com.nendo.argosy.ui.common.toLibraryGameUi
 import com.nendo.argosy.ui.common.toNotificationText
 import com.nendo.argosy.ui.input.InputHandler
@@ -118,50 +121,57 @@ enum class SourceFilter(@StringRes val labelRes: Int) {
     HIDDEN(R.string.source_filter_hidden)
 }
 
+/**
+ * One filter category that is on: the tab it belongs to, the label or text that names its value,
+ * and how many selections it holds. Every "which filters are active" question reads
+ * [ActiveFilters.entries]; nothing else re-derives it from the fields.
+ */
+data class ActiveFilterEntry(
+    val category: FilterCategory,
+    @StringRes val labelRes: Int? = null,
+    val text: String? = null,
+    val count: Int = 1
+)
+
 data class ActiveFilters(
     val searchQuery: String = "",
     val source: SourceFilter = SourceFilter.ALL,
     val platforms: Set<String> = emptySet(),
     val genres: Set<String> = emptySet(),
-    val players: Set<String> = emptySet(),
+    val players: PlayerCountBucket? = null,
     val series: Set<String> = emptySet(),
     val sort: ActiveSort = ActiveSort()
 ) {
-    val activeCount: Int
-        get() = listOf(
-            if (searchQuery.isNotEmpty()) 1 else 0,
-            if (source != SourceFilter.ALL) 1 else 0,
-            platforms.size,
-            genres.size,
-            players.size,
-            series.size,
-            if (sort.option != SortOption.TITLE) 1 else 0
-        ).sum()
-
-    fun summary(context: Context): String = when {
-        activeCount == 0 -> context.getString(R.string.source_filter_all)
-        activeCount == 1 -> when {
-            searchQuery.isNotEmpty() -> "\"$searchQuery\""
-            source != SourceFilter.ALL -> context.getString(source.labelRes)
-            sort.option != SortOption.TITLE -> context.getString(sort.option.labelRes)
-            platforms.isNotEmpty() -> platforms.first()
-            genres.isNotEmpty() -> genres.first()
-            players.isNotEmpty() -> players.first()
-            series.isNotEmpty() -> series.first()
-            else -> context.getString(R.string.source_filter_all)
-        }
-        else -> context.resources.getQuantityString(
-            R.plurals.library_filter_active_count,
-            activeCount,
-            activeCount
+    val entries: List<ActiveFilterEntry>
+        get() = listOfNotNull(
+            sort.option.takeIf { it != SortOption.TITLE }
+                ?.let { ActiveFilterEntry(FilterCategory.SORT, labelRes = it.labelRes) },
+            searchQuery.takeIf { it.isNotEmpty() }
+                ?.let { ActiveFilterEntry(FilterCategory.SEARCH, text = it) },
+            source.takeIf { it != SourceFilter.ALL }
+                ?.let { ActiveFilterEntry(FilterCategory.SOURCE, labelRes = it.labelRes) },
+            multiSelectEntry(FilterCategory.PLATFORM, platforms),
+            multiSelectEntry(FilterCategory.GENRE, genres),
+            players?.let { ActiveFilterEntry(FilterCategory.PLAYERS, labelRes = it.labelRes) },
+            multiSelectEntry(FilterCategory.SERIES, series)
         )
-    }
+
+    val activeCount: Int
+        get() = entries.sumOf { it.count }
+
+    fun isActive(category: FilterCategory): Boolean = entries.any { it.category == category }
+
+    fun summary(context: Context): String =
+        chips.activeFilterSummary(context, R.plurals.library_filter_active_count)
+            ?: context.getString(R.string.source_filter_all)
+
+    private fun multiSelectEntry(category: FilterCategory, values: Set<String>): ActiveFilterEntry? =
+        values.firstOrNull()?.let { ActiveFilterEntry(category, text = it, count = values.size) }
 }
 
 data class FilterOptions(
     val platforms: List<String> = emptyList(),
     val genres: List<String> = emptyList(),
-    val players: List<String> = emptyList(),
     val series: List<String> = emptyList()
 )
 
@@ -338,18 +348,26 @@ data class LibraryUiState(
             }
             FilterCategory.PLATFORM -> filterOptions.platforms
             FilterCategory.GENRE -> filterOptions.genres
-            FilterCategory.PLAYERS -> filterOptions.players
+            FilterCategory.PLAYERS -> PlayerCountBucket.entries.map { context.getString(it.labelRes) }
             FilterCategory.SERIES -> filterOptions.series
         }
 
     val isCurrentCategoryMultiSelect: Boolean
-        get() = currentFilterCategory !in listOf(FilterCategory.SORT, FilterCategory.SOURCE, FilterCategory.SEARCH)
+        get() = currentFilterCategory !in listOf(
+            FilterCategory.SORT,
+            FilterCategory.SOURCE,
+            FilterCategory.SEARCH,
+            FilterCategory.PLAYERS
+        )
 
     val selectedSourceIndex: Int
         get() = activeFilters.source.ordinal
 
     val selectedSortIndex: Int
         get() = activeFilters.sort.option.ordinal
+
+    val selectedPlayersIndex: Int
+        get() = activeFilters.players?.ordinal ?: -1
 
     fun selectedOptionsInCurrentCategory(context: Context): Set<String> =
         when (currentFilterCategory) {
@@ -362,19 +380,8 @@ data class LibraryUiState(
             FilterCategory.SOURCE -> emptySet()
             FilterCategory.PLATFORM -> activeFilters.platforms
             FilterCategory.GENRE -> activeFilters.genres
-            FilterCategory.PLAYERS -> activeFilters.players
+            FilterCategory.PLAYERS -> emptySet()
             FilterCategory.SERIES -> activeFilters.series
-        }
-
-    val currentCategoryActiveCount: Int
-        get() = when (currentFilterCategory) {
-            FilterCategory.SORT -> if (activeFilters.sort.option != SortOption.TITLE) 1 else 0
-            FilterCategory.SEARCH -> if (activeFilters.searchQuery.isNotEmpty()) 1 else 0
-            FilterCategory.SOURCE -> if (activeFilters.source != SourceFilter.ALL) 1 else 0
-            FilterCategory.PLATFORM -> activeFilters.platforms.size
-            FilterCategory.GENRE -> activeFilters.genres.size
-            FilterCategory.PLAYERS -> activeFilters.players.size
-            FilterCategory.SERIES -> activeFilters.series.size
         }
 
     val availableCategories: List<FilterCategory>
@@ -385,7 +392,7 @@ data class LibraryUiState(
                 FilterCategory.SOURCE -> true
                 FilterCategory.PLATFORM -> filterOptions.platforms.isNotEmpty()
                 FilterCategory.GENRE -> filterOptions.genres.isNotEmpty()
-                FilterCategory.PLAYERS -> filterOptions.players.isNotEmpty()
+                FilterCategory.PLAYERS -> true
                 FilterCategory.SERIES -> filterOptions.series.isNotEmpty()
             }
         }
@@ -874,22 +881,14 @@ class LibraryViewModel @Inject constructor(
                 .distinct()
                 .sorted()
 
-            val players = gameRepository.getDistinctGameModes()
-                .flatMap { it.split(",") }
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .sorted()
-
             val series = collectionRepository.getNamesWithGamesByType(CollectionType.SERIES)
 
-            Log.d(TAG, "loadFilterOptions: genres=${genres.size}, players=${players.size}, series=${series.size}")
+            Log.d(TAG, "loadFilterOptions: genres=${genres.size}, series=${series.size}")
 
             _uiState.update { state ->
                 state.copy(
                     filterOptions = state.filterOptions.copy(
                         genres = genres,
-                        players = players,
                         series = series
                     )
                 )
@@ -952,8 +951,7 @@ class LibraryViewModel @Inject constructor(
                             cachedPlatformDisplayNames[game.platformId] in filters.platforms
                         val matchesGenre = filters.genres.isEmpty() ||
                             filters.genres.contains(game.genre)
-                        val matchesPlayers = filters.players.isEmpty() ||
-                            game.gameModes?.split(",")?.map { it.trim() }?.any { it in filters.players } == true
+                        val matchesPlayers = filters.players?.admits(PlayerCount.parse(game.players)) ?: true
                         val matchesSeries = seriesIds == null || game.id in seriesIds
                         matchesSearch && matchesPlatform && matchesGenre && matchesPlayers && matchesSeries
                     }
@@ -1454,10 +1452,9 @@ class LibraryViewModel @Inject constructor(
                 state.activeFilters.copy(genres = newGenres)
             }
             FilterCategory.PLAYERS -> {
-                val player = options.getOrNull(optionIndex) ?: return
-                val currentPlayers = state.activeFilters.players
-                val newPlayers = if (player in currentPlayers) currentPlayers - player else currentPlayers + player
-                state.activeFilters.copy(players = newPlayers)
+                val bucket = PlayerCountBucket.entries.getOrNull(optionIndex) ?: return
+                val updated = if (bucket == state.activeFilters.players) null else bucket
+                state.activeFilters.copy(players = updated)
             }
             FilterCategory.SERIES -> {
                 val series = options.getOrNull(optionIndex) ?: return
@@ -1481,7 +1478,7 @@ class LibraryViewModel @Inject constructor(
             FilterCategory.SOURCE -> state.activeFilters.copy(source = SourceFilter.ALL)
             FilterCategory.PLATFORM -> state.activeFilters.copy(platforms = emptySet())
             FilterCategory.GENRE -> state.activeFilters.copy(genres = emptySet())
-            FilterCategory.PLAYERS -> state.activeFilters.copy(players = emptySet())
+            FilterCategory.PLAYERS -> state.activeFilters.copy(players = null)
             FilterCategory.SERIES -> state.activeFilters.copy(series = emptySet())
         }
 

@@ -4,6 +4,7 @@
     <string name="library_header_all_platforms">Все платформы</string>
     <string name="library_header_previous_platform">Предыдущая платформа</string>
     <string name="library_header_next_platform">Следующая платформа</string>
+    <string name="library_header_active_filters_label">Фильтры:</string>
     <plurals name="library_header_game_count">
         <item quantity="one">%d игра</item>
         <item quantity="few">%d игры</item>
@@ -51,6 +52,8 @@
     <string name="library_empty_title_platform">Игры %1$s не найдены</string>
     <string name="library_empty_title_all">Пока нет игр</string>
     <string name="library_empty_body">Синхронизируйте библиотеку с Rom Manager в настройках</string>
+    <string name="library_empty_filtered_body">Фильтрация: %1$s</string>
+    <string name="library_empty_filtered_hint">Изменить фильтры</string>
 
     <string name="library_filter_title">ФИЛЬТР ИГР</string>
     <string name="library_filter_active_summary">Активно: %1$s</string>
@@ -63,6 +66,10 @@
     <string name="library_filter_category_platform">Платформа</string>
     <string name="library_filter_category_genre">Жанр</string>
     <string name="library_filter_category_players">Игроки</string>
+    <string name="library_filter_players_one">1</string>
+    <string name="library_filter_players_two">2</string>
+    <string name="library_filter_players_three">3</string>
+    <string name="library_filter_players_four_plus">4+</string>
     <string name="library_filter_category_series">Серии</string>
 
     <string name="library_filter_hint_clear">Очистить</string>

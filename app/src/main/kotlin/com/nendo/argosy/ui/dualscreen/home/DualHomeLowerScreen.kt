@@ -69,8 +69,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.nendo.argosy.R
 import androidx.compose.ui.unit.dp
@@ -80,7 +82,12 @@ import com.nendo.argosy.hardware.CompanionAppBar
 import com.nendo.argosy.ui.common.backgroundBlurDp
 import com.nendo.argosy.ui.common.rememberCoverAspectRatio
 import com.nendo.argosy.ui.common.rememberFileImageModel
+import com.nendo.argosy.ui.components.ActiveFilterChipRow
+import com.nendo.argosy.ui.components.ActiveFilterChipUi
 import com.nendo.argosy.ui.components.AlphabetSidebar
+import com.nendo.argosy.ui.components.FooterHint
+import com.nendo.argosy.ui.components.InputButton
+import com.nendo.argosy.ui.components.activeFilterSummary
 import com.nendo.argosy.ui.components.CarouselAnchor
 import com.nendo.argosy.ui.components.CarouselItem
 import com.nendo.argosy.ui.components.CarouselMetrics
@@ -661,6 +668,8 @@ fun DualHomeLibraryGrid(
     sectionLabels: List<String>,
     currentSectionLabel: String,
     platformLabel: String = stringResource(R.string.dual_library_grid_platform_fallback),
+    activeFilterChips: List<ActiveFilterChipUi> = emptyList(),
+    showEmptyState: Boolean = false,
     showSectionOverlay: Boolean = false,
     overlaySectionLabel: String = "",
     repairedCoverPaths: Map<Long, String> = emptyMap(),
@@ -716,8 +725,26 @@ fun DualHomeLibraryGrid(
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
 
+            if (activeFilterChips.isNotEmpty()) {
+                ActiveFilterChipRow(
+                    label = stringResource(R.string.dual_library_grid_active_filters_label),
+                    chips = activeFilterChips,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Dimens.spacingLg)
+                        .padding(bottom = Dimens.spacingXs)
+                )
+            }
+
             Row(modifier = Modifier.weight(1f)) {
-                if (nativeAspect) {
+                if (showEmptyState && gridItems.isEmpty()) {
+                    DualLibraryGridEmpty(
+                        activeFilterChips = activeFilterChips,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    )
+                } else if (nativeAspect) {
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Fixed(columns),
                         state = staggeredState,
@@ -838,6 +865,48 @@ fun DualHomeLibraryGrid(
             letter = overlaySectionLabel,
             visible = showSectionOverlay
         )
+    }
+}
+
+@Composable
+private fun DualLibraryGridEmpty(
+    activeFilterChips: List<ActiveFilterChipUi>,
+    modifier: Modifier = Modifier
+) {
+    val theme = LocalArgosyTheme.current
+    val summary = activeFilterChips.activeFilterSummary(
+        LocalContext.current,
+        R.plurals.dual_library_grid_filter_count
+    )
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = stringResource(R.string.dual_library_grid_empty_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = theme.textPrimary
+            )
+            Spacer(modifier = Modifier.height(Dimens.spacingSm))
+            Text(
+                text = if (summary != null) {
+                    stringResource(R.string.dual_library_grid_empty_filtered_body, summary)
+                } else {
+                    stringResource(R.string.dual_library_grid_empty_body)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = theme.textDim,
+                textAlign = TextAlign.Center
+            )
+            if (summary != null) {
+                Spacer(modifier = Modifier.height(Dimens.spacingMd))
+                FooterHint(
+                    button = InputButton.Y,
+                    action = stringResource(R.string.dual_library_grid_empty_filtered_hint)
+                )
+            }
+        }
     }
 }
 
