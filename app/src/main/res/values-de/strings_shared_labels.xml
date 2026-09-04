@@ -91,16 +91,16 @@
     <!-- ================= Custom home-grid tile menu actions ================= -->
 
     <string name="custom_tile_menu_action_arrange">Verschieben oder Größe ändern</string>
-    <string name="custom_tile_menu_action_recurate">Ändern, was gespielt wird</string>
+    <string name="custom_tile_menu_action_recurate">Playlist</string>
     <string name="custom_tile_menu_action_fit_cover">Cover in Zelle einpassen</string>
     <string name="custom_tile_menu_action_crop_cover">Cover zuschneiden, um die Zelle zu füllen</string>
-    <string name="custom_tile_menu_action_edit_filters">Spielauswahl ändern</string>
-    <string name="custom_tile_menu_action_edit_tile">Ändern, was angezeigt wird</string>
+    <string name="custom_tile_menu_action_edit_filters">Filter</string>
+    <string name="custom_tile_menu_action_edit_tile">Konto oder Spiel</string>
     <string name="custom_tile_menu_action_browse_achievements">Erfolge durchsuchen</string>
     <string name="custom_tile_menu_action_remove">Kachel entfernen</string>
-    <string name="custom_tile_menu_action_start_game_queue">Diese Sammlung der Reihe nach spielen</string>
-    <string name="custom_tile_menu_action_set_focus_game">Wählen, was als Nächstes gespielt wird</string>
-    <string name="custom_tile_menu_action_advance_focus_game">Dieses Spiel beenden</string>
+    <string name="custom_tile_menu_action_start_game_queue">Warteschlange starten</string>
+    <string name="custom_tile_menu_action_set_focus_game">Nächstes Spiel wählen</string>
+    <string name="custom_tile_menu_action_advance_focus_game">Als beendet markieren</string>
     <string name="custom_tile_menu_action_page_backdrop">Hintergrund für diese Seite</string>
     <string name="custom_tile_menu_action_page_music">Musik für diese Seite</string>
     <string name="custom_tile_menu_action_delete_page">Seite löschen</string>

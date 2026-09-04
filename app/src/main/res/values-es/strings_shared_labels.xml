@@ -91,16 +91,16 @@
     <!-- ================= Custom home-grid tile menu actions ================= -->
 
     <string name="custom_tile_menu_action_arrange">Mover o redimensionar</string>
-    <string name="custom_tile_menu_action_recurate">Cambiar lo que reproduce</string>
+    <string name="custom_tile_menu_action_recurate">Playlist</string>
     <string name="custom_tile_menu_action_fit_cover">Ajustar la carátula a la celda</string>
     <string name="custom_tile_menu_action_crop_cover">Recortar la carátula para rellenar la celda</string>
-    <string name="custom_tile_menu_action_edit_filters">Cambiar la selección de juegos</string>
-    <string name="custom_tile_menu_action_edit_tile">Cambiar lo que muestra</string>
+    <string name="custom_tile_menu_action_edit_filters">Filtros</string>
+    <string name="custom_tile_menu_action_edit_tile">Cuenta o juego</string>
     <string name="custom_tile_menu_action_browse_achievements">Explorar logros</string>
     <string name="custom_tile_menu_action_remove">Quitar mosaico</string>
-    <string name="custom_tile_menu_action_start_game_queue">Jugar esta colección en orden</string>
-    <string name="custom_tile_menu_action_set_focus_game">Elegir qué se reproduce a continuación</string>
-    <string name="custom_tile_menu_action_advance_focus_game">Terminar este juego</string>
+    <string name="custom_tile_menu_action_start_game_queue">Iniciar cola</string>
+    <string name="custom_tile_menu_action_set_focus_game">Elegir siguiente juego</string>
+    <string name="custom_tile_menu_action_advance_focus_game">Marcar terminado</string>
     <string name="custom_tile_menu_action_page_backdrop">Fondo de esta página</string>
     <string name="custom_tile_menu_action_page_music">Música de esta página</string>
     <string name="custom_tile_menu_action_delete_page">Eliminar página</string>

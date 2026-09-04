@@ -91,16 +91,16 @@
     <!-- ================= Custom home-grid tile menu actions ================= -->
 
     <string name="custom_tile_menu_action_arrange">स्थानांतरित या आकार बदलें</string>
-    <string name="custom_tile_menu_action_recurate">प्ले सामग्री बदलें</string>
+    <string name="custom_tile_menu_action_recurate">प्लेलिस्ट</string>
     <string name="custom_tile_menu_action_fit_cover">कवर को सेल में फ़िट करें</string>
     <string name="custom_tile_menu_action_crop_cover">सेल भरने के लिए कवर क्रॉप करें</string>
-    <string name="custom_tile_menu_action_edit_filters">खेलों का चयन बदलें</string>
-    <string name="custom_tile_menu_action_edit_tile">टाइल में क्या दिखे, बदलें</string>
+    <string name="custom_tile_menu_action_edit_filters">फ़िल्टर</string>
+    <string name="custom_tile_menu_action_edit_tile">खाता या गेम</string>
     <string name="custom_tile_menu_action_browse_achievements">उपलब्धियाँ ब्राउज़ करें</string>
     <string name="custom_tile_menu_action_remove">टाइल हटाएँ</string>
-    <string name="custom_tile_menu_action_start_game_queue">इस कलेक्शन को क्रम में खेलें</string>
-    <string name="custom_tile_menu_action_set_focus_game">अगला क्या चलेगा, चुनें</string>
-    <string name="custom_tile_menu_action_advance_focus_game">यह गेम पूरा करें</string>
+    <string name="custom_tile_menu_action_start_game_queue">कतार शुरू करें</string>
+    <string name="custom_tile_menu_action_set_focus_game">अगला गेम चुनें</string>
+    <string name="custom_tile_menu_action_advance_focus_game">पूर्ण चिह्नित करें</string>
     <string name="custom_tile_menu_action_page_backdrop">इस पेज के लिए बैकड्रॉप</string>
     <string name="custom_tile_menu_action_page_music">इस पेज के लिए संगीत</string>
     <string name="custom_tile_menu_action_delete_page">पेज हटाएँ</string>

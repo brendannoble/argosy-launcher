@@ -91,16 +91,16 @@
     <!-- ================= Custom home-grid tile menu actions ================= -->
 
     <string name="custom_tile_menu_action_arrange">Переместить или изменить размер</string>
-    <string name="custom_tile_menu_action_recurate">Изменить, что играет</string>
+    <string name="custom_tile_menu_action_recurate">Плейлист</string>
     <string name="custom_tile_menu_action_fit_cover">Вписать обложку в ячейку</string>
     <string name="custom_tile_menu_action_crop_cover">Обрезать обложку, чтобы заполнить ячейку</string>
-    <string name="custom_tile_menu_action_edit_filters">Изменить выбор игр</string>
-    <string name="custom_tile_menu_action_edit_tile">Изменить, что отображается</string>
+    <string name="custom_tile_menu_action_edit_filters">Фильтры</string>
+    <string name="custom_tile_menu_action_edit_tile">Аккаунт или игра</string>
     <string name="custom_tile_menu_action_browse_achievements">Просмотреть достижения</string>
     <string name="custom_tile_menu_action_remove">Убрать плитку</string>
-    <string name="custom_tile_menu_action_start_game_queue">Проходить эту коллекцию по порядку</string>
-    <string name="custom_tile_menu_action_set_focus_game">Выбрать, что играть далее</string>
-    <string name="custom_tile_menu_action_advance_focus_game">Завершить эту игру</string>
+    <string name="custom_tile_menu_action_start_game_queue">Начать очередь</string>
+    <string name="custom_tile_menu_action_set_focus_game">Выбрать следующую игру</string>
+    <string name="custom_tile_menu_action_advance_focus_game">Отметить пройденной</string>
     <string name="custom_tile_menu_action_page_backdrop">Фон для этой страницы</string>
     <string name="custom_tile_menu_action_page_music">Музыка для этой страницы</string>
     <string name="custom_tile_menu_action_delete_page">Удалить страницу</string>
