@@ -14,6 +14,7 @@
     <string name="settings_shell_frame_auto_with_name">ऑटो (%1$s)</string>
     <string name="settings_shell_frame_auto_none">ऑटो (कोई नहीं)</string>
     <string name="settings_shell_frame_none_option">कोई नहीं</string>
+    <string name="settings_shell_frame_import_option">फ़्रेम आयात करें</string>
     <string name="settings_shell_frame_selected_desc">चयनित</string>
     <string name="settings_shell_frame_download_desc">डाउनलोड करें</string>
     <string name="settings_shell_frame_preview_desc">फ़्रेम प्रीव्यू</string>
@@ -134,6 +135,7 @@
     <string name="settings_shell_filebrowser_platform_builtin_state_path_title">%1$s बिल्ट-इन स्टेट पाथ</string>
     <string name="settings_shell_filebrowser_settings_backup_title">सेटिंग्स बैकअप चुनें</string>
     <string name="settings_shell_filebrowser_certificate_title">प्रमाणपत्र चुनें</string>
+    <string name="settings_shell_filebrowser_custom_frame_title">फ़्रेम छवि चुनें</string>
     <string name="settings_shell_filebrowser_add_music_title">संगीत जोड़ें</string>
     <string name="settings_shell_filebrowser_music_location_title">संगीत लोकेशन</string>
     <string name="settings_shell_filebrowser_media_location_title">मीडिया लोकेशन</string>
@@ -221,6 +223,10 @@
     <string name="settings_shell_modal_reset_save_cache_message">इससे सभी लोकल रूप से कैश किए गए सेव स्नैपशॉट और लंबित सिंक ऑपरेशन हट जाएँगे। आपकी असली सेव फ़ाइलें और सर्वर सेव प्रभावित नहीं होंगी।</string>
     <string name="settings_shell_modal_reset_save_cache_confirm">रीसेट करें</string>
 
+    <string name="settings_shell_modal_remove_frame_title">फ़्रेम हटाएँ?</string>
+    <string name="settings_shell_modal_remove_frame_message">यह आयातित फ़्रेम हटा दिया जाएगा। इसका उपयोग करने वाले प्लेटफ़ॉर्म अपने डिफ़ॉल्ट फ़्रेम पर लौट आएंगे।</string>
+    <string name="settings_shell_modal_remove_frame_confirm">हटाएँ</string>
+
     <string name="settings_shell_modal_clear_save_path_cache_title">सेव पाथ कैश साफ़ करें?</string>
     <string name="settings_shell_modal_clear_save_path_cache_message">इससे सभी पहचाने गए सेव फ़ाइल पाथ साफ़ हो जाएँगे। अगली सिंक पर पाथ फिर से पहचाने जाएँगे। अगर सेव गलत लोकेशन पर सिंक हो रहे हैं तो इसका उपयोग करें।</string>
     <string name="settings_shell_modal_clear_save_path_cache_confirm">साफ़ करें</string>
@@ -287,6 +293,7 @@
     <string name="settings_shell_footer_adjust_shaderstack">समायोजित करें</string>
     <string name="settings_shell_footer_reset_shaderstack">रीसेट करें</string>
     <string name="settings_shell_footer_remove_shaderstack">हटाएँ</string>
+    <string name="settings_shell_footer_remove_frame">हटाएँ</string>
     <string name="settings_shell_footer_add_shaderstack">जोड़ें</string>
     <string name="settings_shell_footer_platform_builtin">प्लेटफ़ॉर्म</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">डिफ़ॉल्ट पर रीसेट करें</string>
@@ -398,6 +405,7 @@
     <!-- ===== Routers: SettingsBuiltinRouter ===== -->
 
     <string name="settings_shell_router_cores_load_failed">कोर लोड नहीं हो सके। कृपया फिर से कोशिश करें।</string>
+    <string name="settings_shell_router_frame_import_failed">उस छवि को फ़्रेम के रूप में आयात नहीं किया जा सका।</string>
     <string name="settings_shell_router_cannot_download_offline">ऑफ़लाइन रहते हुए डाउनलोड नहीं किया जा सकता</string>
     <string name="settings_shell_router_cannot_update_offline">ऑफ़लाइन रहते हुए अपडेट नहीं किया जा सकता</string>
     <string name="settings_shell_router_core_downloading_title">%1$s डाउनलोड हो रहा है</string>

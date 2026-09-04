@@ -53,7 +53,7 @@ fun FrameSection(
 ) {
     val listState = rememberLazyListState()
     val frameRegistry = remember { viewModel.getFrameRegistry() }
-    val allFrames = remember { frameRegistry.getAllFrames() }
+    val allFrames = remember(uiState.frameInstalledRefresh) { frameRegistry.getAllFrames() }
     val platformContext = uiState.builtinVideo.currentPlatformContext
     val platformSettings = platformContext?.let {
         uiState.platformLibretro.platformSettings[it.platformId]
@@ -163,6 +163,18 @@ fun FrameSection(
                                 viewModel.downloadAndSelectFrame(frame.id)
                             }
                         }
+                    )
+                }
+
+                item(key = "import") {
+                    FrameListItem(
+                        displayName = stringResource(R.string.settings_shell_frame_import_option),
+                        isSelected = false,
+                        isInstalled = true,
+                        isDownloading = false,
+                        isFocused = uiState.focusedIndex == allFrames.size + 2,
+                        onClick = { viewModel.requestCustomFramePicker() },
+                        onDownload = {}
                     )
                 }
             }
@@ -281,5 +293,5 @@ private fun FramePreview(
 }
 
 fun framePickerMaxFocusIndex(frameRegistry: FrameRegistry): Int {
-    return frameRegistry.getAllFrames().size + 1
+    return frameRegistry.getAllFrames().size + 2
 }

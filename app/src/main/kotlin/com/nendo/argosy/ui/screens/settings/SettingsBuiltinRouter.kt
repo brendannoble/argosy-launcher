@@ -22,6 +22,7 @@ import com.nendo.argosy.ui.screens.settings.sections.BuiltinEmulatorItem
 import com.nendo.argosy.ui.screens.settings.sections.HUD_CORNERS
 import com.nendo.argosy.util.AppPaths
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -1107,6 +1108,63 @@ internal fun routeDownloadAndSelectFrame(vm: SettingsViewModel, frameId: String)
             it.copy(
                 frameDownloadingId = null,
                 frameInstalledRefresh = if (success) it.frameInstalledRefresh + 1 else it.frameInstalledRefresh
+            )
+        }
+    }
+}
+
+internal fun routeImportCustomFrame(vm: SettingsViewModel, path: String) {
+    vm.viewModelScope.launch {
+        val imported = withContext(Dispatchers.IO) { vm.frameRegistry.importCustomFrame(path) }
+        imported
+            .onFailure {
+                android.util.Log.e("SettingsViewModel", "Failed to import frame: $path", it)
+                vm.notificationManager.showError(
+                    NotificationText.Res(R.string.settings_shell_router_frame_import_failed)
+                )
+            }
+            .onSuccess { frame ->
+                if (!vm._uiState.value.builtinVideo.framesEnabled) {
+                    vm.setBuiltinFramesEnabled(true)
+                }
+                vm.updatePlatformLibretroSetting(LibretroSettingDef.Frame, frame.id)
+            }
+        vm._uiState.update { it.copy(frameInstalledRefresh = it.frameInstalledRefresh + 1) }
+    }
+}
+
+internal fun routeRequestCustomFrameRemoval(vm: SettingsViewModel) {
+    val state = vm._uiState.value
+    val frames = vm.frameRegistry.getAllFrames()
+    val frame = frames.getOrNull(state.focusedIndex - 2) ?: return
+    if (frame.source != com.nendo.argosy.libretro.frame.FrameRegistry.Source.CUSTOM) return
+    vm._uiState.update { it.copy(pendingCustomFrameRemovalId = frame.id) }
+}
+
+internal fun routeCancelCustomFrameRemoval(vm: SettingsViewModel) {
+    vm._uiState.update { it.copy(pendingCustomFrameRemovalId = null) }
+}
+
+internal fun routeConfirmCustomFrameRemoval(vm: SettingsViewModel) {
+    val id = vm._uiState.value.pendingCustomFrameRemovalId ?: return
+    vm.viewModelScope.launch {
+        val removed = withContext(Dispatchers.IO) { vm.frameRegistry.deleteCustomFrame(id) }
+        if (removed) {
+            vm.libretroSettingsRepo.observeAll().first()
+                .filter { it.frame == id }
+                .forEach { vm.libretroSettingsRepo.upsert(it.copy(frame = null)) }
+        }
+        val maxIndex = com.nendo.argosy.ui.screens.settings.sections
+            .framePickerMaxFocusIndex(vm.frameRegistry)
+        vm._uiState.update {
+            it.copy(
+                pendingCustomFrameRemovalId = null,
+                focusedIndex = it.focusedIndex.coerceAtMost(maxIndex),
+                frameInstalledRefresh = if (removed) {
+                    it.frameInstalledRefresh + 1
+                } else {
+                    it.frameInstalledRefresh
+                }
             )
         }
     }

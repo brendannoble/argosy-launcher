@@ -1071,6 +1071,7 @@ private fun routeFramePickerConfirm(vm: SettingsViewModel, state: SettingsUiStat
     when (state.focusedIndex) {
         0 -> vm.updatePlatformLibretroSetting(LibretroSettingDef.Frame, null)
         1 -> vm.updatePlatformLibretroSetting(LibretroSettingDef.Frame, "none")
+        allFrames.size + 2 -> vm.requestCustomFramePicker()
         else -> {
             val frameIndex = state.focusedIndex - 2
             if (frameIndex in allFrames.indices) {

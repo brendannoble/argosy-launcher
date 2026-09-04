@@ -7,6 +7,7 @@ import com.nendo.argosy.ui.screens.settings.sections.input.BoxArtSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.BuiltinControlsSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.BuiltinVideoSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.EmulatorsSectionInput
+import com.nendo.argosy.ui.screens.settings.sections.input.FrameSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.PlatformDetailSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.AmbientLedSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.CoreOptionsSectionInput
@@ -62,6 +63,7 @@ class SettingsInputHandler(
         put(SettingsSection.STORAGE_PLATFORM_GAMES, StoragePlatformGamesSectionInput(viewModel))
         put(SettingsSection.STORAGE_CACHES, StorageCachesSectionInput(viewModel))
         put(SettingsSection.DRIVERS, DriversSectionInput(viewModel))
+        put(SettingsSection.FRAME_PICKER, FrameSectionInput(viewModel))
         for (s in listOf(
             SettingsSection.MAIN,
             SettingsSection.ACCOUNTS,

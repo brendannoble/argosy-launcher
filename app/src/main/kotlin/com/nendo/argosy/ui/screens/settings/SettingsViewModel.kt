@@ -234,6 +234,10 @@ class SettingsViewModel @Inject constructor(
     val openCertificatePickerEvent: SharedFlow<Unit> =
         _openCertificatePickerEvent.asSharedFlow()
 
+    internal val _openCustomFramePickerEvent = MutableSharedFlow<Unit>()
+    val openCustomFramePickerEvent: SharedFlow<Unit> =
+        _openCustomFramePickerEvent.asSharedFlow()
+
     internal val _openDeviceSettingsEvent = MutableSharedFlow<Unit>()
     val openDeviceSettingsEvent: SharedFlow<Unit> = _openDeviceSettingsEvent.asSharedFlow()
 
@@ -769,6 +773,15 @@ class SettingsViewModel @Inject constructor(
     fun openShaderChainConfig() = routeOpenShaderChainConfig(this)
     fun openFrameConfig() = routeOpenFrameConfig(this)
     fun downloadAndSelectFrame(frameId: String) = routeDownloadAndSelectFrame(this, frameId)
+
+    fun requestCustomFramePicker() {
+        viewModelScope.launch { _openCustomFramePickerEvent.emit(Unit) }
+    }
+
+    fun importCustomFrame(path: String) = routeImportCustomFrame(this, path)
+    fun requestFocusedCustomFrameRemoval() = routeRequestCustomFrameRemoval(this)
+    fun confirmCustomFrameRemoval() = routeConfirmCustomFrameRemoval(this)
+    fun cancelCustomFrameRemoval() = routeCancelCustomFrameRemoval(this)
 
     fun addShaderToStack(id: String, name: String) = shaderChainManager.addShaderToStack(id, name)
     fun removeShaderFromStack() = shaderChainManager.removeShaderFromStack()

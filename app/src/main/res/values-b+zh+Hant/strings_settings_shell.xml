@@ -21,6 +21,7 @@
     <string name="settings_shell_frame_auto_with_name">自動（%1$s）</string>
     <string name="settings_shell_frame_auto_none">自動（無）</string>
     <string name="settings_shell_frame_none_option">無</string>
+    <string name="settings_shell_frame_import_option">匯入邊框</string>
     <string name="settings_shell_frame_selected_desc">已選取</string>
     <string name="settings_shell_frame_download_desc">下載</string>
     <string name="settings_shell_frame_preview_desc">邊框預覽</string>
@@ -141,6 +142,7 @@
     <string name="settings_shell_filebrowser_platform_builtin_state_path_title">%1$s內建即時存檔路徑</string>
     <string name="settings_shell_filebrowser_settings_backup_title">選擇設定備份</string>
     <string name="settings_shell_filebrowser_certificate_title">選擇憑證</string>
+    <string name="settings_shell_filebrowser_custom_frame_title">選擇邊框圖片</string>
     <string name="settings_shell_filebrowser_add_music_title">新增音樂</string>
     <string name="settings_shell_filebrowser_music_location_title">音樂位置</string>
     <string name="settings_shell_filebrowser_media_location_title">媒體位置</string>
@@ -226,6 +228,10 @@
     <string name="settings_shell_modal_reset_save_cache_message">這會刪除所有本機快取的存檔快照與待處理的同步作業，不會影響您實際的存檔檔案與伺服器上的存檔。</string>
     <string name="settings_shell_modal_reset_save_cache_confirm">重設</string>
 
+    <string name="settings_shell_modal_remove_frame_title">移除邊框？</string>
+    <string name="settings_shell_modal_remove_frame_message">將刪除此匯入的邊框。使用它的平台會回復為各自的預設邊框。</string>
+    <string name="settings_shell_modal_remove_frame_confirm">移除</string>
+
     <string name="settings_shell_modal_clear_save_path_cache_title">要清除存檔路徑快取嗎？</string>
     <string name="settings_shell_modal_clear_save_path_cache_message">這會清除所有偵測到的存檔路徑，下次同步時會重新偵測。若存檔同步到錯誤的位置，可使用此功能。</string>
     <string name="settings_shell_modal_clear_save_path_cache_confirm">清除</string>
@@ -292,6 +298,7 @@
     <string name="settings_shell_footer_adjust_shaderstack">調整</string>
     <string name="settings_shell_footer_reset_shaderstack">重設</string>
     <string name="settings_shell_footer_remove_shaderstack">移除</string>
+    <string name="settings_shell_footer_remove_frame">移除</string>
     <string name="settings_shell_footer_add_shaderstack">新增</string>
     <string name="settings_shell_footer_platform_builtin">平台</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">重設為預設值</string>
@@ -400,6 +407,7 @@
     <!-- ===== Routers: SettingsBuiltinRouter ===== -->
 
     <string name="settings_shell_router_cores_load_failed">無法載入核心，請再試一次。</string>
+    <string name="settings_shell_router_frame_import_failed">無法將該圖片匯入為邊框。</string>
     <string name="settings_shell_router_cannot_download_offline">離線時無法下載</string>
     <string name="settings_shell_router_cannot_update_offline">離線時無法更新</string>
     <string name="settings_shell_router_core_downloading_title">正在下載%1$s</string>

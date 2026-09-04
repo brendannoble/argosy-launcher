@@ -49,6 +49,7 @@ import com.nendo.argosy.ui.theme.backdrop.BackdropRole
 import com.nendo.argosy.ui.theme.backdrop.surfaceBackdrop
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.nendo.argosy.libretro.frame.FrameRegistry
 import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.FooterSpacer
 import com.nendo.argosy.ui.components.InputButton
@@ -204,6 +205,7 @@ fun SettingsScreen(
     var fileBrowserCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
     var showSettingsBackupBrowser by remember { mutableStateOf(false) }
     var showCertBrowser by remember { mutableStateOf(false) }
+    var showCustomFrameBrowser by remember { mutableStateOf(false) }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -275,6 +277,12 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.openCertificatePickerEvent.collect {
             showCertBrowser = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.openCustomFramePickerEvent.collect {
+            showCustomFrameBrowser = true
         }
     }
 
@@ -719,6 +727,10 @@ fun SettingsScreen(
             SettingsFooter(
                 uiState = uiState,
                 shaderStack = viewModel.shaderChainManager.shaderStack,
+                customFrameFocused = uiState.currentSection == SettingsSection.FRAME_PICKER &&
+                    viewModel.getFrameRegistry().getAllFrames()
+                        .getOrNull(uiState.focusedIndex - 2)
+                        ?.source == FrameRegistry.Source.CUSTOM,
                 onHintClick = { button ->
                     when (button) {
                         InputButton.A -> { inputHandler.onConfirm() }
@@ -1102,6 +1114,16 @@ fun SettingsScreen(
     )
 
     ArgosyConfirmModalHost(
+        visible = uiState.pendingCustomFrameRemovalId != null,
+        title = stringResource(R.string.settings_shell_modal_remove_frame_title),
+        message = stringResource(R.string.settings_shell_modal_remove_frame_message),
+        confirmLabel = stringResource(R.string.settings_shell_modal_remove_frame_confirm),
+        destructive = true,
+        onConfirm = { viewModel.confirmCustomFrameRemoval() },
+        onDismiss = { viewModel.cancelCustomFrameRemoval() }
+    )
+
+    ArgosyConfirmModalHost(
         visible = uiState.syncSettings.showSecureSavesConfirm,
         title = stringResource(R.string.settings_shell_modal_secure_saves_off_title),
         message = stringResource(R.string.settings_shell_modal_secure_saves_off_message),
@@ -1181,6 +1203,19 @@ fun SettingsScreen(
                 viewModel.importCertificate(path)
             },
             onDismiss = { showCertBrowser = false }
+        )
+    }
+
+    if (showCustomFrameBrowser) {
+        FileBrowserScreen(
+            mode = FileBrowserMode.FILE_SELECTION,
+            title = stringResource(R.string.settings_shell_filebrowser_custom_frame_title),
+            fileFilter = com.nendo.argosy.ui.filebrowser.FileFilter.IMAGE,
+            onPathSelected = { path ->
+                showCustomFrameBrowser = false
+                viewModel.importCustomFrame(path)
+            },
+            onDismiss = { showCustomFrameBrowser = false }
         )
     }
 
@@ -1550,6 +1585,7 @@ private fun AccountModals(uiState: SettingsUiState, viewModel: SettingsViewModel
 private fun SettingsFooter(
     uiState: SettingsUiState,
     shaderStack: ShaderStackState,
+    customFrameFocused: Boolean = false,
     onHintClick: ((InputButton) -> Unit)? = null
 ) {
     if (uiState.emulators.showSavePathModal || uiState.emulators.showEmulatorPicker ||
@@ -1573,6 +1609,7 @@ private fun SettingsFooter(
     val adjustShaderStackHint = stringResource(R.string.settings_shell_footer_adjust_shaderstack)
     val resetShaderStackHint = stringResource(R.string.settings_shell_footer_reset_shaderstack)
     val removeShaderStackHint = stringResource(R.string.settings_shell_footer_remove_shaderstack)
+    val removeFrameHint = stringResource(R.string.settings_shell_footer_remove_frame)
     val addShaderStackHint = stringResource(R.string.settings_shell_footer_add_shaderstack)
     val platformBuiltinHint = stringResource(R.string.settings_shell_footer_platform_builtin)
     val resetToDefaultBuiltinVideoHint = stringResource(R.string.settings_shell_footer_reset_to_default_builtinvideo)
@@ -1646,6 +1683,9 @@ private fun SettingsFooter(
             if ((onSavePath && videoState.isCustomSavePath) || (onStatePath && videoState.isCustomStatePath)) {
                 add(InputButton.Y to resetToDefaultBuiltinVideoHint)
             }
+        }
+        if (customFrameFocused) {
+            add(InputButton.Y to removeFrameHint)
         }
         if (uiState.currentSection == SettingsSection.THEME_SOUNDS && uiState.sounds.enabled) {
             val soundsLayout = ThemeSoundsLayoutState.from(uiState)

@@ -23,6 +23,7 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
     )
 
     private var installedCache: Set<String>? = null
+    private var customCache: List<FrameEntry>? = null
 
     fun getInstalledIds(): Set<String> {
         installedCache?.let { return it }
@@ -63,6 +64,7 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
 
     fun invalidateInstalledCache() {
         installedCache = null
+        customCache = null
     }
 
     /**
@@ -379,10 +381,81 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
         return catalogFrames.filter { canonical in it.platforms }
     }
 
-    fun getAllFrames(): List<FrameEntry> = catalogFrames
+    fun getAllFrames(): List<FrameEntry> = catalogFrames + getCustomFrames()
+
+    /**
+     * Imported frames are read back off disk rather than tracked in a preference, so the file is
+     * the only record: copying one in or deleting one outside the app stays consistent.
+     */
+    fun getCustomFrames(): List<FrameEntry> {
+        customCache?.let { return it }
+        val entries = getCustomFramesDir().listFiles()
+            ?.filter { it.isFile && it.extension.lowercase() == "png" }
+            ?.sortedBy { it.name.lowercase() }
+            ?.map {
+                val id = it.nameWithoutExtension
+                FrameEntry(id, id.removePrefix(CUSTOM_ID_PREFIX), emptySet(), "", Source.CUSTOM)
+            }
+            ?: emptyList()
+        customCache = entries
+        return entries
+    }
+
+    fun importCustomFrame(sourcePath: String): Result<FrameEntry> = runCatching {
+        val source = File(sourcePath)
+        require(source.isFile) { "Frame source is not a file: $sourcePath" }
+
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(source.absolutePath, bounds)
+        require(bounds.outWidth > 0 && bounds.outHeight > 0) {
+            "Frame source is not a readable image: $sourcePath"
+        }
+
+        val dir = getCustomFramesDir().apply { mkdirs() }
+        val id = allocateCustomId(source.nameWithoutExtension, dir)
+        val target = File(dir, "$id.png")
+
+        if (source.extension.equals("png", ignoreCase = true)) {
+            source.copyTo(target, overwrite = true)
+        } else {
+            val decoded = BitmapFactory.decodeFile(source.absolutePath)
+                ?: error("Frame source could not be decoded: $sourcePath")
+            try {
+                target.outputStream().use { decoded.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            } finally {
+                decoded.recycle()
+            }
+        }
+
+        invalidateInstalledCache()
+        FrameEntry(id, id.removePrefix(CUSTOM_ID_PREFIX), emptySet(), "", Source.CUSTOM)
+    }
+
+    fun deleteCustomFrame(id: String): Boolean {
+        if (!id.startsWith(CUSTOM_ID_PREFIX)) return false
+        val deleted = File(getCustomFramesDir(), "$id.png").delete()
+        if (deleted) invalidateInstalledCache()
+        return deleted
+    }
+
+    private fun allocateCustomId(sourceName: String, dir: File): String {
+        val base = sourceName
+            .map { if (it.isLetterOrDigit() || it == ' ' || it == '-' || it == '_') it else '_' }
+            .joinToString("")
+            .trim()
+            .take(48)
+            .ifBlank { "bezel" }
+        var candidate = "$CUSTOM_ID_PREFIX$base"
+        var suffix = 2
+        while (File(dir, "$candidate.png").exists()) {
+            candidate = "$CUSTOM_ID_PREFIX$base $suffix"
+            suffix++
+        }
+        return candidate
+    }
 
     fun findById(id: String): FrameEntry? =
-        catalogFrames.find { it.id == id }
+        catalogFrames.find { it.id == id } ?: getCustomFrames().find { it.id == id }
 
     fun isInstalled(entry: FrameEntry): Boolean =
         entry.id in getInstalledIds()
@@ -462,6 +535,8 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
 
     companion object {
         private const val TAG = "FrameRegistry"
+
+        const val CUSTOM_ID_PREFIX = "custom_"
 
         const val GITHUB_RAW_BASE =
             "https://raw.githubusercontent.com/libretro/overlay-borders/master/"

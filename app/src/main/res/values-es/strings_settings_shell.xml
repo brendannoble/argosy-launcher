@@ -21,6 +21,7 @@
     <string name="settings_shell_frame_auto_with_name">Auto (%1$s)</string>
     <string name="settings_shell_frame_auto_none">Auto (Ninguno)</string>
     <string name="settings_shell_frame_none_option">Ninguno</string>
+    <string name="settings_shell_frame_import_option">Importar marco</string>
     <string name="settings_shell_frame_selected_desc">Seleccionado</string>
     <string name="settings_shell_frame_download_desc">Descargar</string>
     <string name="settings_shell_frame_preview_desc">Vista previa del marco</string>
@@ -141,6 +142,7 @@
     <string name="settings_shell_filebrowser_platform_builtin_state_path_title">Ruta de estado integrada de %1$s</string>
     <string name="settings_shell_filebrowser_settings_backup_title">Seleccionar copia de seguridad de ajustes</string>
     <string name="settings_shell_filebrowser_certificate_title">Seleccionar certificado</string>
+    <string name="settings_shell_filebrowser_custom_frame_title">Seleccionar imagen de marco</string>
     <string name="settings_shell_filebrowser_add_music_title">Añadir música</string>
     <string name="settings_shell_filebrowser_music_location_title">Ubicación de la música</string>
     <string name="settings_shell_filebrowser_media_location_title">Ubicación multimedia</string>
@@ -230,6 +232,10 @@
     <string name="settings_shell_modal_reset_save_cache_message">Esto eliminará todas las instantáneas de guardado en caché local y las operaciones de sincronización pendientes. Tus archivos de guardado reales y los guardados del servidor no se ven afectados.</string>
     <string name="settings_shell_modal_reset_save_cache_confirm">Restablecer</string>
 
+    <string name="settings_shell_modal_remove_frame_title">¿Quitar marco?</string>
+    <string name="settings_shell_modal_remove_frame_message">Se eliminará este marco importado. Las plataformas que lo usan volverán a su marco predeterminado.</string>
+    <string name="settings_shell_modal_remove_frame_confirm">Quitar</string>
+
     <string name="settings_shell_modal_clear_save_path_cache_title">¿Vaciar caché de rutas de guardado?</string>
     <string name="settings_shell_modal_clear_save_path_cache_message">Esto borrará todas las rutas de archivos de guardado detectadas. Las rutas se volverán a detectar en la próxima sincronización. Usa esto si los guardados se sincronizan en el lugar equivocado.</string>
     <string name="settings_shell_modal_clear_save_path_cache_confirm">Vaciar</string>
@@ -296,6 +302,7 @@
     <string name="settings_shell_footer_adjust_shaderstack">Ajustar</string>
     <string name="settings_shell_footer_reset_shaderstack">Restablecer</string>
     <string name="settings_shell_footer_remove_shaderstack">Quitar</string>
+    <string name="settings_shell_footer_remove_frame">Quitar</string>
     <string name="settings_shell_footer_add_shaderstack">Añadir</string>
     <string name="settings_shell_footer_platform_builtin">Plataforma</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Restablecer predeterminado</string>
@@ -410,6 +417,7 @@
     <!-- ===== Routers: SettingsBuiltinRouter ===== -->
 
     <string name="settings_shell_router_cores_load_failed">No se pudieron cargar los cores. Inténtalo de nuevo.</string>
+    <string name="settings_shell_router_frame_import_failed">No se pudo importar esa imagen como marco.</string>
     <string name="settings_shell_router_cannot_download_offline">No se puede descargar sin conexión</string>
     <string name="settings_shell_router_cannot_update_offline">No se puede actualizar sin conexión</string>
     <string name="settings_shell_router_core_downloading_title">Descargando %1$s</string>

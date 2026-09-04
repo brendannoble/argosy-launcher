@@ -21,6 +21,7 @@
     <string name="settings_shell_frame_auto_with_name">Auto (%1$s)</string>
     <string name="settings_shell_frame_auto_none">Auto (Keiner)</string>
     <string name="settings_shell_frame_none_option">Keiner</string>
+    <string name="settings_shell_frame_import_option">Rahmen importieren</string>
     <string name="settings_shell_frame_selected_desc">Ausgewählt</string>
     <string name="settings_shell_frame_download_desc">Herunterladen</string>
     <string name="settings_shell_frame_preview_desc">Rahmenvorschau</string>
@@ -141,6 +142,7 @@
     <string name="settings_shell_filebrowser_platform_builtin_state_path_title">%1$s-Savestate-Pfad (integriert)</string>
     <string name="settings_shell_filebrowser_settings_backup_title">Einstellungssicherung auswählen</string>
     <string name="settings_shell_filebrowser_certificate_title">Zertifikat auswählen</string>
+    <string name="settings_shell_filebrowser_custom_frame_title">Rahmenbild auswählen</string>
     <string name="settings_shell_filebrowser_add_music_title">Musik hinzufügen</string>
     <string name="settings_shell_filebrowser_music_location_title">Musikspeicherort</string>
     <string name="settings_shell_filebrowser_media_location_title">Medienspeicherort</string>
@@ -228,6 +230,10 @@
     <string name="settings_shell_modal_reset_save_cache_message">Dadurch werden alle lokal zwischengespeicherten Spielstand-Schnappschüsse und ausstehenden Sync-Vorgänge gelöscht. Ihre eigentlichen Spielstanddateien und Server-Spielstände sind davon nicht betroffen.</string>
     <string name="settings_shell_modal_reset_save_cache_confirm">Zurücksetzen</string>
 
+    <string name="settings_shell_modal_remove_frame_title">Rahmen entfernen?</string>
+    <string name="settings_shell_modal_remove_frame_message">Dieser importierte Rahmen wird gelöscht. Plattformen, die ihn verwenden, greifen wieder auf ihren Standardrahmen zurück.</string>
+    <string name="settings_shell_modal_remove_frame_confirm">Entfernen</string>
+
     <string name="settings_shell_modal_clear_save_path_cache_title">Spielstand-Pfad-Cache leeren?</string>
     <string name="settings_shell_modal_clear_save_path_cache_message">Dadurch werden alle erkannten Spielstand-Pfade gelöscht. Pfade werden bei der nächsten Synchro neu erkannt. Verwenden Sie dies, wenn Spielstände am falschen Ort synchronisiert werden.</string>
     <string name="settings_shell_modal_clear_save_path_cache_confirm">Leeren</string>
@@ -294,6 +300,7 @@
     <string name="settings_shell_footer_adjust_shaderstack">Anpassen</string>
     <string name="settings_shell_footer_reset_shaderstack">Zurücksetzen</string>
     <string name="settings_shell_footer_remove_shaderstack">Entfernen</string>
+    <string name="settings_shell_footer_remove_frame">Entfernen</string>
     <string name="settings_shell_footer_add_shaderstack">Hinzufügen</string>
     <string name="settings_shell_footer_platform_builtin">Plattform</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Standard</string>
@@ -405,6 +412,7 @@
     <!-- ===== Routers: SettingsBuiltinRouter ===== -->
 
     <string name="settings_shell_router_cores_load_failed">Cores konnten nicht geladen werden. Bitte versuchen Sie es erneut.</string>
+    <string name="settings_shell_router_frame_import_failed">Dieses Bild konnte nicht als Rahmen importiert werden.</string>
     <string name="settings_shell_router_cannot_download_offline">Download offline nicht möglich</string>
     <string name="settings_shell_router_cannot_update_offline">Update offline nicht möglich</string>
     <string name="settings_shell_router_core_downloading_title">%1$s wird heruntergeladen</string>

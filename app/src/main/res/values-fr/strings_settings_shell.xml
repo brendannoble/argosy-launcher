@@ -21,6 +21,7 @@
     <string name="settings_shell_frame_auto_with_name">Auto (%1$s)</string>
     <string name="settings_shell_frame_auto_none">Auto (Aucun)</string>
     <string name="settings_shell_frame_none_option">Aucun</string>
+    <string name="settings_shell_frame_import_option">Importer un cadre</string>
     <string name="settings_shell_frame_selected_desc">Sélectionné</string>
     <string name="settings_shell_frame_download_desc">Télécharger</string>
     <string name="settings_shell_frame_preview_desc">Aperçu du cadre</string>
@@ -141,6 +142,7 @@
     <string name="settings_shell_filebrowser_platform_builtin_state_path_title">Chemin des états intégré de %1$s</string>
     <string name="settings_shell_filebrowser_settings_backup_title">Sélectionner une sauvegarde de réglages</string>
     <string name="settings_shell_filebrowser_certificate_title">Sélectionner un certificat</string>
+    <string name="settings_shell_filebrowser_custom_frame_title">Sélectionner une image de cadre</string>
     <string name="settings_shell_filebrowser_add_music_title">Ajouter de la musique</string>
     <string name="settings_shell_filebrowser_music_location_title">Emplacement de la musique</string>
     <string name="settings_shell_filebrowser_media_location_title">Emplacement des médias</string>
@@ -230,6 +232,10 @@
     <string name="settings_shell_modal_reset_save_cache_message">Cela supprimera tous les instantanés de sauvegarde mis en cache localement et les opérations de synchro en attente. Vos fichiers de sauvegarde réels et les sauvegardes du serveur ne sont pas affectés.</string>
     <string name="settings_shell_modal_reset_save_cache_confirm">Réinitialiser</string>
 
+    <string name="settings_shell_modal_remove_frame_title">Supprimer le cadre ?</string>
+    <string name="settings_shell_modal_remove_frame_message">Ce cadre importé sera supprimé. Les plateformes qui l\'utilisent reviendront à leur cadre par défaut.</string>
+    <string name="settings_shell_modal_remove_frame_confirm">Supprimer</string>
+
     <string name="settings_shell_modal_clear_save_path_cache_title">Vider le cache des chemins de sauvegarde ?</string>
     <string name="settings_shell_modal_clear_save_path_cache_message">Cela effacera tous les chemins de fichiers de sauvegarde détectés. Les chemins seront redétectés à la prochaine synchro. À utiliser si les sauvegardes se synchronisent au mauvais endroit.</string>
     <string name="settings_shell_modal_clear_save_path_cache_confirm">Vider</string>
@@ -296,6 +302,7 @@
     <string name="settings_shell_footer_adjust_shaderstack">Ajuster</string>
     <string name="settings_shell_footer_reset_shaderstack">Réinitialiser</string>
     <string name="settings_shell_footer_remove_shaderstack">Retirer</string>
+    <string name="settings_shell_footer_remove_frame">Retirer</string>
     <string name="settings_shell_footer_add_shaderstack">Ajouter</string>
     <string name="settings_shell_footer_platform_builtin">Plateforme</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Réinitialiser par défaut</string>
@@ -410,6 +417,7 @@
     <!-- ===== Routers: SettingsBuiltinRouter ===== -->
 
     <string name="settings_shell_router_cores_load_failed">Impossible de charger les cores. Veuillez réessayer.</string>
+    <string name="settings_shell_router_frame_import_failed">Impossible d\'importer cette image comme cadre.</string>
     <string name="settings_shell_router_cannot_download_offline">Téléchargement impossible hors ligne</string>
     <string name="settings_shell_router_cannot_update_offline">Mise à jour impossible hors ligne</string>
     <string name="settings_shell_router_core_downloading_title">Téléchargement de %1$s</string>

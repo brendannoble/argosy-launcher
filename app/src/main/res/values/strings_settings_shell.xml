@@ -30,6 +30,8 @@
     <string name="settings_shell_frame_auto_none">Auto (None)</string>
     <!-- Row that picks no bezel frame. Noun. -->
     <string name="settings_shell_frame_none_option">None</string>
+    <!-- Last row of the frame list. Opens a file picker to add the user's own image. Verb. -->
+    <string name="settings_shell_frame_import_option">Import Frame</string>
     <!-- Icon description on a frame already chosen. Adjective. -->
     <string name="settings_shell_frame_selected_desc">Selected</string>
     <!-- Icon description on a frame not yet downloaded. Verb. -->
@@ -190,6 +192,7 @@
     <string name="settings_shell_filebrowser_platform_builtin_state_path_title">%1$s Built-in State Path</string>
     <string name="settings_shell_filebrowser_settings_backup_title">Select Settings Backup</string>
     <string name="settings_shell_filebrowser_certificate_title">Select Certificate</string>
+    <string name="settings_shell_filebrowser_custom_frame_title">Select Frame Image</string>
     <string name="settings_shell_filebrowser_add_music_title">Add Music</string>
     <string name="settings_shell_filebrowser_music_location_title">Music Location</string>
     <string name="settings_shell_filebrowser_media_location_title">Media Location</string>
@@ -294,6 +297,10 @@
     <string name="settings_shell_modal_reset_save_cache_message">This will delete all locally cached save snapshots and pending sync operations. Your actual save files and server saves are not affected.</string>
     <string name="settings_shell_modal_reset_save_cache_confirm">Reset</string>
 
+    <string name="settings_shell_modal_remove_frame_title">Remove Frame?</string>
+    <string name="settings_shell_modal_remove_frame_message">This imported frame will be deleted. Platforms using it fall back to their default.</string>
+    <string name="settings_shell_modal_remove_frame_confirm">Remove</string>
+
     <string name="settings_shell_modal_clear_save_path_cache_title">Clear Save Path Cache?</string>
     <string name="settings_shell_modal_clear_save_path_cache_message">This will clear all detected save file paths. Paths will be re-detected on next sync. Use this if saves are syncing to the wrong location.</string>
     <string name="settings_shell_modal_clear_save_path_cache_confirm">Clear</string>
@@ -367,6 +374,8 @@
     <!-- A-button hint on the shader stack screen: resets the focused parameter. Verb. -->
     <string name="settings_shell_footer_reset_shaderstack">Reset</string>
     <string name="settings_shell_footer_remove_shaderstack">Remove</string>
+    <!-- Footer hint shown only on an imported frame row. Verb. -->
+    <string name="settings_shell_footer_remove_frame">Remove</string>
     <string name="settings_shell_footer_add_shaderstack">Add</string>
     <!-- LB/RB hint that cycles the platform context on built-in video/controls screens. Noun. -->
     <string name="settings_shell_footer_platform_builtin">Platform</string>
@@ -504,6 +513,7 @@
     <!-- ===== Routers: SettingsBuiltinRouter ===== -->
 
     <string name="settings_shell_router_cores_load_failed">Couldn\'t load cores. Please try again.</string>
+    <string name="settings_shell_router_frame_import_failed">Couldn\'t import that image as a frame.</string>
     <string name="settings_shell_router_cannot_download_offline">Cannot download while offline</string>
     <string name="settings_shell_router_cannot_update_offline">Cannot update while offline</string>
     <!-- Persistent notification title while a core downloads. %1$s is the core's display name. -->

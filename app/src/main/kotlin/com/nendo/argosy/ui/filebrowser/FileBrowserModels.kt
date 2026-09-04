@@ -42,6 +42,10 @@ data class FileFilter(
         val CERTIFICATE = FileFilter(
             extensions = setOf("crt", "cer", "pem", "der")
         )
+
+        val IMAGE = FileFilter(
+            extensions = setOf("png", "jpg", "jpeg", "webp")
+        )
     }
 }
 

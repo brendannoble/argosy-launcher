@@ -18,6 +18,9 @@ class FrameDownloader(private val registry: FrameRegistry) {
     suspend fun downloadFrame(entry: FrameRegistry.FrameEntry): Result<File> =
         withContext(Dispatchers.IO) {
             runCatching {
+                require(entry.source != FrameRegistry.Source.CUSTOM) {
+                    "Imported frames have no remote source: ${entry.id}"
+                }
                 val targetFile = registry.installedFileFor(entry)
                 targetFile.parentFile?.mkdirs()
                 val url = FrameRegistry.downloadUrl(entry)

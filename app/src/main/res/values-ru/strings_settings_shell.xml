@@ -21,6 +21,7 @@
     <string name="settings_shell_frame_auto_with_name">Авто (%1$s)</string>
     <string name="settings_shell_frame_auto_none">Авто (нет)</string>
     <string name="settings_shell_frame_none_option">Нет</string>
+    <string name="settings_shell_frame_import_option">Импортировать рамку</string>
     <string name="settings_shell_frame_selected_desc">Выбрано</string>
     <string name="settings_shell_frame_download_desc">Скачать</string>
     <string name="settings_shell_frame_preview_desc">Предпросмотр рамки</string>
@@ -141,6 +142,7 @@
     <string name="settings_shell_filebrowser_platform_builtin_state_path_title">Встроенный путь состояний %1$s</string>
     <string name="settings_shell_filebrowser_settings_backup_title">Выбор резервной копии настроек</string>
     <string name="settings_shell_filebrowser_certificate_title">Выбор сертификата</string>
+    <string name="settings_shell_filebrowser_custom_frame_title">Выбор изображения рамки</string>
     <string name="settings_shell_filebrowser_add_music_title">Добавить музыку</string>
     <string name="settings_shell_filebrowser_music_location_title">Расположение музыки</string>
     <string name="settings_shell_filebrowser_media_location_title">Расположение медиа</string>
@@ -232,6 +234,10 @@
     <string name="settings_shell_modal_reset_save_cache_message">Это удалит все локально кэшированные снимки сохранений и незавершённые операции синхронизации. Сами файлы сохранений и сохранения на сервере не затрагиваются.</string>
     <string name="settings_shell_modal_reset_save_cache_confirm">Сбросить</string>
 
+    <string name="settings_shell_modal_remove_frame_title">Удалить рамку?</string>
+    <string name="settings_shell_modal_remove_frame_message">Эта импортированная рамка будет удалена. Платформы, использующие её, вернутся к своей рамке по умолчанию.</string>
+    <string name="settings_shell_modal_remove_frame_confirm">Удалить</string>
+
     <string name="settings_shell_modal_clear_save_path_cache_title">Очистить кэш путей сохранений?</string>
     <string name="settings_shell_modal_clear_save_path_cache_message">Это очистит все обнаруженные пути к файлам сохранений. Пути будут определены заново при следующей синхронизации. Используйте это, если сохранения синхронизируются не туда.</string>
     <string name="settings_shell_modal_clear_save_path_cache_confirm">Очистить</string>
@@ -298,6 +304,7 @@
     <string name="settings_shell_footer_adjust_shaderstack">Настроить</string>
     <string name="settings_shell_footer_reset_shaderstack">Сбросить</string>
     <string name="settings_shell_footer_remove_shaderstack">Удалить</string>
+    <string name="settings_shell_footer_remove_frame">Удалить</string>
     <string name="settings_shell_footer_add_shaderstack">Добавить</string>
     <string name="settings_shell_footer_platform_builtin">Платформа</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Сбросить по умолчанию</string>
@@ -415,6 +422,7 @@
     <!-- ===== Routers: SettingsBuiltinRouter ===== -->
 
     <string name="settings_shell_router_cores_load_failed">Не удалось загрузить ядра. Попробуйте снова.</string>
+    <string name="settings_shell_router_frame_import_failed">Не удалось импортировать это изображение как рамку.</string>
     <string name="settings_shell_router_cannot_download_offline">Нельзя скачать без подключения к сети</string>
     <string name="settings_shell_router_cannot_update_offline">Нельзя обновить без подключения к сети</string>
     <string name="settings_shell_router_core_downloading_title">Скачивание %1$s</string>
