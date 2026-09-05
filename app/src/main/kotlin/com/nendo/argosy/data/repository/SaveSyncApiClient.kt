@@ -264,7 +264,8 @@ class SaveSyncApiClient @Inject constructor(
 
             val serverTime = parseTimestamp(serverSave.updatedAt)
 
-            if (existing == null || serverTime.isAfter(existing.serverUpdatedAt)) {
+            val knownServerTime = existing?.serverUpdatedAt
+            if (knownServerTime == null || serverTime.isAfter(knownServerTime)) {
                 val uploaderDeviceSync = serverSave.deviceSyncs
                     ?.filter { !it.isCurrent }
                     ?.maxByOrNull { it.lastSyncedAt ?: "" }

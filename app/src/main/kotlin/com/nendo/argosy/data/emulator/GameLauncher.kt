@@ -47,6 +47,8 @@ import javax.inject.Singleton
 
 private const val TAG = "GameLauncher"
 private const val EXTRA_ALREADY_LAUNCHED = "argosy.already_launched"
+private val DISC_TAG_REGEX = Regex("\\(Disc \\d+\\)", RegexOption.IGNORE_CASE)
+private val DISC_NUMBER_REGEX = Regex("\\d+")
 
 data class DiscOption(
     val fileName: String,
@@ -215,8 +217,9 @@ class GameLauncher @Inject constructor(
             }
         }
 
-        if (game.isMultiDisc) {
-            return launchMultiDiscGame(game, discId, forResume)
+        val multiDiscGame = backfillDiscModel(game)
+        if (multiDiscGame.isMultiDisc) {
+            return launchMultiDiscGame(multiDiscGame, discId, forResume)
         }
 
         val romPath = game.localPath
@@ -400,6 +403,52 @@ class GameLauncher @Inject constructor(
             variantFileId = variant.id,
         )
     }
+
+    /**
+     * Registers the discs of a game whose files say it is multi-disc but whose own row does not,
+     * which is how a library synced before disc promotion existed still looks. Without it the
+     * launcher hands the core one disc instead of the playlist, and a core that decides an m3u by
+     * substring reads that disc as a playlist and fails to open it.
+     */
+    private suspend fun backfillDiscModel(game: GameEntity): GameEntity {
+        if (game.isMultiDisc) return game
+
+        val discFiles = gameFileDao.getFilesForGame(game.id)
+            .mapNotNull { file ->
+                val number = discNumberOf(file.fileName) ?: return@mapNotNull null
+                number to file
+            }
+            .distinctBy { it.first }
+            .sortedBy { it.first }
+        if (discFiles.size < 2) return game
+
+        val existing = gameDiscDao.getDiscsForGame(game.id)
+        gameDiscDao.insertAll(
+            discFiles.map { (number, file) ->
+                GameDiscEntity(
+                    id = existing.firstOrNull { it.discNumber == number }?.id ?: 0,
+                    gameId = game.id,
+                    discNumber = number,
+                    rommId = game.rommId ?: 0,
+                    fileName = file.fileName,
+                    localPath = file.localPath,
+                    fileSize = file.fileSize,
+                    parentRommId = game.rommId
+                )
+            }
+        )
+        val repaired = game.copy(isMultiDisc = true)
+        gameDao.update(repaired)
+        Logger.info(
+            TAG,
+            "backfillDiscModel: gameId=${game.id} registered ${discFiles.size} discs " +
+                "from files that were never promoted"
+        )
+        return repaired
+    }
+
+    private fun discNumberOf(fileName: String): Int? =
+        DISC_TAG_REGEX.find(fileName)?.let { DISC_NUMBER_REGEX.find(it.value)?.value?.toIntOrNull() }
 
     private suspend fun launchMultiDiscGame(game: GameEntity, requestedDiscId: Long?, forResume: Boolean): LaunchResult {
         Logger.debug(TAG, "launchMultiDiscGame(): discCount query for gameId=${game.id}, forResume=$forResume")
