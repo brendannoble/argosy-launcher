@@ -3135,7 +3135,11 @@ class LibretroActivity : ComponentActivity() {
         val im = getSystemService(android.hardware.input.InputManager::class.java) ?: return
         val listener = object : android.hardware.input.InputManager.InputDeviceListener {
             override fun onInputDeviceAdded(deviceId: Int) = refreshGamepadPresence()
-            override fun onInputDeviceRemoved(deviceId: Int) = refreshGamepadPresence()
+            override fun onInputDeviceRemoved(deviceId: Int) {
+                releaseCoreHeldKeys()
+                if (::inputConfig.isInitialized) inputConfig.releaseDisconnectedControllers()
+                refreshGamepadPresence()
+            }
             override fun onInputDeviceChanged(deviceId: Int) = refreshGamepadPresence()
         }
         inputDeviceListener = listener

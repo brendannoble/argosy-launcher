@@ -50,7 +50,9 @@ class InputConfigCoordinator(
 
             val connectedDevices = inputConfigRepository.getConnectedControllers()
                 .mapNotNull { InputDevice.getDevice(it.deviceId) }
-            portResolver.setAutoDetectedOrder(connectedDevices)
+            portResolver.onPortClaimed = { controllerId, port ->
+                if (port == 0) hotkeyManager.setPlayer1ControllerId(controllerId)
+            }
 
             val mappings = mutableMapOf<String, Map<InputSource, Int>>()
             for (device in connectedDevices) {
@@ -71,9 +73,7 @@ class InputConfigCoordinator(
             hotkeyManager.setPlatformMappedButtons(platformMappedButtons(mappings))
             hotkeyManager.setLimitToPlayer1(limitHotkeysToPlayer1)
 
-            player1ControllerId(controllerOrder, connectedDevices)?.let {
-                hotkeyManager.setPlayer1ControllerId(it)
-            }
+            hotkeyManager.setPlayer1ControllerId(player1ControllerId(controllerOrder))
 
             Log.d(TAG, "Input config loaded: ${controllerOrder.size} port assignments, ${mappings.size} mappings, ${hotkeys.size} hotkeys")
         }
@@ -84,20 +84,28 @@ class InputConfigCoordinator(
         controllerOrderList = order
         controllerOrderCount = order.size
         portResolver.setControllerOrder(order)
-        val connectedDevices = inputConfigRepository.getConnectedControllers()
-            .mapNotNull { InputDevice.getDevice(it.deviceId) }
-        portResolver.setAutoDetectedOrder(connectedDevices)
-        player1ControllerId(order, connectedDevices)?.let {
-            hotkeyManager.setPlayer1ControllerId(it)
-        }
+        hotkeyManager.setPlayer1ControllerId(player1ControllerId(order))
     }
 
-    private fun player1ControllerId(
-        order: List<ControllerOrderEntity>,
-        connectedDevices: List<InputDevice>
-    ): String? = order.firstOrNull()?.controllerId
-        ?: connectedDevices.firstOrNull { portResolver.getPort(it) == 0 }
-            ?.let { ControllerPortResolver.getControllerId(it) }
+    /**
+     * Gives up the seats of pads that have gone away. Player one goes with them unless settings
+     * name one, so the next pad to send something takes the seat instead of playing as player two.
+     */
+    fun releaseDisconnectedControllers() {
+        val connected = inputConfigRepository.getConnectedControllers()
+            .map { it.controllerId }
+            .toSet()
+        portResolver.releaseDisconnected(connected)
+        hotkeyManager.setPlayer1ControllerId(player1ControllerId(controllerOrderList))
+    }
+
+    /**
+     * Null until a pad takes port zero, which leaves hotkeys open to every pad rather than pinned
+     * to one nobody is holding.
+     */
+    private fun player1ControllerId(order: List<ControllerOrderEntity>): String? =
+        order.firstOrNull { it.port == 0 }?.controllerId
+            ?: portResolver.claimedPortFor0()
 
     fun setGameId(newGameId: Long?) {
         if (gameId == newGameId) return
@@ -129,7 +137,7 @@ class InputConfigCoordinator(
         val deviceProfile = CoreDeviceProfiles.profileIdFor(
             coreId = coreId,
             platformSlug = platformSlug,
-            deviceId = controllerTypeForPort(portResolver.getPort(device))
+            deviceId = controllerTypeForPort(portResolver.peekPort(device) ?: 0)
         )
         return deviceProfile ?: MappingPlatforms.dbPlatformIdForSlug(platformSlug)
     }
