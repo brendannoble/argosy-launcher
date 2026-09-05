@@ -14,7 +14,7 @@ internal class FrameSectionInput(
         val focused = frames.getOrNull(viewModel.uiState.value.focusedIndex - 2)
             ?: return InputResult.UNHANDLED
         if (focused.source != FrameRegistry.Source.CUSTOM) return InputResult.UNHANDLED
-        viewModel.requestFocusedCustomFrameRemoval()
+        viewModel.requestCustomFrameRemoval(focused.id)
         return InputResult.HANDLED
     }
 }

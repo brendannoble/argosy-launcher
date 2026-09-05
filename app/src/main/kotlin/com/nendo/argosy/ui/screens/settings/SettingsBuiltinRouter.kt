@@ -1133,10 +1133,8 @@ internal fun routeImportCustomFrame(vm: SettingsViewModel, path: String) {
     }
 }
 
-internal fun routeRequestCustomFrameRemoval(vm: SettingsViewModel) {
-    val state = vm._uiState.value
-    val frames = vm.frameRegistry.getAllFrames()
-    val frame = frames.getOrNull(state.focusedIndex - 2) ?: return
+internal fun routeRequestCustomFrameRemoval(vm: SettingsViewModel, frameId: String) {
+    val frame = vm.frameRegistry.findById(frameId) ?: return
     if (frame.source != com.nendo.argosy.libretro.frame.FrameRegistry.Source.CUSTOM) return
     vm._uiState.update { it.copy(pendingCustomFrameRemovalId = frame.id) }
 }

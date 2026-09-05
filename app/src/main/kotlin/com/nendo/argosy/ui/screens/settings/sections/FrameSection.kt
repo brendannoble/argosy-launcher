@@ -162,6 +162,11 @@ fun FrameSection(
                             if (!isInstalled && !isDownloading) {
                                 viewModel.downloadAndSelectFrame(frame.id)
                             }
+                        },
+                        onRemove = if (frame.source == FrameRegistry.Source.CUSTOM) {
+                            { viewModel.requestCustomFrameRemoval(frame.id) }
+                        } else {
+                            null
                         }
                     )
                 }
@@ -204,7 +209,8 @@ private fun FrameListItem(
     isDownloading: Boolean,
     isFocused: Boolean,
     onClick: () -> Unit,
-    onDownload: () -> Unit
+    onDownload: () -> Unit,
+    onRemove: (() -> Unit)? = null
 ) {
     val focusAccent = LocalArgosyTheme.current.focusAccent
     val backgroundColor = when {
@@ -222,7 +228,16 @@ private fun FrameListItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(Dimens.radiusSm))
             .background(backgroundColor)
-            .clickableNoFocus { if (isInstalled) onClick() else onDownload() }
+            .then(
+                if (onRemove != null) {
+                    Modifier.clickableNoFocus(
+                        onClick = { if (isInstalled) onClick() else onDownload() },
+                        onLongClick = onRemove
+                    )
+                } else {
+                    Modifier.clickableNoFocus { if (isInstalled) onClick() else onDownload() }
+                }
+            )
             .padding(horizontal = Dimens.spacingMd, vertical = Dimens.spacingSm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween

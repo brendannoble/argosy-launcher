@@ -779,7 +779,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun importCustomFrame(path: String) = routeImportCustomFrame(this, path)
-    fun requestFocusedCustomFrameRemoval() = routeRequestCustomFrameRemoval(this)
+    fun requestCustomFrameRemoval(frameId: String) = routeRequestCustomFrameRemoval(this, frameId)
     fun confirmCustomFrameRemoval() = routeConfirmCustomFrameRemoval(this)
     fun cancelCustomFrameRemoval() = routeCancelCustomFrameRemoval(this)
 
