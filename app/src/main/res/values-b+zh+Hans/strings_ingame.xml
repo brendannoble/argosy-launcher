@@ -224,6 +224,12 @@
     <string name="ingame_frame_footer_select">选择</string>
     <string name="ingame_frame_footer_download">下载</string>
     <string name="ingame_frame_footer_cancel">取消</string>
+    <string name="ingame_frame_adjust_title">调整画面</string>
+    <string name="ingame_frame_footer_move">移动</string>
+    <string name="ingame_frame_footer_zoom">缩放</string>
+    <string name="ingame_frame_footer_adjust">调整</string>
+    <string name="ingame_frame_footer_reset">重置</string>
+    <string name="ingame_frame_footer_done">完成</string>
 
     <string name="ingame_shader_footer_picker_browse">浏览</string>
     <string name="ingame_shader_footer_picker_select">选择</string>

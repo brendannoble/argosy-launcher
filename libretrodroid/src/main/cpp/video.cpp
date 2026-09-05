@@ -215,6 +215,21 @@ void Video::renderFrame(bool force) {
         ? hwRenderTexture
         : renderer->getTexture();
 
+    bool frameDrawsBehind =
+        backgroundFrameBehind &&
+        (backgroundFrame.hasImage() || backgroundFrame.hasPendingImage());
+
+    if (frameDrawsBehind) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        backgroundFrame.render(
+            videoLayout.getScreenWidth(),
+            videoLayout.getScreenHeight(),
+            videoLayout.getBackgroundVertices()
+        );
+        glDisable(GL_BLEND);
+    }
+
     if (!backgroundFrame.hasImage() && immersiveModeEnabled) {
         immersiveMode.renderBackground(
             videoLayout.getScreenWidth(),
@@ -322,8 +337,11 @@ void Video::renderFrame(bool force) {
         glUseProgram(0);
     }
 
-    // Render background frame ON TOP of game content with alpha blending
-    bool hasFrame = backgroundFrame.hasImage() || backgroundFrame.hasPendingImage();
+    // A cutout bezel is drawn ON TOP of game content and shows it through its transparent
+    // middle. A plate has no cutout, so it is drawn behind and the game is placed on it.
+    bool hasFrame =
+        !frameDrawsBehind &&
+        (backgroundFrame.hasImage() || backgroundFrame.hasPendingImage());
     if (hasFrame) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -560,6 +578,10 @@ void Video::setBackgroundFrame(const uint8_t* data, int width, int height) {
 
 void Video::clearBackgroundFrame() {
     backgroundFrame.clearImage();
+}
+
+void Video::setBackgroundFrameBehind(bool behind) {
+    backgroundFrameBehind = behind;
 }
 
 void Video::renderBlackFrame() {

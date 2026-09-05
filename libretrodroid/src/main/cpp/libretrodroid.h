@@ -204,6 +204,7 @@ public:
 
     void setBackgroundFrame(const uint8_t* data, int width, int height);
     void clearBackgroundFrame();
+    void setBackgroundFrameBehind(bool behind);
 
     void resetGlobalVariables();
 
@@ -255,6 +256,7 @@ private:
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;
     bool immersiveModeEnabled = false;
+    bool backgroundFrameBehind = false;
     ImmersiveMode::Config immersiveModeConfig {};
 
     float defaultAspectRatio = 1.0;

@@ -226,6 +226,12 @@
     <string name="ingame_frame_footer_select">Auswählen</string>
     <string name="ingame_frame_footer_download">Herunterladen</string>
     <string name="ingame_frame_footer_cancel">Abbrechen</string>
+    <string name="ingame_frame_adjust_title">Bild anpassen</string>
+    <string name="ingame_frame_footer_move">Verschieben</string>
+    <string name="ingame_frame_footer_zoom">Zoom</string>
+    <string name="ingame_frame_footer_adjust">Anpassen</string>
+    <string name="ingame_frame_footer_reset">Zurücksetzen</string>
+    <string name="ingame_frame_footer_done">Fertig</string>
 
     <string name="ingame_shader_footer_picker_browse">Durchsuchen</string>
     <string name="ingame_shader_footer_picker_select">Auswählen</string>

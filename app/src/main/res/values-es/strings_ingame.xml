@@ -229,6 +229,12 @@
     <string name="ingame_frame_footer_select">Seleccionar</string>
     <string name="ingame_frame_footer_download">Descargar</string>
     <string name="ingame_frame_footer_cancel">Cancelar</string>
+    <string name="ingame_frame_adjust_title">Ajustar pantalla</string>
+    <string name="ingame_frame_footer_move">Mover</string>
+    <string name="ingame_frame_footer_zoom">Zoom</string>
+    <string name="ingame_frame_footer_adjust">Ajustar</string>
+    <string name="ingame_frame_footer_reset">Restablecer</string>
+    <string name="ingame_frame_footer_done">Listo</string>
 
     <string name="ingame_shader_footer_picker_browse">Explorar</string>
     <string name="ingame_shader_footer_picker_select">Seleccionar</string>

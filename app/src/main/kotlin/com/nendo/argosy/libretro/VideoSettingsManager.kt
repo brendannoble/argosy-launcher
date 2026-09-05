@@ -102,6 +102,12 @@ class VideoSettingsManager(
         currentAnalogAsDpad = settings.analogAsDpad
         currentDpadAsAnalog = settings.dpadAsAnalog
         currentFrame = settings.frame
+        scope.launch {
+            val stored = platformLibretroSettingsDao.getByPlatformId(platformId)
+            frameOffsetX = stored?.frameOffsetX ?: 0f
+            frameOffsetY = stored?.frameOffsetY ?: 0f
+            frameZoom = stored?.frameZoom ?: 1f
+        }
     }
 
     fun resolveCustomShader(settings: BuiltinEmulatorSettings) {
@@ -163,6 +169,84 @@ class VideoSettingsManager(
         LibretroSettingDef.AutoSaveState,
         LibretroSettingDef.AutoRestoreState,
         LibretroSettingDef.HwCoreSaveStates -> ""
+    }
+
+    /**
+     * Netplay and speedrun runs give the whole surface to the game: a frame shrinks it, and both
+     * modes are judged on what the player can see.
+     */
+    var framesSuppressed: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            applyFrame(currentFrame)
+        }
+
+    var frameOffsetX by mutableStateOf(0f)
+    var frameOffsetY by mutableStateOf(0f)
+    var frameZoom by mutableStateOf(1f)
+
+    val frameIsAdjustable: Boolean
+        get() = currentFrame?.let { frameRegistry.findById(it)?.screenRect } != null
+
+    fun adjustFrame(offsetX: Float, offsetY: Float, zoom: Float) {
+        frameOffsetX = (frameOffsetX + offsetX).coerceIn(-0.5f, 0.5f)
+        frameOffsetY = (frameOffsetY + offsetY).coerceIn(-0.5f, 0.5f)
+        frameZoom = (frameZoom * zoom).coerceIn(0.2f, 3f)
+        applyFrame(currentFrame)
+    }
+
+    fun resetFrameAdjustment() {
+        frameOffsetX = 0f
+        frameOffsetY = 0f
+        frameZoom = 1f
+        applyFrame(currentFrame)
+    }
+
+    fun persistFrameAdjustment() {
+        val hasOverride = frameOffsetX != 0f || frameOffsetY != 0f || frameZoom != 1f
+        scope.launch {
+            val current = platformLibretroSettingsDao.getByPlatformId(platformId)
+                ?: PlatformLibretroSettingsEntity(platformId = platformId)
+            platformLibretroSettingsDao.upsert(
+                current.copy(
+                    frameOffsetX = frameOffsetX.takeIf { hasOverride },
+                    frameOffsetY = frameOffsetY.takeIf { hasOverride },
+                    frameZoom = frameZoom.takeIf { hasOverride }
+                )
+            )
+        }
+    }
+
+    fun applyFrame(frameId: String?) {
+        val retroView = getRetroView()
+        val entry = frameId?.takeUnless { framesSuppressed }?.let { frameRegistry.findById(it) }
+        val bitmap = entry?.let { frameRegistry.loadFrame(it.id) }
+
+        if (bitmap == null) {
+            retroView.clearBackgroundFrame()
+            retroView.backgroundFrameBehind = false
+            retroView.viewport = RectF(0f, 0f, 1f, 1f)
+            return
+        }
+
+        val rect = entry.screenRect
+        retroView.backgroundFrameBehind = rect != null
+        retroView.viewport = if (rect != null) adjustedViewport(rect) else RectF(0f, 0f, 1f, 1f)
+        retroView.setBackgroundFrame(bitmap)
+    }
+
+    private fun adjustedViewport(rect: FrameRegistry.ScreenRect): RectF {
+        val centerX = (rect.left + rect.right) / 2f + frameOffsetX
+        val centerY = (rect.top + rect.bottom) / 2f + frameOffsetY
+        val halfWidth = (rect.right - rect.left) / 2f * frameZoom
+        val halfHeight = (rect.bottom - rect.top) / 2f * frameZoom
+        return RectF(
+            centerX - halfWidth,
+            centerY - halfHeight,
+            centerX + halfWidth,
+            centerY + halfHeight
+        )
     }
 
     private fun getGlobalFrameForPlatform(): String? {
@@ -370,17 +454,7 @@ class VideoSettingsManager(
                 onRewindToggled?.invoke(enabled)
             }
             LibretroSettingDef.Frame -> {
-                val frameId = if (value == "None") null else currentFrame
-                if (frameId != null) {
-                    val bitmap = frameRegistry.loadFrame(frameId)
-                    if (bitmap != null) {
-                        retroView.setBackgroundFrame(bitmap)
-                    } else {
-                        retroView.clearBackgroundFrame()
-                    }
-                } else {
-                    retroView.clearBackgroundFrame()
-                }
+                applyFrame(if (value == "None") null else currentFrame)
             }
             LibretroSettingDef.RewindSpeed -> {
                 onRewindConfigChanged?.invoke()

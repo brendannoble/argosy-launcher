@@ -94,6 +94,17 @@ class GLRetroView(
         // Always use RENDERMODE_CONTINUOUSLY - libretro cores expect continuous frame calls
     }
 
+    /**
+     * Draws the background frame behind the game rather than over it. A cutout bezel shows the
+     * game through its transparent middle and must stay on top; a plate has no cutout, so it goes
+     * behind and [viewport] places the game on it.
+     */
+    var backgroundFrameBehind: Boolean by Delegates.observable(false) { _, _, value ->
+        runOnGLThread {
+            LibretroDroid.setBackgroundFrameBehind(value)
+        }
+    }
+
     var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
         runOnGLThread {
             LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())

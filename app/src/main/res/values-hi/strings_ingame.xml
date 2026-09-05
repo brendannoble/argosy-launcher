@@ -226,6 +226,12 @@
     <string name="ingame_frame_footer_select">चुनें</string>
     <string name="ingame_frame_footer_download">डाउनलोड</string>
     <string name="ingame_frame_footer_cancel">रद्द करें</string>
+    <string name="ingame_frame_adjust_title">स्क्रीन समायोजित करें</string>
+    <string name="ingame_frame_footer_move">हिलाएँ</string>
+    <string name="ingame_frame_footer_zoom">ज़ूम</string>
+    <string name="ingame_frame_footer_adjust">समायोजित करें</string>
+    <string name="ingame_frame_footer_reset">रीसेट करें</string>
+    <string name="ingame_frame_footer_done">पूर्ण</string>
 
     <string name="ingame_shader_footer_picker_browse">ब्राउज़ करें</string>
     <string name="ingame_shader_footer_picker_select">चुनें</string>

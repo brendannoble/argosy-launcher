@@ -826,6 +826,14 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_clearBackg
     LibretroDroid::getInstance().clearBackgroundFrame();
 }
 
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setBackgroundFrameBehind(
+    JNIEnv* env,
+    jclass obj,
+    jboolean behind
+) {
+    LibretroDroid::getInstance().setBackgroundFrameBehind(behind);
+}
+
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setViewport(
     JNIEnv* env,
     jclass obj,

@@ -232,6 +232,12 @@
     <string name="ingame_frame_footer_select">Выбрать</string>
     <string name="ingame_frame_footer_download">Скачать</string>
     <string name="ingame_frame_footer_cancel">Отмена</string>
+    <string name="ingame_frame_adjust_title">Настройка экрана</string>
+    <string name="ingame_frame_footer_move">Сдвинуть</string>
+    <string name="ingame_frame_footer_zoom">Масштаб</string>
+    <string name="ingame_frame_footer_adjust">Настроить</string>
+    <string name="ingame_frame_footer_reset">Сбросить</string>
+    <string name="ingame_frame_footer_done">Готово</string>
 
     <string name="ingame_shader_footer_picker_browse">Просмотр</string>
     <string name="ingame_shader_footer_picker_select">Выбрать</string>

@@ -231,6 +231,7 @@ class LibretroActivity : ComponentActivity() {
     private var settingsVisible by mutableStateOf(false)
     private var shaderChainEditorVisible by mutableStateOf(false)
     private var frameEditorVisible by mutableStateOf(false)
+    private var frameAdjustMode by mutableStateOf(false)
     private var inGameShaderChainManager: ShaderChainManager? = null
     private var inGameFrameManager: FrameManager? = null
     private var capturedGameFrame: Bitmap? = null
@@ -696,6 +697,10 @@ class LibretroActivity : ComponentActivity() {
                 com.nendo.argosy.DualScreenManagerHolder.instance?.updateCompanionHasQuickSave(has)
             }
         }
+        lifecycleScope.launch {
+            snapshotFlow { netplay.inSession || speedrunPanelSideState != "Off" }
+                .collect { videoSettings.framesSuppressed = it }
+        }
     }
 
     private fun initializeInputHandlers() {
@@ -850,13 +855,7 @@ class LibretroActivity : ComponentActivity() {
                         if (gameLoadFailed) return@collect
                         coreLoadedSuccessfully = true
                         Log.i(TAG, "[Startup] GL surface created - render pipeline ready")
-                        videoSettings.currentFrame?.let { frameId ->
-                            val bitmap = frameRegistry.loadFrame(frameId)
-                            if (bitmap != null) {
-                                Log.i(TAG, "[Startup] Setting initial frame: $frameId (${bitmap.width}x${bitmap.height})")
-                                retroView.setBackgroundFrame(bitmap)
-                            }
-                        }
+                        videoSettings.applyFrame(videoSettings.currentFrame)
                         videoSettings.applyAspectRatio()
                         videoSettings.applyOverscanCrop()
                         videoSettings.applyRotation()
@@ -1487,6 +1486,11 @@ class LibretroActivity : ComponentActivity() {
                         activeMenuHandler = InGameFrameScreen(
                             manager = manager,
                             isOffline = false,
+                            adjustable = videoSettings.frameIsAdjustable,
+                            adjusting = frameAdjustMode,
+                            onToggleAdjust = { frameAdjustMode = !frameAdjustMode },
+                            onAdjust = { dx, dy, zoom -> videoSettings.adjustFrame(dx, dy, zoom) },
+                            onResetAdjust = { videoSettings.resetFrameAdjustment() },
                             onConfirm = ::confirmInGameFrameEditor,
                             onDismiss = ::closeInGameFrameEditor
                         )
@@ -2574,14 +2578,7 @@ class LibretroActivity : ComponentActivity() {
             platformSlug = platformSlug,
             scope = lifecycleScope,
             initialFrameId = videoSettings.currentFrame,
-            onFrameChanged = { frameId ->
-                val bitmap = if (frameId != null) registry.loadFrame(frameId) else null
-                if (bitmap != null) {
-                    retroView.setBackgroundFrame(bitmap)
-                } else {
-                    retroView.clearBackgroundFrame()
-                }
-            }
+            onFrameChanged = { frameId -> videoSettings.applyFrame(frameId) }
         )
         inGameFrameManager = manager
         retroView.enablePreviewMode()
@@ -2593,6 +2590,7 @@ class LibretroActivity : ComponentActivity() {
         val frameId = manager.selectedFrameId
         videoSettings.currentFrame = frameId
         videoSettings.persistFrame(frameId)
+        videoSettings.persistFrameAdjustment()
         if (frameId != null) {
             lifecycleScope.launch {
                 val globalSettings = preferencesRepository.getBuiltinEmulatorSettings().first()
@@ -2605,12 +2603,12 @@ class LibretroActivity : ComponentActivity() {
     }
 
     private fun closeInGameFrameEditor() {
-        val originalFrameId = videoSettings.currentFrame
-        val bitmap = if (originalFrameId != null) frameRegistry.loadFrame(originalFrameId) else null
-        if (bitmap != null) {
-            retroView.setBackgroundFrame(bitmap)
-        } else {
-            retroView.clearBackgroundFrame()
+        lifecycleScope.launch {
+            val stored = platformLibretroSettingsDao.getByPlatformId(platformId)
+            videoSettings.frameOffsetX = stored?.frameOffsetX ?: 0f
+            videoSettings.frameOffsetY = stored?.frameOffsetY ?: 0f
+            videoSettings.frameZoom = stored?.frameZoom ?: 1f
+            videoSettings.applyFrame(videoSettings.currentFrame)
         }
         closeInGameFrameEditorInternal()
     }
@@ -2620,6 +2618,7 @@ class LibretroActivity : ComponentActivity() {
         inGameFrameManager?.destroy()
         inGameFrameManager = null
         frameEditorVisible = false
+        frameAdjustMode = false
         settingsVisible = true
     }
 

@@ -91,6 +91,7 @@ public:
 
     void setBackgroundFrame(const uint8_t* data, int width, int height);
     void clearBackgroundFrame();
+    void setBackgroundFrameBehind(bool behind);
 
     /**
      * Draws the current frame. Pass force = true when the caller has no new core frame to show
@@ -155,6 +156,7 @@ private:
     std::vector<ShaderChainEntry> shadersChain;
 
     bool immersiveModeEnabled = false;
+    bool backgroundFrameBehind = false;
     ImmersiveMode immersiveMode;
     BackgroundFrame backgroundFrame;
     VideoLayout videoLayout;

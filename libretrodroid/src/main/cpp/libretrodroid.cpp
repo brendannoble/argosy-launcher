@@ -368,6 +368,9 @@ void LibretroDroid::onSurfaceCreated() {
     if (bfiEnabled) {
         video->setBlackFrameInsertion(bfiEnabled);
     }
+    if (backgroundFrameBehind) {
+        video->setBackgroundFrameBehind(backgroundFrameBehind);
+    }
 
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         if (video && video->isHWAccelerated()) {
@@ -1061,6 +1064,13 @@ void LibretroDroid::setBackgroundFrame(const uint8_t* data, int width, int heigh
 void LibretroDroid::clearBackgroundFrame() {
     if (video) {
         video->clearBackgroundFrame();
+    }
+}
+
+void LibretroDroid::setBackgroundFrameBehind(bool behind) {
+    backgroundFrameBehind = behind;
+    if (video) {
+        video->setBackgroundFrameBehind(behind);
     }
 }
 

@@ -223,6 +223,12 @@
     <string name="ingame_frame_footer_select">選擇</string>
     <string name="ingame_frame_footer_download">下載</string>
     <string name="ingame_frame_footer_cancel">取消</string>
+    <string name="ingame_frame_adjust_title">調整畫面</string>
+    <string name="ingame_frame_footer_move">移動</string>
+    <string name="ingame_frame_footer_zoom">縮放</string>
+    <string name="ingame_frame_footer_adjust">調整</string>
+    <string name="ingame_frame_footer_reset">重設</string>
+    <string name="ingame_frame_footer_done">完成</string>
 
     <string name="ingame_shader_footer_picker_browse">瀏覽</string>
     <string name="ingame_shader_footer_picker_select">選擇</string>

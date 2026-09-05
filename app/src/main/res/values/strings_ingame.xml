@@ -509,6 +509,18 @@
     <string name="ingame_frame_footer_download">Download</string>
     <!-- Footer hint in the border art picker. Verb: leaves the border as it was. -->
     <string name="ingame_frame_footer_cancel">Cancel</string>
+    <!-- Title while the player is repositioning the game on the frame. -->
+    <string name="ingame_frame_adjust_title">Adjust Screen</string>
+    <!-- Footer hint: d-pad moves the game on the frame. Verb. -->
+    <string name="ingame_frame_footer_move">Move</string>
+    <!-- Footer hint: triggers resize the game on the frame. Verb. -->
+    <string name="ingame_frame_footer_zoom">Zoom</string>
+    <!-- Footer hint: enters the reposition mode. Verb. -->
+    <string name="ingame_frame_footer_adjust">Adjust</string>
+    <!-- Footer hint: returns the game to the frame's own position and size. Verb. -->
+    <string name="ingame_frame_footer_reset">Reset</string>
+    <!-- Footer hint: leaves the reposition mode. Adjective. -->
+    <string name="ingame_frame_footer_done">Done</string>
 
     <!-- Footer hint while the list of available shaders is open. Verb: up and down move
          through the list. -->

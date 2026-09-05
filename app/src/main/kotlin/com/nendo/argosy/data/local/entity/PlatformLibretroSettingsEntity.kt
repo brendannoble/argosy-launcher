@@ -46,7 +46,10 @@ data class PlatformLibretroSettingsEntity(
     val statePath: String? = null,
     val autoSaveState: Boolean? = null,
     val autoRestoreState: Boolean? = null,
-    val hwCoreSaveStates: Boolean? = null
+    val hwCoreSaveStates: Boolean? = null,
+    val frameOffsetX: Float? = null,
+    val frameOffsetY: Float? = null,
+    val frameZoom: Float? = null
 ) {
     fun hasAnyOverrides(): Boolean =
         hasAnyVideoOverrides() || hasAnyControlOverrides() || hasAnyPathOverrides() || hasAnySavingOverrides()

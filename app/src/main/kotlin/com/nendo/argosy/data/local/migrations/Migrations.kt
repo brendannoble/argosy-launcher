@@ -3563,3 +3563,11 @@ object Migration_183_184 : Migration(183, 184) {
         db.execSQL("UPDATE `pending_conflicts` SET `emulator` = 'argosy' WHERE `emulator` = 'builtin'")
     }
 }
+
+object Migration_184_185 : Migration(184, 185) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `frameOffsetX` REAL")
+        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `frameOffsetY` REAL")
+        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `frameZoom` REAL")
+    }
+}

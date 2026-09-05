@@ -14,12 +14,29 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
 
     enum class Source { LIBRETRO, DUIMON, CUSTOM }
 
+    /**
+     * Where the game sits on the frame, as fractions of the surface. Taken from the Mega Bezel
+     * preset that ships the artwork, so it lands on the screen the artwork was drawn around.
+     */
+    data class ScreenRect(
+        val left: Float,
+        val top: Float,
+        val right: Float,
+        val bottom: Float
+    )
+
+    /**
+     * [screenRect] decides how the frame is composited. Null is a cutout bezel: opaque border,
+     * transparent middle, drawn over a full-surface game. Non-null is a plate with no cutout,
+     * drawn behind a game placed at that rect.
+     */
     data class FrameEntry(
         val id: String,
         val displayName: String,
         val platforms: Set<String>,
         val githubPath: String,
-        val source: Source = Source.LIBRETRO
+        val source: Source = Source.LIBRETRO,
+        val screenRect: ScreenRect? = null
     )
 
     private var installedCache: Set<String>? = null
@@ -68,6 +85,12 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
     }
 
     /**
+     * The screen every Duimon CRT preset places the game on: 4:3 at 82.97% of surface height,
+     * centred. Upstream picks 82.97 so a 224px core lands on an integer scale at 1080p and 2160p.
+     */
+    private val CRT_SCREEN = ScreenRect(0.189f, 0.085f, 0.811f, 0.915f)
+
+    /**
      * Duimon entries lead, so a platform that has one takes it as its Auto default: Auto resolves
      * to the first entry matching the slug. The set covers every platform the built-in cores run
      * that Duimon ships a single 16:9 bezel for. Game Boy, Game Boy Color and Game Boy Advance are
@@ -77,224 +100,228 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
     private val catalogFrames = listOf(
         FrameEntry(
             "duimon_nes", "NES (Duimon)", setOf("nes"),
-            "Nintendo_NES/NES.png", Source.DUIMON
+            "Nintendo_NES/NES.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_fds", "Famicom Disk System (Duimon)", setOf("fds"),
-            "Nintendo_Famicom/Famicom.png", Source.DUIMON
+            "Nintendo_Famicom/Famicom.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_snes", "SNES (Duimon)", setOf("snes"),
-            "Nintendo_SNES/SNES.png", Source.DUIMON
+            "Nintendo_SNES/SNES.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_n64", "Nintendo 64 (Duimon)", setOf("n64", "n64dd"),
-            "Nintendo_N64/N64.png", Source.DUIMON
+            "Nintendo_N64/N64.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_gc", "GameCube (Duimon)", setOf("gc"),
-            "Nintendo_Gamecube/Gamecube.png", Source.DUIMON
+            "Nintendo_Gamecube/Gamecube.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_wii", "Wii (Duimon)", setOf("wii"),
-            "Nintendo_Wii/Wii.png", Source.DUIMON
-        ),
-        FrameEntry(
-            "duimon_nds", "Nintendo DS (Duimon)", setOf("nds", "dsi"),
-            "Nintendo_NDS/NDS.png", Source.DUIMON
-        ),
-        FrameEntry(
-            "duimon_3ds", "Nintendo 3DS (Duimon)", setOf("3ds", "n3ds"),
-            "Nintendo_3DS/3DS.png", Source.DUIMON
+            "Nintendo_Wii/Wii.png", Source.DUIMON,
+            ScreenRect(0.174f, 0.075f, 0.826f, 0.945f)
         ),
         FrameEntry(
             "duimon_pokemini", "Pokemon Mini (Duimon)", setOf("pokemini"),
-            "Nintendo_Pokemon_Mini/Pokemon_Mini.png", Source.DUIMON
+            "Nintendo_Pokemon_Mini/Pokemon_Mini.png", Source.DUIMON,
+            ScreenRect(0.328f, 0.362f, 0.672f, 0.820f)
         ),
         FrameEntry(
             "duimon_sg1000", "SG-1000 (Duimon)", setOf("sg1000"),
-            "SEGA_SG-1000/SG-1000.png", Source.DUIMON
+            "SEGA_SG-1000/SG-1000.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_mastersystem", "Master System (Duimon)", setOf("sms"),
-            "SEGA_Master_System/SMS.png", Source.DUIMON
+            "SEGA_Master_System/SMS.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_genesis", "Sega Genesis (Duimon)", setOf("genesis"),
-            "SEGA_Genesis/Genesis.png", Source.DUIMON
+            "SEGA_Genesis/Genesis.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_nomad", "Sega Nomad (Duimon)", setOf("nomad"),
-            "SEGA_Nomad/Nomad.png", Source.DUIMON
+            "SEGA_Nomad/Nomad.png", Source.DUIMON,
+            ScreenRect(0.315f, 0.327f, 0.685f, 0.821f)
         ),
         FrameEntry(
             "duimon_scd", "Sega CD (Duimon)", setOf("scd"),
-            "SEGA_CD/SEGACD.png", Source.DUIMON
+            "SEGA_CD/SEGACD.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_32x", "Sega 32X (Duimon)", setOf("32x"),
-            "SEGA_32X/SEGA32X.png", Source.DUIMON
+            "SEGA_32X/SEGA32X.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_gamegear", "Game Gear (Duimon)", setOf("gg"),
-            "SEGA_Game_Gear/Game_Gear.png", Source.DUIMON
+            "SEGA_Game_Gear/Game_Gear.png", Source.DUIMON,
+            ScreenRect(0.282f, 0.252f, 0.718f, 0.834f)
         ),
         FrameEntry(
             "duimon_pico", "Sega Pico (Duimon)", setOf("pico"),
-            "SEGA_Pico/SEGA_Pico.png", Source.DUIMON
+            "SEGA_Pico/SEGA_Pico.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_saturn", "Sega Saturn (Duimon)", setOf("saturn"),
-            "SEGA_Saturn/Saturn.png", Source.DUIMON
+            "SEGA_Saturn/Saturn.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_dreamcast", "Dreamcast (Duimon)", setOf("dreamcast"),
-            "SEGA_Dreamcast/Dreamcast.png", Source.DUIMON
+            "SEGA_Dreamcast/Dreamcast.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_psx", "PlayStation (Duimon)", setOf("psx"),
-            "SONY_Playstation/Playstation.png", Source.DUIMON
+            "SONY_Playstation/Playstation.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_psp", "PlayStation Portable (Duimon)", setOf("psp"),
-            "SONY_PSP/PSP.png", Source.DUIMON
+            "SONY_PSP/PSP.png", Source.DUIMON,
+            ScreenRect(0.154f, 0.192f, 0.846f, 0.884f)
         ),
         FrameEntry(
             "duimon_tg16", "TurboGrafx-16 (Duimon)", setOf("tg16"),
-            "NEC_TurboGrafx_16/TurboGrafx16.png", Source.DUIMON
+            "NEC_TurboGrafx_16/TurboGrafx16.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_tgcd", "TurboGrafx-CD (Duimon)", setOf("tgcd"),
-            "NEC_TurboGrafx_CD/TurboGrafx_CD.png", Source.DUIMON
+            "NEC_TurboGrafx_CD/TurboGrafx_CD.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_supergrafx", "SuperGrafx (Duimon)", setOf("supergrafx"),
-            "NEC_SuperGrafx/SuperGrafx.png", Source.DUIMON
+            "NEC_SuperGrafx/SuperGrafx.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_pcfx", "PC-FX (Duimon)", setOf("pcfx"),
-            "NEC_PC-FX/PC-FX.png", Source.DUIMON
+            "NEC_PC-FX/PC-FX.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_pc9800", "PC-9800 (Duimon)", setOf("pc9800"),
-            "NEC_PC-9801/PC-9801.png", Source.DUIMON
+            "NEC_PC-9801/PC-9801.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_neogeo", "Neo Geo (Duimon)", setOf("neogeo"),
-            "Neo_Geo_AES/NeoGeo_AES.png", Source.DUIMON
+            "Neo_Geo_AES/NeoGeo_AES.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_neogeocd", "Neo Geo CD (Duimon)", setOf("neogeocd"),
-            "Neo_Geo_CD/NeoGeo_CD.png", Source.DUIMON
+            "Neo_Geo_CD/NeoGeo_CD.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_ngp", "Neo Geo Pocket (Duimon)", setOf("ngp"),
-            "Neo_Geo_Pocket/NGP.png", Source.DUIMON
+            "Neo_Geo_Pocket/NGP.png", Source.DUIMON,
+            ScreenRect(0.315f, 0.261f, 0.685f, 0.889f)
         ),
         FrameEntry(
             "duimon_ngpc", "Neo Geo Pocket Color (Duimon)", setOf("ngpc"),
-            "Neo_Geo_Pocket_Color/NGPC.png", Source.DUIMON
+            "Neo_Geo_Pocket_Color/NGPC.png", Source.DUIMON,
+            ScreenRect(0.318f, 0.238f, 0.682f, 0.854f)
         ),
         FrameEntry(
             "duimon_atari2600", "Atari 2600 (Duimon)", setOf("atari2600"),
-            "Atari_2600/2600.png", Source.DUIMON
+            "Atari_2600/2600.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_atari5200", "Atari 5200 (Duimon)", setOf("atari5200"),
-            "Atari_5200/5200.png", Source.DUIMON
+            "Atari_5200/5200.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_atari7800", "Atari 7800 (Duimon)", setOf("atari7800"),
-            "Atari_7800/7800.png", Source.DUIMON
+            "Atari_7800/7800.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_jaguar", "Atari Jaguar (Duimon)", setOf("jaguar"),
-            "Atari_Jaguar/Jaguar.png", Source.DUIMON
+            "Atari_Jaguar/Jaguar.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_lynx", "Atari Lynx (Duimon)", setOf("lynx"),
-            "Atari_Lynx/Lynx_Alt.png", Source.DUIMON
+            "Atari_Lynx/Lynx_Alt.png", Source.DUIMON,
+            ScreenRect(0.304f, 0.276f, 0.696f, 0.724f)
         ),
         FrameEntry(
             "duimon_wonderswan", "WonderSwan (Duimon)", setOf("wonderswan"),
-            "Bandai_WonderSwan/WonderSwan.png", Source.DUIMON
+            "Bandai_WonderSwan/WonderSwan.png", Source.DUIMON,
+            ScreenRect(0.354f, 0.308f, 0.800f, 0.820f)
         ),
         FrameEntry(
             "duimon_wscolor", "WonderSwan Color (Duimon)", setOf("wsc"),
-            "Bandai_WonderSwan_Color/WonderSwan_Color.png", Source.DUIMON
+            "Bandai_WonderSwan_Color/WonderSwan_Color.png", Source.DUIMON,
+            ScreenRect(0.354f, 0.308f, 0.800f, 0.820f)
         ),
         FrameEntry(
             "duimon_3do", "3DO (Duimon)", setOf("3do"),
-            "Panasonic_3DO/3DO.png", Source.DUIMON
+            "Panasonic_3DO/3DO.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_cdi", "CD-i (Duimon)", setOf("cdi"),
-            "Philips_CD-i/CD-i.png", Source.DUIMON
+            "Philips_CD-i/CD-i.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_channelf", "Channel F (Duimon)", setOf("channelf"),
-            "Fairchild_Channel_F/ChannelF.png", Source.DUIMON
+            "Fairchild_Channel_F/ChannelF.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_coleco", "ColecoVision (Duimon)", setOf("coleco"),
-            "ColecoVision/ColecoVision.png", Source.DUIMON
+            "ColecoVision/ColecoVision.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_intellivision", "Intellivision (Duimon)", setOf("intellivision"),
-            "Mattel_Intellivision/Intellivision.png", Source.DUIMON
+            "Mattel_Intellivision/Intellivision.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_odyssey2", "Odyssey 2 (Duimon)", setOf("odyssey2"),
-            "Magnavox_Odyssey_2/Odyssey2.png", Source.DUIMON
+            "Magnavox_Odyssey_2/Odyssey2.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_vectrex", "Vectrex (Duimon)", setOf("vectrex"),
-            "GCE_Vectrex/Vectrex.png", Source.DUIMON
+            "GCE_Vectrex/Vectrex.png", Source.DUIMON,
+            ScreenRect(0.285f, 0.277f, 0.715f, 0.895f)
         ),
         FrameEntry(
             "duimon_arcade", "Arcade Cabinet (Duimon)",
             setOf("arcade", "cps1", "cps2", "cps3", "naomi", "atomiswave"),
-            "Arcade/Arcade_Horizontal.png", Source.DUIMON
+            "Arcade/Arcade_Horizontal.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_fbneo", "FB Neo (Duimon)", setOf("fbneo"),
-            "FB-Neo/FB-Neo_Horizontal.png", Source.DUIMON
+            "FB-Neo/FB-Neo_Horizontal.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_mame", "MAME (Duimon)", setOf("mame"),
-            "MAME/MAME_Horizontal.png", Source.DUIMON
+            "MAME/MAME_Horizontal.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_amiga", "Amiga (Duimon)", setOf("amiga", "amigacd32", "cdtv"),
-            "Amiga_A500_Plus/A500.png", Source.DUIMON
+            "Amiga_A500_Plus/A500.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_amstradcpc", "Amstrad CPC (Duimon)", setOf("amstradcpc"),
-            "Amstrad_CPC/CPC464.png", Source.DUIMON
+            "Amstrad_CPC/CPC464.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_c64", "Commodore 64 (Duimon)", setOf("c64"),
-            "Commodore_64C/64C.png", Source.DUIMON
+            "Commodore_64C/64C.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_dos", "DOS (Duimon)", setOf("dos"),
-            "DOSBox/DOSBox.png", Source.DUIMON
+            "DOSBox/DOSBox.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_msx", "MSX (Duimon)", setOf("msx"),
-            "MSX/MSX.png", Source.DUIMON
+            "MSX/MSX.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_msx2", "MSX2 (Duimon)", setOf("msx2"),
-            "MSX2/MSX2.png", Source.DUIMON
+            "MSX2/MSX2.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_zx", "ZX Spectrum (Duimon)", setOf("zx"),
-            "Sinclair_ZX_Spectrum/ZX_Spectrum.png", Source.DUIMON
+            "Sinclair_ZX_Spectrum/ZX_Spectrum.png", Source.DUIMON, CRT_SCREEN
         ),
         FrameEntry(
             "duimon_pico8", "PICO-8 (Duimon)", setOf("pico8"),
-            "PICO-8/PICO-8.png", Source.DUIMON
+            "PICO-8/PICO-8.png", Source.DUIMON,
+            ScreenRect(0.339f, 0.279f, 0.661f, 0.851f)
         ),
         FrameEntry(
             "nes", "NES", setOf("nes"),

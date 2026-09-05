@@ -38,28 +38,80 @@ import com.nendo.argosy.ui.components.FooterBar
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
+import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.gripReserveBottomInset
 import com.nendo.argosy.ui.util.clickableNoFocus
+
+private const val NUDGE_STEP = 0.004f
+private const val ZOOM_STEP = 1.02f
 
 @Composable
 fun InGameFrameScreen(
     manager: FrameManager,
     isOffline: Boolean,
+    adjustable: Boolean,
+    adjusting: Boolean,
+    onToggleAdjust: () -> Unit,
+    onAdjust: (Float, Float, Float) -> Unit,
+    onResetAdjust: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ): InputHandler {
     val currentOnConfirm = rememberUpdatedState(onConfirm)
     val currentOnDismiss = rememberUpdatedState(onDismiss)
+    val currentAdjusting = rememberUpdatedState(adjusting)
+    val currentAdjustable = rememberUpdatedState(adjustable)
+    val currentOnToggleAdjust = rememberUpdatedState(onToggleAdjust)
+    val currentOnAdjust = rememberUpdatedState(onAdjust)
+    val currentOnResetAdjust = rememberUpdatedState(onResetAdjust)
 
     val inputHandler = remember {
         object : InputHandler {
             override fun onLeft(): InputResult {
-                manager.previousFrame(localOnly = isOffline)
+                if (currentAdjusting.value) {
+                    currentOnAdjust.value(-NUDGE_STEP, 0f, 1f)
+                } else {
+                    manager.previousFrame(localOnly = isOffline)
+                }
                 return InputResult.HANDLED
             }
 
             override fun onRight(): InputResult {
-                manager.nextFrame(localOnly = isOffline)
+                if (currentAdjusting.value) {
+                    currentOnAdjust.value(NUDGE_STEP, 0f, 1f)
+                } else {
+                    manager.nextFrame(localOnly = isOffline)
+                }
+                return InputResult.HANDLED
+            }
+
+            override fun onUp(): InputResult {
+                if (!currentAdjusting.value) return InputResult.UNHANDLED
+                currentOnAdjust.value(0f, -NUDGE_STEP, 1f)
+                return InputResult.HANDLED
+            }
+
+            override fun onDown(): InputResult {
+                if (!currentAdjusting.value) return InputResult.UNHANDLED
+                currentOnAdjust.value(0f, NUDGE_STEP, 1f)
+                return InputResult.HANDLED
+            }
+
+            override fun onPrevTrigger(): InputResult {
+                if (!currentAdjusting.value) return InputResult.UNHANDLED
+                currentOnAdjust.value(0f, 0f, 1f / ZOOM_STEP)
+                return InputResult.HANDLED
+            }
+
+            override fun onNextTrigger(): InputResult {
+                if (!currentAdjusting.value) return InputResult.UNHANDLED
+                currentOnAdjust.value(0f, 0f, ZOOM_STEP)
+                return InputResult.HANDLED
+            }
+
+            override fun onSecondaryAction(): InputResult {
+                if (!currentAdjustable.value) return InputResult.UNHANDLED
+                currentOnToggleAdjust.value()
                 return InputResult.HANDLED
             }
 
@@ -69,12 +121,20 @@ fun InGameFrameScreen(
             }
 
             override fun onBack(): InputResult {
+                if (currentAdjusting.value) {
+                    currentOnToggleAdjust.value()
+                    return InputResult.HANDLED
+                }
                 currentOnDismiss.value()
                 return InputResult.HANDLED
             }
 
             override fun onContextMenu(): InputResult {
-                if (!isOffline) manager.downloadSelectedFrame()
+                if (currentAdjusting.value) {
+                    currentOnResetAdjust.value()
+                } else if (!isOffline) {
+                    manager.downloadSelectedFrame()
+                }
                 return InputResult.HANDLED
             }
         }
@@ -86,27 +146,29 @@ fun InGameFrameScreen(
             .padding(bottom = gripReserveBottomInset())
             .focusProperties { canFocus = false }
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ArrowButton(
-                direction = -1,
-                onClick = { manager.previousFrame(localOnly = isOffline) },
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(80.dp)
-            )
+        if (!adjusting) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ArrowButton(
+                    direction = -1,
+                    onClick = { manager.previousFrame(localOnly = isOffline) },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(Dimens.mediaMenuRailWidth)
+                )
 
-            Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-            ArrowButton(
-                direction = 1,
-                onClick = { manager.nextFrame(localOnly = isOffline) },
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(80.dp)
-            )
+                ArrowButton(
+                    direction = 1,
+                    onClick = { manager.nextFrame(localOnly = isOffline) },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(Dimens.mediaMenuRailWidth)
+                )
+            }
         }
 
         if (manager.isDownloading) {
@@ -129,25 +191,60 @@ fun InGameFrameScreen(
             }
         }
 
-        FrameInfoBar(
-            manager = manager,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp, start = 24.dp, end = 24.dp)
-        )
+        if (adjusting) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = Dimens.spacingMd)
+                    .clip(RoundedCornerShape(Dimens.radiusSm)),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            ) {
+                Text(
+                    text = stringResource(R.string.ingame_frame_adjust_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(
+                        horizontal = Dimens.spacingMd,
+                        vertical = Dimens.spacingSm
+                    )
+                )
+            }
+        } else {
+            FrameInfoBar(
+                manager = manager,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(
+                        top = Dimens.spacingMd,
+                        start = Dimens.spacingLg,
+                        end = Dimens.spacingLg
+                    )
+            )
+        }
 
         FooterBar(
             hints = buildFrameFooterHints(
                 canDownload = manager.installRefresh.let {
                     !isOffline && !manager.selectedFrameInstalled && !manager.isDownloading
-                }
+                },
+                adjustable = adjustable,
+                adjusting = adjusting
             ),
             onHintClick = { button ->
                 when (button) {
                     InputButton.A -> currentOnConfirm.value()
-                    InputButton.B -> currentOnDismiss.value()
-                    InputButton.X -> manager.downloadSelectedFrame()
-                    InputButton.DPAD_HORIZONTAL -> {}
+                    InputButton.B -> {
+                        if (adjusting) currentOnToggleAdjust.value() else currentOnDismiss.value()
+                    }
+                    InputButton.X -> {
+                        if (adjusting) {
+                            currentOnResetAdjust.value()
+                        } else {
+                            manager.downloadSelectedFrame()
+                        }
+                    }
+                    InputButton.Y -> currentOnToggleAdjust.value()
                     else -> {}
                 }
             },
@@ -251,15 +348,33 @@ private fun FrameInfoBar(
 }
 
 @Composable
-private fun buildFrameFooterHints(canDownload: Boolean): List<Pair<InputButton, String>> {
+private fun buildFrameFooterHints(
+    canDownload: Boolean,
+    adjustable: Boolean,
+    adjusting: Boolean
+): List<Pair<InputButton, String>> {
     val changeLabel = stringResource(R.string.ingame_frame_footer_change)
     val selectLabel = stringResource(R.string.ingame_frame_footer_select)
     val downloadLabel = stringResource(R.string.ingame_frame_footer_download)
     val cancelLabel = stringResource(R.string.ingame_frame_footer_cancel)
+    val moveLabel = stringResource(R.string.ingame_frame_footer_move)
+    val zoomLabel = stringResource(R.string.ingame_frame_footer_zoom)
+    val adjustLabel = stringResource(R.string.ingame_frame_footer_adjust)
+    val resetLabel = stringResource(R.string.ingame_frame_footer_reset)
+    val doneLabel = stringResource(R.string.ingame_frame_footer_done)
     return buildList {
-        add(InputButton.DPAD_HORIZONTAL to changeLabel)
-        add(InputButton.A to selectLabel)
-        if (canDownload) add(InputButton.X to downloadLabel)
-        add(InputButton.B to cancelLabel)
+        if (adjusting) {
+            add(InputButton.DPAD to moveLabel)
+            add(InputButton.LT_RT to zoomLabel)
+            add(InputButton.X to resetLabel)
+            add(InputButton.A to selectLabel)
+            add(InputButton.B to doneLabel)
+        } else {
+            add(InputButton.DPAD_HORIZONTAL to changeLabel)
+            add(InputButton.A to selectLabel)
+            if (canDownload) add(InputButton.X to downloadLabel)
+            if (adjustable) add(InputButton.Y to adjustLabel)
+            add(InputButton.B to cancelLabel)
+        }
     }
 }
