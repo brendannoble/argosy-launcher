@@ -30,6 +30,15 @@ set(SOUNDTOUCH_SOURCES
     ${SOUNDTOUCH_DIR}/source/cpu_detect_x86.cpp
 )
 
+# On x86 soundtouch's runtime cpu detection refers to its SSE and MMX classes, so the files
+# defining them have to be built too. They compile to nothing on other architectures.
+if(ANDROID_ABI STREQUAL "x86" OR ANDROID_ABI STREQUAL "x86_64")
+    list(APPEND SOUNDTOUCH_SOURCES
+        ${SOUNDTOUCH_DIR}/source/sse_optimized.cpp
+        ${SOUNDTOUCH_DIR}/source/mmx_optimized.cpp
+    )
+endif()
+
 # rcheevos library for RetroAchievements
 set(RCHEEVOS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/rcheevos)
 include_directories(${RCHEEVOS_DIR}/include)

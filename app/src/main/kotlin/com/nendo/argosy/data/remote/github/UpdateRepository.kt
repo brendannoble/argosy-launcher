@@ -112,6 +112,35 @@ class UpdateRepository @Inject constructor(
         private const val TAG = "UpdateRepository"
         private const val GITHUB_API_BASE = "https://api.github.com/"
         private const val RELEASES_PER_PAGE = 10
+
+        /**
+         * Release asset suffix per version code prefix, as `app/build.gradle.kts` assigns them.
+         * Assets are matched on the whole `-<suffix>.apk` ending rather than by substring, so an
+         * x86 build cannot take the x86_64 asset whose name contains it. A prefix that is absent
+         * here, the universal build's included, takes the asset carrying no suffix at all.
+         */
+        private val ABI_SUFFIX_BY_VERSION_CODE_PREFIX = mapOf(
+            1 to "arm32",
+            2 to "arm64",
+            4 to "x86",
+            5 to "x86_64"
+        )
+
+        /**
+         * The release asset matching this build's abi, else the one carrying no abi suffix, else
+         * whatever apk the release has. Taking a suffixed asset as the universal fallback would
+         * install a foreign abi, so the fallback excludes every suffix rather than a listed few.
+         */
+        fun selectApkAsset(assets: List<GitHubAsset>, versionCode: Int): GitHubAsset? {
+            val apks = assets.filter { it.name.endsWith(".apk") }
+            val suffix = ABI_SUFFIX_BY_VERSION_CODE_PREFIX[versionCode / 1_000_000]
+            val exact = suffix?.let { s -> apks.find { it.name.endsWith("-$s.apk") } }
+            return exact
+                ?: apks.find { asset ->
+                    ABI_SUFFIX_BY_VERSION_CODE_PREFIX.values.none { asset.name.endsWith("-$it.apk") }
+                }
+                ?: apks.firstOrNull()
+        }
     }
 
     private val api: GitHubApi by lazy { createApi() }
@@ -193,19 +222,7 @@ class UpdateRepository @Inject constructor(
             Log.d(TAG, "Version comparison: current=$currentVersionInfo, latest=$latestVersion")
 
             if (latestVersion > currentVersionInfo) {
-                val installedAbiType = BuildConfig.VERSION_CODE / 1_000_000
-                val abiSuffix = when (installedAbiType) {
-                    1 -> "arm32"
-                    2 -> "arm64"
-                    else -> null  // universal or debug build
-                }
-                Log.d(TAG, "APK type selection: versionCode=${BuildConfig.VERSION_CODE}, abiType=$installedAbiType, suffix=$abiSuffix")
-                val apkAssets = release.assets.filter { it.name.endsWith(".apk") }
-                val apkAsset = (if (abiSuffix != null) {
-                    apkAssets.find { it.name.contains(abiSuffix) }
-                } else null)
-                    ?: apkAssets.find { !it.name.contains("arm64") && !it.name.contains("arm32") }
-                    ?: apkAssets.firstOrNull()
+                val apkAsset = selectApkAsset(release.assets, BuildConfig.VERSION_CODE)
                 if (apkAsset == null) {
                     val error = UpdateState.Error("No APK found in release")
                     _updateState.value = error

@@ -22,7 +22,7 @@ android {
 
         ndk {
             if (project.hasProperty('allAbis') || project.hasProperty('ciOnly')) {
-                abiFilters 'arm64-v8a', 'armeabi-v7a'
+                abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86'
             } else {
                 abiFilters 'arm64-v8a'
             }

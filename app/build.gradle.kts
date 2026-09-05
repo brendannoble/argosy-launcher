@@ -135,7 +135,7 @@ android {
         abi {
             isEnable = project.hasProperty("allAbis")
             reset()
-            include("arm64-v8a", "armeabi-v7a")
+            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
             isUniversalApk = true
         }
     }
@@ -176,7 +176,16 @@ composeCompiler {
     }
 }
 
-val abiCodes = mapOf("armeabi-v7a" to 1, "arm64-v8a" to 2)
+/**
+ * Version code prefix per ABI. An x86 device cannot run the arm builds, so those sit above the
+ * universal apk rather than below it, and a store offering several picks the native one.
+ */
+val abiCodes = mapOf(
+    "armeabi-v7a" to 1,
+    "arm64-v8a" to 2,
+    "x86" to 4,
+    "x86_64" to 5
+)
 
 android.applicationVariants.all {
     outputs.all {
