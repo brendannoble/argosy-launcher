@@ -65,14 +65,19 @@ private sealed class PickerItem(
 
     data object AutoItem : PickerItem("auto", { it.hasInstalled })
 
+    /**
+     * Keyed on the emulator id, which is unique by construction, rather than the display name,
+     * which is not: every package one family matches takes that family's name when no variant
+     * suffix separates them, and a repeated key is fatal to a lazy list.
+     */
     class InstalledItem(val emulator: InstalledEmulator, val itemIndex: Int) : PickerItem(
-        key = "installed_${emulator.def.displayName}"
+        key = "installed_${emulator.def.id}"
     )
 
     data object DownloadHeader : PickerItem("downloadHeader", { it.hasDownloadable })
 
     class DownloadableItem(val emulator: EmulatorDef, val itemIndex: Int) : PickerItem(
-        key = "downloadable_${emulator.displayName}"
+        key = "downloadable_${emulator.id}"
     )
 
     class OtherAppItem(val itemIndex: Int) : PickerItem(key = "otherApp")
