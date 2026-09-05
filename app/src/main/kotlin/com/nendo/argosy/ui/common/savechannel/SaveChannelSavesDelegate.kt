@@ -307,7 +307,13 @@ class SaveChannelSavesDelegate @Inject constructor(
             }
             SaveFocusColumn.HISTORY -> {
                 val historyItem = state.focusedHistoryItem ?: return
-                val entry = findEntryForHistoryItem(historyItem) ?: return
+                val entry = findEntryForHistoryItem(historyItem)
+                if (entry == null) {
+                    notificationManager.showError(
+                        NotificationText.Res(R.string.ui_save_channel_notice_save_unavailable)
+                    )
+                    return
+                }
                 _state.update {
                     it.copy(
                         showRestoreConfirmation = true,
@@ -516,7 +522,13 @@ class SaveChannelSavesDelegate @Inject constructor(
         if (state.selectedTab != SaveTab.SAVES) return
         if (state.saveFocusColumn != SaveFocusColumn.HISTORY) return
         val historyItem = state.focusedHistoryItem ?: return
-        val entry = findEntryForHistoryItem(historyItem) ?: return
+        val entry = findEntryForHistoryItem(historyItem)
+        if (entry == null) {
+            notificationManager.showError(
+                NotificationText.Res(R.string.ui_save_channel_notice_save_unavailable)
+            )
+            return
+        }
         _state.update {
             it.copy(
                 showRenameDialog = true,

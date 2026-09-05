@@ -109,6 +109,19 @@ class LibretroHotkeyDispatcher(
         }
     }
 
+    /**
+     * Drops held-key state that key ups can no longer clear, and ends anything those keys were
+     * driving. Held fast forward is the one that survives otherwise.
+     */
+    fun releaseHeldInput() {
+        hotkeyManager.releasePressedKeys()
+        releaseFastForward()
+        if (isRewinding) {
+            isRewinding = false
+            getRetroView().isRewinding = false
+        }
+    }
+
     private fun handleFastForwardRequest(requested: Boolean) {
         if (isNetplayInSession()) return
         if (!requested || !videoSettings.fastForwardEnabled) return

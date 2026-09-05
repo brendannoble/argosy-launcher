@@ -138,6 +138,7 @@
 
     <string name="ui_save_channel_notice_activate_default">ऑटो सेव</string>
     <string name="ui_save_channel_notice_using_slot">सेव स्लॉट इस्तेमाल हो रहा है: %1$s</string>
+    <string name="ui_save_channel_notice_save_unavailable">वह सेव अब उपलब्ध नहीं है। सिंक करके फिर कोशिश करें।</string>
     <string name="ui_save_channel_notice_clear_failed">मौजूदा सेव साफ़ करने में विफल</string>
     <string name="ui_save_channel_notice_switch_default">ऑटो सेव</string>
     <string name="ui_save_channel_notice_switched_to">इस पर स्विच किया गया: %1$s</string>

@@ -331,6 +331,7 @@ class LibretroActivity : ComponentActivity() {
     private var speedrunPanelSidePref = "Right"
     private val hotkeyConsumedKeys = mutableSetOf<Int>()
     private val deferredCoreKeys = mutableSetOf<Int>()
+    private val coreHeldKeys = mutableSetOf<Int>()
     private var speedrunPickerVisible by mutableStateOf(false)
     private var speedrunPickerFocusIndex by mutableStateOf(0)
     private var speedrunPickerCategories by mutableStateOf<List<com.nendo.argosy.data.local.entity.SpeedrunCategoryEntity>>(emptyList())
@@ -700,6 +701,9 @@ class LibretroActivity : ComponentActivity() {
         lifecycleScope.launch {
             snapshotFlow { netplay.inSession || speedrunPanelSideState != "Off" }
                 .collect { videoSettings.framesSuppressed = it }
+        }
+        lifecycleScope.launch {
+            snapshotFlow { isAnyMenuOpen }.collect { open -> if (open) releaseCoreHeldKeys() }
         }
     }
 
@@ -2857,7 +2861,10 @@ class LibretroActivity : ComponentActivity() {
         if (shouldFilterShoulderButton(keyCode, event.device)) return true
 
         val handled = retroView.onKeyDown(keyCode, event)
-        if (handled) return true
+        if (handled) {
+            coreHeldKeys.add(keyCode)
+            return true
+        }
 
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             showMenu()
@@ -2881,6 +2888,7 @@ class LibretroActivity : ComponentActivity() {
 
         if (shouldFilterShoulderButton(keyCode, event.device)) return true
 
+        coreHeldKeys.remove(keyCode)
         return retroView.onKeyUp(keyCode, event) ||
             keyCode == KeyEvent.KEYCODE_BUTTON_MODE ||
             super.onKeyUp(keyCode, event)
@@ -3039,6 +3047,7 @@ class LibretroActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        releaseCoreHeldKeys()
         hideSecondScreen()
         stopRollingSave()
         Log.i(
@@ -3301,6 +3310,21 @@ class LibretroActivity : ComponentActivity() {
      * a face button is a binding the console can honour, and dropping it by keycode would void an
      * explicit remap.
      */
+    /**
+     * Releases every key the core is still holding. Key ups stop reaching the core the moment a
+     * menu opens, so a button held across that boundary stays down for the rest of the session.
+     */
+    private fun releaseCoreHeldKeys() {
+        if (::hotkeyDispatcher.isInitialized) hotkeyDispatcher.releaseHeldInput()
+        deferredCoreKeys.clear()
+        if (coreHeldKeys.isEmpty()) return
+        val held = coreHeldKeys.toList()
+        coreHeldKeys.clear()
+        held.forEach { keyCode ->
+            retroView.onKeyUp(keyCode, KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        }
+    }
+
     private fun shouldFilterShoulderButton(keyCode: Int, device: InputDevice?): Boolean {
         val isShoulder = keyCode == KeyEvent.KEYCODE_BUTTON_L1 || keyCode == KeyEvent.KEYCODE_BUTTON_R1 ||
             keyCode == KeyEvent.KEYCODE_BUTTON_L2 || keyCode == KeyEvent.KEYCODE_BUTTON_R2

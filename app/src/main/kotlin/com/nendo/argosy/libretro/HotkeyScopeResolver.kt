@@ -18,7 +18,21 @@ object HotkeyScopeResolver {
         HotkeyScopeType.CORE -> 2
     }
 
-    /** GLOBAL + PLATFORM(slug) + CORE(coreId); highest tier wins per combo+controller. */
+    /**
+     * Actions one scope can hold several binds of at once, so they group by combo, not by action.
+     */
+    private val MULTI_BIND_ACTIONS = setOf(
+        HotkeyAction.CYCLE_CORE_OPTION,
+        HotkeyAction.SEND_CORE_INPUT
+    )
+
+    /**
+     * GLOBAL + PLATFORM(slug) + CORE(coreId), highest tier winning. A higher tier displaces a
+     * lower one that shares its combo, so one combo never drives two actions, and one that shares
+     * its action, so rebinding in a scope replaces the bind rather than running alongside it. A
+     * disabled row still displaces, which is how a scope unbinds an action the tier below holds;
+     * callers pass disabled rows in for that and drop them after resolving.
+     */
     fun resolve(
         all: List<HotkeyEntity>,
         platformSlug: String?,
@@ -26,12 +40,30 @@ object HotkeyScopeResolver {
         parseCombo: (HotkeyEntity) -> List<Int>
     ): List<HotkeyEntity> {
         val applicable = all.filter { isApplicable(it, platformSlug, coreId) }
-        return applicable
+        val (multiBind, singleBind) = applicable.partition { it.action in MULTI_BIND_ACTIONS }
+
+        val resolvedMulti = multiBind
             .groupBy { HotkeyManager.canonicalizeCombo(parseCombo(it)) to it.controllerId }
-            .flatMap { (_, group) ->
-                val topTier = group.maxOf { tierRank(it.scopeType) }
-                group.filter { tierRank(it.scopeType) == topTier }
+            .flatMap { (_, group) -> topTierOf(group) }
+
+        val resolvedSingle = singleBind.filter { entity ->
+            val combo = HotkeyManager.canonicalizeCombo(parseCombo(entity))
+            val rank = tierRank(entity.scopeType)
+            singleBind.none { other ->
+                other !== entity &&
+                    other.controllerId == entity.controllerId &&
+                    tierRank(other.scopeType) > rank &&
+                    (other.action == entity.action ||
+                        HotkeyManager.canonicalizeCombo(parseCombo(other)) == combo)
             }
+        }
+
+        return resolvedMulti + resolvedSingle
+    }
+
+    private fun topTierOf(group: List<HotkeyEntity>): List<HotkeyEntity> {
+        val topTier = group.maxOf { tierRank(it.scopeType) }
+        return group.filter { tierRank(it.scopeType) == topTier }
     }
 
     private fun isApplicable(entity: HotkeyEntity, platformSlug: String?, coreId: String?): Boolean =

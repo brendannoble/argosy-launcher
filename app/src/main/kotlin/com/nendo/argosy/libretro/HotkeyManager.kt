@@ -247,6 +247,16 @@ class HotkeyManager(
         clearPending()
     }
 
+    /**
+     * Forgets which keys are down. Key ups stop arriving while a menu is open, and a combo left
+     * half-pressed makes its hotkey read as still active and rejects the next press of it.
+     */
+    fun releasePressedKeys() {
+        pressedKeys.clear()
+        triggeredConfig = null
+        clearPending()
+    }
+
     private fun parseComboJson(jsonStr: String): List<Int> {
         return try {
             val result = mutableListOf<Int>()

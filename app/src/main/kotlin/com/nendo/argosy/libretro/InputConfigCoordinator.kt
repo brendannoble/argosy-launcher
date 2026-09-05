@@ -65,9 +65,9 @@ class InputConfigCoordinator(
             inputMapper.setPortResolver { device -> portResolver.getPort(device) }
 
             inputConfigRepository.initializeDefaultHotkeys()
-            val hotkeys = inputConfigRepository.getEnabledHotkeys()
-            hotkeyManager.setHotkeys(resolveScopedHotkeys(hotkeys))
             hotkeyList = inputConfigRepository.getHotkeys()
+            val hotkeys = resolveScopedHotkeys(hotkeyList)
+            hotkeyManager.setHotkeys(hotkeys)
             hotkeyManager.setPlatformMappedButtons(platformMappedButtons(mappings))
             hotkeyManager.setLimitToPlayer1(limitHotkeysToPlayer1)
 
@@ -141,17 +141,20 @@ class InputConfigCoordinator(
 
     suspend fun refreshHotkeys() {
         hotkeyList = inputConfigRepository.getHotkeys()
-        val enabledHotkeys = inputConfigRepository.getEnabledHotkeys()
-        hotkeyManager.setHotkeys(resolveScopedHotkeys(enabledHotkeys))
+        hotkeyManager.setHotkeys(resolveScopedHotkeys(hotkeyList))
     }
 
+    /**
+     * Disabled rows go in so a scoped one can suppress the tier below it, and come out after
+     * resolving so nothing disabled ever reaches the matcher.
+     */
     private fun resolveScopedHotkeys(hotkeys: List<HotkeyEntity>): List<HotkeyEntity> =
         HotkeyScopeResolver.resolve(
             all = hotkeys,
             platformSlug = platformSlug,
             coreId = coreId,
             parseCombo = inputConfigRepository::parseHotkeyCombo
-        )
+        ).filter { it.isEnabled }
 
     private fun platformMappedButtons(
         mappings: Map<String, Map<InputSource, Int>>

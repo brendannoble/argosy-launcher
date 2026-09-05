@@ -306,6 +306,8 @@
     <string name="ui_save_channel_notice_activate_default">Auto Save</string>
     <!-- Brief message after switching which slot a game plays from. %1$s is the slot's name. -->
     <string name="ui_save_channel_notice_using_slot">Using save slot: %1$s</string>
+    <!-- Shown when a listed save can no longer be acted on because the list moved under it. -->
+    <string name="ui_save_channel_notice_save_unavailable">That save is no longer available. Sync and try again.</string>
     <!-- Brief message when the old save could not be moved out of the way. -->
     <string name="ui_save_channel_notice_clear_failed">Failed to clear existing save</string>
     <!-- Stands in for the slot name when switching to an empty default slot, inside the

@@ -150,6 +150,7 @@
 
     <string name="ui_save_channel_notice_activate_default">Sauvegarde automatique</string>
     <string name="ui_save_channel_notice_using_slot">Emplacement de sauvegarde utilisé : %1$s</string>
+    <string name="ui_save_channel_notice_save_unavailable">Cette sauvegarde n\'est plus disponible. Synchronisez puis réessayez.</string>
     <string name="ui_save_channel_notice_clear_failed">Échec de la suppression de la sauvegarde existante</string>
     <string name="ui_save_channel_notice_switch_default">Sauvegarde automatique</string>
     <string name="ui_save_channel_notice_switched_to">Basculé vers : %1$s</string>

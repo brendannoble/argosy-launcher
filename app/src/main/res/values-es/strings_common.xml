@@ -139,6 +139,7 @@
 
     <string name="ui_save_channel_notice_activate_default">Guardado automático</string>
     <string name="ui_save_channel_notice_using_slot">Usando ranura de guardado: %1$s</string>
+    <string name="ui_save_channel_notice_save_unavailable">Esa partida guardada ya no está disponible. Sincroniza e inténtalo de nuevo.</string>
     <string name="ui_save_channel_notice_clear_failed">No se pudo borrar la partida guardada existente</string>
     <string name="ui_save_channel_notice_switch_default">Guardado automático</string>
     <string name="ui_save_channel_notice_switched_to">Cambiado a: %1$s</string>

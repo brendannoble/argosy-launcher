@@ -138,6 +138,7 @@
 
     <string name="ui_save_channel_notice_activate_default">Автосохранение</string>
     <string name="ui_save_channel_notice_using_slot">Используется слот сохранения: %1$s</string>
+    <string name="ui_save_channel_notice_save_unavailable">Это сохранение больше недоступно. Синхронизируйте и повторите.</string>
     <string name="ui_save_channel_notice_clear_failed">Не удалось очистить существующее сохранение</string>
     <string name="ui_save_channel_notice_switch_default">Автосохранение</string>
     <string name="ui_save_channel_notice_switched_to">Переключено на: %1$s</string>

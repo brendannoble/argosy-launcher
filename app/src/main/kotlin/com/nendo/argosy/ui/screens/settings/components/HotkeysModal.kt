@@ -333,14 +333,15 @@ private fun buildRows(
             } else {
                 null
             }
-        val combo = displayEntity?.let { parseComboJson(it.buttonComboJson) } ?: emptyList()
+        val boundEntity = displayEntity?.takeIf { it.isEnabled }
+        val combo = boundEntity?.let { parseComboJson(it.buttonComboJson) } ?: emptyList()
         val shadowed = platformSlug != null && combo.size == 1 &&
             InputPresets.keyMapsToConsoleButton(combo.first(), platformSlug)
         add(
             MenuRow.System(
                 action = action,
                 combo = combo,
-                holdMs = displayEntity?.holdMs ?: 0L,
+                holdMs = boundEntity?.holdMs ?: 0L,
                 conflicting = action in conflictingActions,
                 inherited = inherited,
                 shadowedByConsoleButton = shadowed
@@ -783,6 +784,7 @@ private fun findConflictingActions(
     scopeKey: String?
 ): Set<HotkeyAction> {
     val grouped = hotkeys
+        .filter { it.isEnabled }
         .filter { it.action != HotkeyAction.CYCLE_CORE_OPTION && it.action != HotkeyAction.SEND_CORE_INPUT }
         .filter { it.scopeType == scopeType && it.scopeKey == scopeKey }
         .filter { it.buttonComboJson.isNotBlank() }

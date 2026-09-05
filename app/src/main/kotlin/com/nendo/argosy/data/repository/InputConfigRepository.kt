@@ -397,6 +397,12 @@ class InputConfigRepository @Inject constructor(
         Logger.info(TAG, "Set hotkey for $action ($scopeType/${scopeKey ?: "-"}): ${canonicalKeyCodes.map { KeyEvent.keyCodeToString(it) }}")
     }
 
+    /**
+     * Clearing a global bind removes it. Clearing a scoped one leaves a disabled row carrying the
+     * combo it inherits, because deleting the override would fall back to that inherited bind
+     * rather than unbinding the action for this scope. With nothing to inherit, deleting is the
+     * unbind.
+     */
     suspend fun clearScopedHotkey(
         action: HotkeyAction,
         scopeType: HotkeyScopeType,
@@ -404,6 +410,23 @@ class InputConfigRepository @Inject constructor(
         controllerId: String? = null
     ) = withContext(Dispatchers.IO) {
         hotkeyDao.deleteByActionControllerAndScope(action, controllerId, scopeType, scopeKey)
+        if (scopeType == HotkeyScopeType.GLOBAL) return@withContext
+
+        val inherited = hotkeyDao.getByActionControllerAndScope(
+            action,
+            controllerId,
+            HotkeyScopeType.GLOBAL,
+            null
+        ) ?: return@withContext
+
+        hotkeyDao.upsert(
+            inherited.copy(
+                id = 0,
+                isEnabled = false,
+                scopeType = scopeType,
+                scopeKey = scopeKey
+            )
+        )
     }
 
     suspend fun setHotkeyHoldMs(

@@ -33,6 +33,35 @@ class HotkeyScopeResolverTest {
         HotkeyScopeResolver.resolve(all, platformSlug, coreId, parseCombo)
 
     private val L2 = 104
+    private val R2 = 105
+    private val L1 = 102
+
+    @Test
+    fun `platform binding on a new combo replaces the global binding for that action`() {
+        val global = hotkey(HotkeyAction.FAST_FORWARD, listOf(R2), id = 1)
+        val platform = hotkey(
+            HotkeyAction.FAST_FORWARD, listOf(L1), HotkeyScopeType.PLATFORM, "gba", id = 2
+        )
+
+        val onGba = resolve(listOf(global, platform), platformSlug = "gba")
+
+        assertEquals(listOf(L1), onGba.single().let(parseCombo))
+    }
+
+    @Test
+    fun `disabled platform binding suppresses the global binding for that action`() {
+        val global = hotkey(HotkeyAction.FAST_FORWARD, listOf(R2), id = 1)
+        val tombstone = hotkey(
+            HotkeyAction.FAST_FORWARD, listOf(R2), HotkeyScopeType.PLATFORM, "gba", id = 2
+        ).copy(isEnabled = false)
+
+        val onGba = resolve(listOf(global, tombstone), platformSlug = "gba")
+        val onSnes = resolve(listOf(global, tombstone), platformSlug = "snes")
+
+        assertTrue(onGba.none { it.isEnabled })
+        assertEquals(HotkeyAction.FAST_FORWARD, onSnes.single().action)
+        assertTrue(onSnes.single().isEnabled)
+    }
 
     @Test
     fun `platform binding shadows global on the same combo for its own platform`() {

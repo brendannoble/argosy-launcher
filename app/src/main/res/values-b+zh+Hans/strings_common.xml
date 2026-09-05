@@ -135,6 +135,7 @@
 
     <string name="ui_save_channel_notice_activate_default">自动存档</string>
     <string name="ui_save_channel_notice_using_slot">正在使用存档槽位：%1$s</string>
+    <string name="ui_save_channel_notice_save_unavailable">该存档已不可用。请同步后重试。</string>
     <string name="ui_save_channel_notice_clear_failed">清除现有存档失败</string>
     <string name="ui_save_channel_notice_switch_default">自动存档</string>
     <string name="ui_save_channel_notice_switched_to">已切换到：%1$s</string>
