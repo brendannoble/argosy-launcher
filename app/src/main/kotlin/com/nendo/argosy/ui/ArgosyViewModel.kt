@@ -580,6 +580,7 @@ class ArgosyViewModel @Inject constructor(
         DrawerItem(Screen.Library.route, R.string.ui_drawer_nav_library),
         DrawerItem(Screen.MediaLibrary.route, R.string.ui_drawer_nav_media),
         DrawerItem(Screen.Downloads.route, R.string.ui_drawer_nav_downloads),
+        DrawerItem(Screen.SyncMonitor.route, R.string.syncmonitor_drawer_title),
         DrawerItem(Screen.SaveSync.route, R.string.ui_drawer_nav_save_sync),
         DrawerItem(Screen.Apps.route, R.string.ui_drawer_nav_apps),
         DrawerItem(Screen.Settings.route, R.string.ui_drawer_nav_settings)

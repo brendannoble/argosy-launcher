@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Library sync monitor. Owner: ui/screens/syncmonitor.
+  Every string here describes a library sync in progress, one row per platform.
+-->
+<resources>
+    <!-- Screen title. Noun phrase. -->
+    <string name="syncmonitor_title">Library Sync</string>
+    <!-- Drawer entry for the screen. Noun phrase, same subject as the title. -->
+    <string name="syncmonitor_drawer_title">Library Sync</string>
+    <!-- Header while syncing: how many platforms are finished of the total. -->
+    <string name="syncmonitor_progress_platforms">%1$d of %2$d platforms</string>
+    <!-- Header when no sync is running. -->
+    <string name="syncmonitor_idle_subtitle">No sync running</string>
+    <!-- Shown instead of rows when connected and nothing has synced yet. -->
+    <string name="syncmonitor_empty_idle">Start a sync to see progress here</string>
+    <!-- Shown instead of rows when there is no server to sync with. -->
+    <string name="syncmonitor_empty_disconnected">Connect to RomM to sync your library</string>
+    <!-- Row status: waiting its turn. Adjective. -->
+    <string name="syncmonitor_state_queued">Queued</string>
+    <!-- Row status while running: games processed of the total this platform reports. -->
+    <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
+    <!-- Row status when finished: games added, updated and removed. -->
+    <string name="syncmonitor_state_done">+%1$d · ~%2$d · -%3$d</string>
+    <!-- Row status for a platform an earlier run already finished, so this run skipped it. -->
+    <string name="syncmonitor_state_already_synced">Already synced</string>
+    <!-- Row status when a platform failed and the server gave no reason. -->
+    <string name="syncmonitor_state_failed">Failed</string>
+    <!-- Footer hint: starts a library sync. Verb. -->
+    <string name="syncmonitor_footer_sync">Sync now</string>
+    <!-- Footer hint: leaves the screen. Verb. -->
+    <string name="syncmonitor_footer_back">Back</string>
+</resources>

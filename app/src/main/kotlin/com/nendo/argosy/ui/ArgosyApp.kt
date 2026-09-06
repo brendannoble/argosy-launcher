@@ -2030,7 +2030,12 @@ fun ArgosyApp(
 
             NotificationHost(
                 manager = viewModel.notificationManager,
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier.align(Alignment.BottomCenter),
+                mutedKeys = if (currentRoute == Screen.SyncMonitor.route) {
+                    com.nendo.argosy.domain.usecase.sync.SyncNotificationKeys.ALL
+                } else {
+                    emptySet()
+                }
             )
 
             // Quick Menu Overlay (L3 triggered)

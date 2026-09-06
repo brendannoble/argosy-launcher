@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val TAG = "SyncPlatformUseCase"
-private const val NOTIFICATION_KEY = "romm-platform-sync"
+private const val NOTIFICATION_KEY = SyncNotificationKeys.PLATFORM
 
 sealed class SyncPlatformResult {
     data class Success(val result: SyncResult) : SyncPlatformResult()

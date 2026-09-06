@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="syncmonitor_title">लाइब्रेरी सिंक</string>
+    <string name="syncmonitor_drawer_title">लाइब्रेरी सिंक</string>
+    <string name="syncmonitor_progress_platforms">%2$d में से %1$d प्लेटफ़ॉर्म</string>
+    <string name="syncmonitor_idle_subtitle">कोई सिंक नहीं चल रहा</string>
+    <string name="syncmonitor_empty_idle">प्रगति यहाँ देखने के लिए सिंक शुरू करें</string>
+    <string name="syncmonitor_empty_disconnected">अपनी लाइब्रेरी सिंक करने के लिए RomM से कनेक्ट करें</string>
+    <string name="syncmonitor_state_queued">कतार में</string>
+    <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
+    <string name="syncmonitor_state_done">+%1$d · ~%2$d · -%3$d</string>
+    <string name="syncmonitor_state_already_synced">पहले से सिंक</string>
+    <string name="syncmonitor_state_failed">विफल</string>
+    <string name="syncmonitor_footer_sync">अभी सिंक करें</string>
+    <string name="syncmonitor_footer_back">वापस</string>
+</resources>

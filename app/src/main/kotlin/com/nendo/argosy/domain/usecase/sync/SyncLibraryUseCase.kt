@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val TAG = "SyncLibraryUseCase"
-private const val NOTIFICATION_KEY = "romm-sync"
+private const val NOTIFICATION_KEY = SyncNotificationKeys.LIBRARY
 
 sealed class SyncLibraryResult {
     data class Success(val result: SyncResult) : SyncLibraryResult()

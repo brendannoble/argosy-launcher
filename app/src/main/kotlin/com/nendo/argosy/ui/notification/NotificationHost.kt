@@ -68,15 +68,22 @@ fun NotificationText.resolve(context: android.content.Context): String = when (t
 
 private fun NotificationProgress.displayText(): String = "$current / $total"
 
+/**
+ * [mutedKeys] hides notifications a screen is already showing better than a toast can. Muting is
+ * a render decision, so the notification is still held and reappears the moment that screen is
+ * left, and a screen cannot mute anything it is not displaying.
+ */
 @Composable
 fun NotificationHost(
     manager: NotificationManager,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    mutedKeys: Set<String> = emptySet()
 ) {
     val notifications by manager.notifications.collectAsState()
-    val persistent by manager.persistentNotification.collectAsState()
+    val persistentRaw by manager.persistentNotification.collectAsState()
     val status by manager.statusNotification.collectAsState()
-    val current = notifications.firstOrNull()
+    val persistent = persistentRaw?.takeUnless { it.key in mutedKeys }
+    val current = notifications.firstOrNull { it.key == null || it.key !in mutedKeys }
 
     LaunchedEffect(current?.id) {
         current?.let { notification ->

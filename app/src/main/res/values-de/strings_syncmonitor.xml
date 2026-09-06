@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="syncmonitor_title">Bibliothek-Sync</string>
+    <string name="syncmonitor_drawer_title">Bibliothek-Sync</string>
+    <string name="syncmonitor_progress_platforms">%1$d von %2$d Plattformen</string>
+    <string name="syncmonitor_idle_subtitle">Kein Sync aktiv</string>
+    <string name="syncmonitor_empty_idle">Starten Sie einen Sync, um den Fortschritt hier zu sehen</string>
+    <string name="syncmonitor_empty_disconnected">Mit RomM verbinden, um die Bibliothek zu synchronisieren</string>
+    <string name="syncmonitor_state_queued">In Warteschlange</string>
+    <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
+    <string name="syncmonitor_state_done">+%1$d · ~%2$d · -%3$d</string>
+    <string name="syncmonitor_state_already_synced">Bereits synchronisiert</string>
+    <string name="syncmonitor_state_failed">Fehlgeschlagen</string>
+    <string name="syncmonitor_footer_sync">Jetzt synchronisieren</string>
+    <string name="syncmonitor_footer_back">Zurück</string>
+</resources>

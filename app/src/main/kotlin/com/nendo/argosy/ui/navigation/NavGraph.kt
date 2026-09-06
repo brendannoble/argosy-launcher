@@ -190,6 +190,13 @@ fun NavGraph(
             )
         }
 
+        composable(Screen.SyncMonitor.route) {
+            com.nendo.argosy.ui.screens.syncmonitor.SyncMonitorScreen(
+                onBack = { if (!navController.popBackStack()) navigateToDefault() },
+                onDrawerToggle = onDrawerToggle
+            )
+        }
+
         composable(Screen.SaveSync.route) {
             com.nendo.argosy.ui.screens.savesync.SaveSyncScreen(
                 onBack = { if (!navController.popBackStack()) navigateToDefault() },
