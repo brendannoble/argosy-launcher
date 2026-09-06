@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,8 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +36,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,11 +46,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.AsyncImage
 import com.nendo.argosy.R
 import com.nendo.argosy.data.remote.romm.PlatformSyncRow
 import com.nendo.argosy.data.remote.romm.PlatformSyncState
 import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.InputButton
+import com.nendo.argosy.ui.components.PlatformIconAssets
 import com.nendo.argosy.ui.components.animateScrollToItemCentered
 import com.nendo.argosy.ui.input.LocalInputDispatcher
 import com.nendo.argosy.ui.navigation.Screen
@@ -46,6 +60,7 @@ import com.nendo.argosy.ui.primitives.ArgosyProgressBar
 import com.nendo.argosy.ui.primitives.ProgressBarStyle
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.theme.generated.ColorTokens
 import com.nendo.argosy.ui.theme.generated.MotionTokens
 import com.nendo.argosy.ui.util.clickableNoFocus
 
@@ -90,10 +105,10 @@ fun SyncMonitorScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (uiState.isConnected) {
-                            stringResource(R.string.syncmonitor_empty_idle)
-                        } else {
-                            stringResource(R.string.syncmonitor_empty_disconnected)
+                        text = when {
+                            uiState.isSyncing -> stringResource(R.string.syncmonitor_empty_starting)
+                            uiState.isConnected -> stringResource(R.string.syncmonitor_empty_idle)
+                            else -> stringResource(R.string.syncmonitor_empty_disconnected)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = theme.textDim
@@ -103,6 +118,7 @@ fun SyncMonitorScreen(
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(bottom = Dimens.footerHeight + Dimens.spacingLg),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
                 ) {
                     itemsIndexed(uiState.rows, key = { _, row -> row.platformId }) { index, row ->
@@ -143,25 +159,33 @@ private fun SyncMonitorHeader(state: SyncMonitorUiState) {
         )
         Spacer(Modifier.height(Dimens.spacingXs))
         Text(
-            text = if (state.isSyncing) {
-                stringResource(
+            text = when {
+                state.isSyncing && state.hasRows -> stringResource(
                     R.string.syncmonitor_progress_platforms,
                     state.platformsDone,
                     state.rows.size
                 )
-            } else {
-                stringResource(R.string.syncmonitor_idle_subtitle)
+                state.isSyncing -> stringResource(R.string.syncmonitor_progress_starting)
+                else -> stringResource(R.string.syncmonitor_idle_subtitle)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = theme.textDim
         )
         if (state.isSyncing) {
             Spacer(Modifier.height(Dimens.spacingSm))
-            InterpolatedProgressBar(
-                target = state.passFraction,
-                style = ProgressBarStyle.Active,
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (state.hasRows) {
+                InterpolatedProgressBar(
+                    target = state.passFraction,
+                    style = ProgressBarStyle.Active,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                ArgosyProgressBar(
+                    progress = null,
+                    style = ProgressBarStyle.Working,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -175,65 +199,205 @@ private fun PlatformRow(
     val theme = LocalArgosyTheme.current
     val background = if (focused) theme.focusAccent.copy(alpha = 0.15f) else theme.surfaceElevated
 
-    Column(
+    val context = LocalContext.current
+    val iconUri = remember(row.slug) { PlatformIconAssets.resolveAssetUri(context, row.slug) }
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(Dimens.radiusSm))
+            .clip(RoundedCornerShape(Dimens.radiusMd))
             .background(background)
             .clickableNoFocus(onClick = onClick)
-            .padding(horizontal = Dimens.spacingMd, vertical = Dimens.spacingSm)
+            .padding(Dimens.spacingMd),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        if (iconUri != null) {
+            AsyncImage(
+                model = iconUri,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(Dimens.iconLg)
+            )
+        } else {
+            StateIcon(row.state)
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
         ) {
             Text(
                 text = row.name,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleSmall,
                 color = theme.textPrimary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = rowStatusText(row),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (row.state == PlatformSyncState.FAILED) theme.textMute else theme.textDim
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StateIcon(row.state)
+                Text(
+                    text = rowSubtitle(row),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = stateColor(row.state),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (row.state == PlatformSyncState.SYNCING) {
+                InterpolatedProgressBar(
+                    target = if (row.gamesTotal > 0) {
+                        row.gamesDone.toFloat() / row.gamesTotal
+                    } else {
+                        0f
+                    },
+                    style = ProgressBarStyle.Active,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
-        if (row.state == PlatformSyncState.SYNCING) {
-            Spacer(Modifier.height(Dimens.spacingXs))
-            InterpolatedProgressBar(
-                target = if (row.gamesTotal > 0) {
-                    row.gamesDone.toFloat() / row.gamesTotal
-                } else {
-                    0f
-                },
-                style = ProgressBarStyle.Active,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        RowTrailing(row)
     }
 }
 
+/**
+ * The line under the platform name: what this row is doing, in words, so the icon and colour are
+ * confirmation rather than the only signal.
+ */
 @Composable
-private fun rowStatusText(row: PlatformSyncRow): String = when (row.state) {
+private fun rowSubtitle(row: PlatformSyncRow): String = when (row.state) {
     PlatformSyncState.QUEUED -> stringResource(R.string.syncmonitor_state_queued)
     PlatformSyncState.SYNCING -> stringResource(
         R.string.syncmonitor_state_syncing,
         row.gamesDone,
         row.gamesTotal
     )
-    PlatformSyncState.DONE -> stringResource(
-        R.string.syncmonitor_state_done,
-        row.added,
-        row.updated,
-        row.removed
-    )
+    PlatformSyncState.DONE -> stringResource(R.string.syncmonitor_state_done_desc)
     PlatformSyncState.ALREADY_SYNCED -> stringResource(R.string.syncmonitor_state_already_synced)
     PlatformSyncState.FAILED -> row.error ?: stringResource(R.string.syncmonitor_state_failed)
+}
+
+@Composable
+private fun successColor(): Color =
+    if (LocalArgosyTheme.current.isDark) {
+        ColorTokens.Semantic.Dark.success
+    } else {
+        ColorTokens.Semantic.Light.success
+    }
+
+@Composable
+private fun warningColor(): Color =
+    if (LocalArgosyTheme.current.isDark) {
+        ColorTokens.Semantic.Dark.warning
+    } else {
+        ColorTokens.Semantic.Light.warning
+    }
+
+@Composable
+private fun infoColor(): Color =
+    if (LocalArgosyTheme.current.isDark) {
+        ColorTokens.Semantic.Dark.info
+    } else {
+        ColorTokens.Semantic.Light.info
+    }
+
+@Composable
+private fun progressColor(): Color =
+    if (LocalArgosyTheme.current.isDark) {
+        ColorTokens.Semantic.Dark.progress
+    } else {
+        ColorTokens.Semantic.Light.progress
+    }
+
+@Composable
+private fun stateColor(state: PlatformSyncState): Color {
+    val theme = LocalArgosyTheme.current
+    return when (state) {
+        PlatformSyncState.QUEUED -> theme.textMute
+        PlatformSyncState.SYNCING -> progressColor()
+        PlatformSyncState.DONE -> successColor()
+        PlatformSyncState.ALREADY_SYNCED -> theme.textMute
+        PlatformSyncState.FAILED -> warningColor()
+    }
+}
+
+@Composable
+private fun StateIcon(state: PlatformSyncState) {
+    Icon(
+        imageVector = when (state) {
+            PlatformSyncState.QUEUED -> Icons.Default.Schedule
+            PlatformSyncState.SYNCING -> Icons.Default.Sync
+            PlatformSyncState.DONE -> Icons.Default.CheckCircle
+            PlatformSyncState.ALREADY_SYNCED -> Icons.Default.Check
+            PlatformSyncState.FAILED -> Icons.Default.ErrorOutline
+        },
+        contentDescription = stateDescription(state),
+        tint = stateColor(state),
+        modifier = Modifier.size(Dimens.iconSm)
+    )
+}
+
+@Composable
+private fun stateDescription(state: PlatformSyncState): String = when (state) {
+    PlatformSyncState.QUEUED -> stringResource(R.string.syncmonitor_state_queued)
+    PlatformSyncState.SYNCING -> stringResource(R.string.syncmonitor_state_syncing_desc)
+    PlatformSyncState.DONE -> stringResource(R.string.syncmonitor_state_done_desc)
+    PlatformSyncState.ALREADY_SYNCED -> stringResource(R.string.syncmonitor_state_already_synced)
+    PlatformSyncState.FAILED -> stringResource(R.string.syncmonitor_state_failed)
+}
+
+/**
+ * What the row says on its right: counts once a platform is finished, its position in the pass
+ * while it runs, and the server's own words when it failed.
+ */
+@Composable
+private fun RowTrailing(row: PlatformSyncRow) {
+    val theme = LocalArgosyTheme.current
+
+    when (row.state) {
+        PlatformSyncState.DONE -> Row(
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (row.added > 0) {
+                CountBadge(R.string.syncmonitor_badge_added, row.added, successColor())
+            }
+            if (row.updated > 0) {
+                CountBadge(R.string.syncmonitor_badge_updated, row.updated, infoColor())
+            }
+            if (row.removed > 0) {
+                CountBadge(R.string.syncmonitor_badge_removed, row.removed, warningColor())
+            }
+            if (row.added == 0 && row.updated == 0 && row.removed == 0) {
+                Text(
+                    text = stringResource(R.string.syncmonitor_badge_unchanged),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = theme.textMute
+                )
+            }
+        }
+        PlatformSyncState.QUEUED,
+        PlatformSyncState.SYNCING,
+        PlatformSyncState.FAILED,
+        PlatformSyncState.ALREADY_SYNCED -> Unit
+    }
+}
+
+@Composable
+private fun CountBadge(labelRes: Int, count: Int, color: Color) {
+    Text(
+        text = stringResource(labelRes, count),
+        style = MaterialTheme.typography.labelSmall,
+        color = color,
+        modifier = Modifier
+            .clip(RoundedCornerShape(Dimens.radiusPill))
+            .background(color.copy(alpha = 0.15f))
+            .padding(horizontal = Dimens.spacingSm, vertical = Dimens.spacingXs)
+    )
 }
 
 /**

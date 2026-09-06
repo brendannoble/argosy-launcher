@@ -12,6 +12,10 @@
     <string name="syncmonitor_progress_platforms">%1$d of %2$d platforms</string>
     <!-- Header when no sync is running. -->
     <string name="syncmonitor_idle_subtitle">No sync running</string>
+    <!-- Header after a sync starts, before the server has named the platforms. -->
+    <string name="syncmonitor_progress_starting">Starting</string>
+    <!-- Shown instead of rows for that same wait. -->
+    <string name="syncmonitor_empty_starting">Fetching platforms…</string>
     <!-- Shown instead of rows when connected and nothing has synced yet. -->
     <string name="syncmonitor_empty_idle">Start a sync to see progress here</string>
     <!-- Shown instead of rows when there is no server to sync with. -->
@@ -20,8 +24,18 @@
     <string name="syncmonitor_state_queued">Queued</string>
     <!-- Row status while running: games processed of the total this platform reports. -->
     <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
-    <!-- Row status when finished: games added, updated and removed. -->
-    <string name="syncmonitor_state_done">+%1$d · ~%2$d · -%3$d</string>
+    <!-- Badge on a finished row: how many games this platform gained. -->
+    <string name="syncmonitor_badge_added">%1$d new</string>
+    <!-- Badge on a finished row: how many existing games changed. -->
+    <string name="syncmonitor_badge_updated">%1$d updated</string>
+    <!-- Badge on a finished row: how many games left the library. -->
+    <string name="syncmonitor_badge_removed">%1$d removed</string>
+    <!-- Shown in place of badges when a platform finished with nothing to change. -->
+    <string name="syncmonitor_badge_unchanged">No changes</string>
+    <!-- Icon description while a platform is being synced. -->
+    <string name="syncmonitor_state_syncing_desc">Syncing</string>
+    <!-- Icon description for a platform that finished. -->
+    <string name="syncmonitor_state_done_desc">Finished</string>
     <!-- Row status for a platform an earlier run already finished, so this run skipped it. -->
     <string name="syncmonitor_state_already_synced">Already synced</string>
     <!-- Row status when a platform failed and the server gave no reason. -->

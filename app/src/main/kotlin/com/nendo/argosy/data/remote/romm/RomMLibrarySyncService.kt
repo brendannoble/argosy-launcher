@@ -383,6 +383,18 @@ class RomMLibrarySyncService @Inject constructor(
                 return SyncResult(0, 0, 0, 0, listOf("No platforms returned from server"))
             }
 
+            _syncProgress.update { progress ->
+                progress.copy(
+                    platforms = platforms.map { platform ->
+                        PlatformSyncRow(
+                            platformId = storagePlatformId(platform),
+                            name = platform.name,
+                            slug = platform.slug
+                        )
+                    }
+                )
+            }
+
             for (platform in platforms) {
                 syncPlatformMetadata(platform)
             }
