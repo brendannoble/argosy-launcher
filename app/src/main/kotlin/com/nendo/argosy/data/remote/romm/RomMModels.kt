@@ -516,6 +516,25 @@ fun <T> RomMResult<T>.toResult(): Result<T> = when (this) {
     is RomMResult.Error -> Result.failure(Exception(message))
 }
 
+enum class PlatformSyncState { QUEUED, SYNCING, DONE, ALREADY_SYNCED, FAILED }
+
+/**
+ * One platform's place in a library pass. [ALREADY_SYNCED] is a platform a resumed pass skipped
+ * because an earlier run finished it, which is not the same as one that ran and changed nothing.
+ */
+data class PlatformSyncRow(
+    val platformId: Long,
+    val name: String,
+    val slug: String,
+    val state: PlatformSyncState = PlatformSyncState.QUEUED,
+    val gamesDone: Int = 0,
+    val gamesTotal: Int = 0,
+    val added: Int = 0,
+    val updated: Int = 0,
+    val removed: Int = 0,
+    val error: String? = null
+)
+
 data class SyncProgress(
     val isSyncing: Boolean = false,
     val currentPlatform: String = "",
@@ -523,7 +542,8 @@ data class SyncProgress(
     val platformsTotal: Int = 0,
     val platformsDone: Int = 0,
     val gamesTotal: Int = 0,
-    val gamesDone: Int = 0
+    val gamesDone: Int = 0,
+    val platforms: List<PlatformSyncRow> = emptyList()
 )
 
 data class SyncResult(

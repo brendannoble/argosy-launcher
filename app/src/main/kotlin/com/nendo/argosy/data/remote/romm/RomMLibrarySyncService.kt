@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -257,6 +258,96 @@ class RomMLibrarySyncService @Inject constructor(
         return gamesDeleted
     }
 
+    private data class PlatformPassOutcome(
+        val added: Int = 0,
+        val updated: Int = 0,
+        val removed: Int = 0,
+        val error: String? = null,
+        val counted: Boolean = false
+    )
+
+    /**
+     * One platform's share of a library pass: mark dirty, sync its roms, run the post-platform
+     * work, and record it against the resume generation so a later run can skip it. A platform
+     * that throws is reported and left behind rather than ending the pass.
+     */
+    private suspend fun syncOnePlatformOfPass(
+        currentApi: RomMApi,
+        platform: RomMPlatform,
+        storageId: Long,
+        filters: SyncFilterPreferences,
+        scope: SyncScope
+    ): PlatformPassOutcome {
+        updateRow(storageId) { it.copy(state = PlatformSyncState.SYNCING) }
+        return try {
+            gameDao.markSyncDirtyForOwner(storageId, ROMM_SOURCES, scope.ownerUserId)
+
+            val result = syncPlatformRoms(currentApi, platform, filters, scope)
+            val removed = processPostPlatformSync(currentApi, storageId, result, filters, scope)
+
+            if (result.error == null) {
+                userPreferencesRepository.addSyncResumeCompletedPlatform(storageId)
+            }
+            updateRow(storageId) {
+                it.copy(
+                    state = if (result.error == null) {
+                        PlatformSyncState.DONE
+                    } else {
+                        PlatformSyncState.FAILED
+                    },
+                    added = result.added,
+                    updated = result.updated,
+                    removed = removed,
+                    error = result.error
+                )
+            }
+            PlatformPassOutcome(result.added, result.updated, removed, result.error, counted = true)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Logger.warn(
+                TAG,
+                "doSyncLibrary: platform ${platform.name} failed, continuing with the rest: ${e.message}"
+            )
+            gameDao.clearSyncDirty(storageId, ROMM_SOURCES)
+            val message = "${platform.name}: ${e.message ?: "sync failed"}"
+            updateRow(storageId) {
+                it.copy(state = PlatformSyncState.FAILED, error = message)
+            }
+            PlatformPassOutcome(error = message)
+        }
+    }
+
+    /**
+     * Advances the game counters once per rom rather than once per page, so a consumer drawing a
+     * bar moves by one game at a time instead of jumping a page width when a response lands.
+     */
+    private fun publishGameProgress(platformId: Long, done: Int, total: Int) {
+        _syncProgress.update { progress ->
+            progress.copy(
+                gamesDone = done,
+                gamesTotal = total,
+                platforms = progress.platforms.map { row ->
+                    if (row.platformId == platformId) {
+                        row.copy(gamesDone = done, gamesTotal = total)
+                    } else {
+                        row
+                    }
+                }
+            )
+        }
+    }
+
+    private fun updateRow(platformId: Long, transform: (PlatformSyncRow) -> PlatformSyncRow) {
+        _syncProgress.update { progress ->
+            progress.copy(
+                platforms = progress.platforms.map { row ->
+                    if (row.platformId == platformId) transform(row) else row
+                }
+            )
+        }
+    }
+
     private suspend fun doSyncLibrary(
         onProgress: ((current: Int, total: Int, platformName: String) -> Unit)?
     ): SyncResult {
@@ -312,7 +403,16 @@ class RomMLibrarySyncService @Inject constructor(
                 emptySet()
             }
 
-            _syncProgress.value = _syncProgress.value.copy(platformsTotal = enabledPlatforms.size)
+            _syncProgress.value = _syncProgress.value.copy(
+                platformsTotal = enabledPlatforms.size,
+                platforms = enabledPlatforms.map { platform ->
+                    PlatformSyncRow(
+                        platformId = storagePlatformId(platform),
+                        name = platform.name,
+                        slug = platform.slug
+                    )
+                }
+            )
 
             for ((index, platform) in enabledPlatforms.withIndex()) {
                 onProgress?.invoke(index + 1, enabledPlatforms.size, platform.name)
@@ -326,33 +426,16 @@ class RomMLibrarySyncService @Inject constructor(
                 val storageId = storagePlatformId(platform)
                 if (storageId in completedPlatformIds) {
                     platformsSynced++
+                    updateRow(storageId) { it.copy(state = PlatformSyncState.ALREADY_SYNCED) }
                     continue
                 }
 
-                try {
-                    gameDao.markSyncDirtyForOwner(storageId, ROMM_SOURCES, scope.ownerUserId)
-
-                    val result = syncPlatformRoms(currentApi, platform, filters, scope)
-                    gamesAdded += result.added
-                    gamesUpdated += result.updated
-                    result.error?.let { errors.add(it) }
-
-                    gamesDeleted += processPostPlatformSync(currentApi, storageId, result, filters, scope)
-
-                    platformsSynced++
-                    if (result.error == null) {
-                        userPreferencesRepository.addSyncResumeCompletedPlatform(storageId)
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Logger.warn(
-                        TAG,
-                        "doSyncLibrary: platform ${platform.name} failed, continuing with the rest: ${e.message}"
-                    )
-                    errors.add("${platform.name}: ${e.message ?: "sync failed"}")
-                    gameDao.clearSyncDirty(storageId, ROMM_SOURCES)
-                }
+                val outcome = syncOnePlatformOfPass(currentApi, platform, storageId, filters, scope)
+                gamesAdded += outcome.added
+                gamesUpdated += outcome.updated
+                gamesDeleted += outcome.removed
+                outcome.error?.let { errors.add(it) }
+                if (outcome.counted) platformsSynced++
             }
 
             gameDao.clearAllSyncDirtyForOwner(scope.ownerUserId)
@@ -955,7 +1038,9 @@ class RomMLibrarySyncService @Inject constructor(
         val decidedRomIds = mutableSetOf<Long>()
         var offset = 0
         var totalFetched = 0
+        var processedRoms = 0
         var platformTotal: Int? = null
+        val storageId = storagePlatformId(platform)
 
         fun groupFor(rom: RomMRom): SiblingGroup {
             val ids = listOf(rom.id) +
@@ -1008,13 +1093,12 @@ class RomMLibrarySyncService @Inject constructor(
             val pageCount = romsPage.items.size
             totalFetched += pageCount
             romsPage.total?.let { platformTotal = it }
-            _syncProgress.value = _syncProgress.value.copy(
-                gamesTotal = platformTotal ?: totalFetched,
-                gamesDone = totalFetched
-            )
+            publishGameProgress(storageId, processedRoms, platformTotal ?: totalFetched)
 
             for (rom in romsPage.items) {
                 decidedRomIds.add(rom.id)
+                processedRoms++
+                publishGameProgress(storageId, processedRoms, platformTotal ?: totalFetched)
 
                 if (!RomMSyncFilter.shouldSyncRom(rom, filters)) continue
 
