@@ -2,19 +2,23 @@ package com.nendo.argosy.ui.screens.syncmonitor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.data.local.entity.PlatformEntity
 import com.nendo.argosy.data.preferences.SyncPreferencesRepository
 import com.nendo.argosy.data.remote.romm.PlatformSyncRow
 import com.nendo.argosy.data.remote.romm.PlatformSyncState
 import com.nendo.argosy.data.remote.romm.RomMRepository
+import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.repository.PlatformRepository
+import com.nendo.argosy.data.repository.SaveSyncRepository
 import com.nendo.argosy.data.sync.PlatformSyncQueue
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
-import com.nendo.argosy.core.input.SoundType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +28,8 @@ class SyncMonitorViewModel @Inject constructor(
     private val romMRepository: RomMRepository,
     private val platformSyncQueue: PlatformSyncQueue,
     private val platformRepository: PlatformRepository,
+    private val gameRepository: GameRepository,
+    private val saveSyncRepository: SaveSyncRepository,
     private val syncPreferencesRepository: SyncPreferencesRepository
 ) : ViewModel() {
 
@@ -31,51 +37,78 @@ class SyncMonitorViewModel @Inject constructor(
     val uiState: StateFlow<SyncMonitorUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch { seedFromLocalPlatforms() }
         viewModelScope.launch {
-            romMRepository.syncProgress.collect { progress ->
+            combine(
+                platformRepository.observeAllPlatforms(),
+                gameRepository.observeCountsByPlatform(),
+                gameRepository.observeDownloadedCountsByPlatform(),
+                saveSyncRepository.observeSaveCountsByPlatform(),
+                romMRepository.syncProgress
+            ) { platforms, games, downloaded, saves, progress ->
+                val activity = progress.platforms.associateBy { it.platformId }
+                platforms
+                    .filter { it.id >= 0 }
+                    .map { platform ->
+                        buildRow(platform, games, downloaded, saves, activity[platform.id])
+                    } to progress.isSyncing
+            }.collect { (rows, isSyncing) ->
                 _uiState.update { state ->
-                    val rows = progress.platforms.ifEmpty { state.rows }
-                    val active = rows.indexOfFirst { it.state == PlatformSyncState.SYNCING }
+                    val enabled = rows.filter { it.syncEnabled }
+                    val disabled = rows.filterNot { it.syncEnabled }
+                    val ordered = enabled + disabled
+                    val active = ordered.indexOfFirst { it.state == PlatformSyncState.SYNCING }
                     state.copy(
-                        isSyncing = progress.isSyncing,
-                        rows = rows,
-                        focusedIndex = resolveFocus(state, rows, active)
+                        isSyncing = isSyncing,
+                        enabledRows = enabled,
+                        disabledRows = disabled,
+                        focusedIndex = resolveFocus(state, ordered, active)
                     )
                 }
             }
         }
         viewModelScope.launch {
-            syncPreferencesRepository.preferences.collect { prefs ->
-                _uiState.update { it.copy(lastSyncedAt = prefs.lastRommSync) }
-            }
+            combine(
+                platformSyncQueue.isLibraryBusy,
+                platformSyncQueue.busyPlatformIds
+            ) { libraryBusy, busyIds -> libraryBusy to busyIds }
+                .collect { (libraryBusy, busyIds) ->
+                    _uiState.update { it.copy(libraryBusy = libraryBusy, busyPlatformIds = busyIds) }
+                }
         }
         viewModelScope.launch {
-            _uiState.update { it.copy(isConnected = romMRepository.isConnected()) }
+            syncPreferencesRepository.preferences.collect { prefs ->
+                _uiState.update {
+                    it.copy(
+                        lastSyncedAt = prefs.lastRommSync,
+                        isConnected = romMRepository.isConnected()
+                    )
+                }
+            }
         }
     }
 
-    /**
-     * Shows the platforms already known locally so the screen is populated before a sync is asked
-     * for, and so pressing sync changes their state rather than replacing an empty screen after
-     * the server answers. A running sync's own rows outrank these.
-     */
-    private suspend fun seedFromLocalPlatforms() {
-        val seeded = platformRepository.getAllPlatformsOrdered()
-            .filter { it.syncEnabled }
-            .map { platform ->
-                PlatformSyncRow(
-                    platformId = platform.id,
-                    name = platform.name,
-                    slug = platform.slug,
-                    state = PlatformSyncState.IDLE
-                )
-            }
-        if (seeded.isEmpty()) return
-        _uiState.update { state ->
-            if (state.rows.isNotEmpty()) state else state.copy(rows = seeded)
-        }
-    }
+    private fun buildRow(
+        platform: PlatformEntity,
+        games: Map<Long, Int>,
+        downloaded: Map<Long, Int>,
+        saves: Map<Long, Int>,
+        activity: PlatformSyncRow?
+    ) = SyncMonitorRow(
+        platformId = platform.id,
+        name = platform.name,
+        slug = platform.slug,
+        syncEnabled = platform.syncEnabled,
+        games = games[platform.id] ?: 0,
+        downloaded = downloaded[platform.id] ?: 0,
+        withSaves = saves[platform.id] ?: 0,
+        state = activity?.state ?: PlatformSyncState.IDLE,
+        gamesDone = activity?.gamesDone ?: 0,
+        gamesTotal = activity?.gamesTotal ?: 0,
+        added = activity?.added ?: 0,
+        updated = activity?.updated ?: 0,
+        removed = activity?.removed ?: 0,
+        error = activity?.error
+    )
 
     /**
      * Following moves focus with the sync; a user who has taken over keeps their row unless it
@@ -83,7 +116,7 @@ class SyncMonitorViewModel @Inject constructor(
      */
     private fun resolveFocus(
         state: SyncMonitorUiState,
-        rows: List<com.nendo.argosy.data.remote.romm.PlatformSyncRow>,
+        rows: List<SyncMonitorRow>,
         activeIndex: Int
     ): Int = when {
         rows.isEmpty() -> state.focusedIndex
@@ -97,10 +130,7 @@ class SyncMonitorViewModel @Inject constructor(
             if (state.rows.isEmpty()) return@update state
             val next = (state.focusedIndex + delta).coerceIn(0, state.rows.lastIndex)
             moved = next != state.focusedIndex
-            state.copy(
-                focusedIndex = next,
-                followActive = next == state.activeIndex
-            )
+            state.copy(focusedIndex = next, followActive = next == state.activeIndex)
         }
         return moved
     }
@@ -112,20 +142,27 @@ class SyncMonitorViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Marks every row queued before the request leaves, because the pass does not publish its own
-     * rows until the server has answered and the wait is long enough to read as a dead button.
-     */
-    fun syncNow() {
-        if (_uiState.value.isSyncing) return
+    fun syncAll() {
+        if (!_uiState.value.canSyncAll) return
         platformSyncQueue.enqueueLibrary()
-        _uiState.update { state ->
-            state.copy(
-                isSyncing = true,
-                followActive = true,
-                rows = state.rows.map { it.copy(state = PlatformSyncState.QUEUED) }
-            )
+        _uiState.update { it.copy(followActive = true) }
+    }
+
+    /**
+     * Syncs one platform, or enables one that is excluded. Enabling does not also sync: someone
+     * turning several platforms back on wants one pass, not one job each.
+     */
+    fun activateFocusedRow() {
+        val state = _uiState.value
+        val row = state.focusedRow ?: return
+        if (!row.syncEnabled) {
+            viewModelScope.launch {
+                platformRepository.updateSyncEnabled(row.platformId, true)
+            }
+            return
         }
+        if (!state.canSyncFocused) return
+        platformSyncQueue.enqueuePlatform(row.platformId, row.name)
     }
 
     fun createInputHandler(onBack: () -> Unit): InputHandler = object : InputHandler {
@@ -135,9 +172,19 @@ class SyncMonitorViewModel @Inject constructor(
         override fun onDown(): InputResult =
             if (moveFocus(1)) InputResult.HANDLED else InputResult.handled(SoundType.BOUNDARY)
 
+        override fun onConfirm(): InputResult {
+            val state = _uiState.value
+            val row = state.focusedRow ?: return InputResult.UNHANDLED
+            if (!row.syncEnabled || state.canSyncFocused) {
+                activateFocusedRow()
+                return InputResult.HANDLED
+            }
+            return InputResult.handled(SoundType.BOUNDARY)
+        }
+
         override fun onSecondaryAction(): InputResult {
-            if (_uiState.value.isSyncing || !_uiState.value.isConnected) return InputResult.UNHANDLED
-            syncNow()
+            if (!_uiState.value.canSyncAll) return InputResult.handled(SoundType.BOUNDARY)
+            syncAll()
             return InputResult.HANDLED
         }
 

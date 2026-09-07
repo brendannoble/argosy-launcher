@@ -32,6 +32,11 @@ sealed class SyncPlatformResult {
 sealed class SyncPlatformFailureReason {
     data object NotConnected : SyncPlatformFailureReason()
     data object PlatformNotFound : SyncPlatformFailureReason()
+
+    /**
+     * Excluded from sync in settings; syncing it would populate games the library then hides.
+     */
+    data object PlatformDisabled : SyncPlatformFailureReason()
     data class Unexpected(val message: String?) : SyncPlatformFailureReason()
 }
 
@@ -53,6 +58,10 @@ class SyncPlatformUseCase @Inject constructor(
         if (platform == null) {
             Logger.info(TAG, "invoke: platform $platformId not found")
             return SyncPlatformResult.Error(SyncPlatformFailureReason.PlatformNotFound)
+        }
+        if (!platform.syncEnabled) {
+            Logger.info(TAG, "invoke: platform $platformId is excluded from sync")
+            return SyncPlatformResult.Error(SyncPlatformFailureReason.PlatformDisabled)
         }
         Logger.info(TAG, "invoke: syncing platform ${platform.id} (slug='${platform.slug}')")
 

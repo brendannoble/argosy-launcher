@@ -5,6 +5,7 @@
 
     <string name="error_sync_platform_not_connected">RomM未连接</string>
     <string name="error_sync_platform_not_found">未找到平台</string>
+    <string name="error_sync_platform_disabled">该平台已排除在同步之外</string>
     <string name="error_sync_platform_unexpected">同步失败</string>
 
     <string name="error_restore_cached_states_game_not_found">未找到游戏</string>

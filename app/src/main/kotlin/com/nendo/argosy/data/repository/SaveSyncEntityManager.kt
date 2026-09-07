@@ -35,6 +35,12 @@ class SaveSyncEntityManager @Inject constructor(
 
     fun observePendingCount(): Flow<Int> = saveCacheDao.observeNeedingRemoteSyncCount()
 
+    fun observeSaveCountsByPlatform(): Flow<Map<Long, Int>> = syncPreferencesRepository.preferences
+        .map { it.rommUserId }
+        .distinctUntilChanged()
+        .flatMapLatest { saveSyncDao.observeSaveCountsByPlatform(it) }
+        .map { rows -> rows.associate { it.platformId to it.gameCount } }
+
     suspend fun clearDirtyFlags(gameId: Long) =
         saveCacheDao.clearAllDirtyFlags(gameId, syncPreferencesRepository.getRommUserId())
 

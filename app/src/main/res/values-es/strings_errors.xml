@@ -5,6 +5,7 @@
 
     <string name="error_sync_platform_not_connected">RomM no conectado</string>
     <string name="error_sync_platform_not_found">Plataforma no encontrada</string>
+    <string name="error_sync_platform_disabled">Esa plataforma está excluida de la sincronización</string>
     <string name="error_sync_platform_unexpected">Error de sincronización</string>
 
     <string name="error_restore_cached_states_game_not_found">Juego no encontrado</string>

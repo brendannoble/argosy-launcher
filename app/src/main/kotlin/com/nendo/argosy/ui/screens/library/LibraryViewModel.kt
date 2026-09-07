@@ -41,7 +41,6 @@ import com.nendo.argosy.domain.model.PlayerCount
 import com.nendo.argosy.domain.model.PlayerCountBucket
 import com.nendo.argosy.domain.usecase.cache.RepairImageCacheUseCase
 import com.nendo.argosy.domain.usecase.download.DownloadResult
-import com.nendo.argosy.domain.usecase.sync.SyncPlatformUseCase
 import android.content.Context
 import com.nendo.argosy.ui.common.GridDirection
 import com.nendo.argosy.ui.common.GridFocusNavigator
@@ -425,7 +424,7 @@ class LibraryViewModel @Inject constructor(
     private val playStoreService: PlayStoreService,
     private val imageCacheManager: ImageCacheManager,
     private val apkInstallManager: ApkInstallManager,
-    private val syncPlatformUseCase: SyncPlatformUseCase,
+    private val platformSyncQueue: com.nendo.argosy.data.sync.PlatformSyncQueue,
     private val repairImageCacheUseCase: RepairImageCacheUseCase,
     private val modalResetSignal: ModalResetSignal,
     private val gradientExtractionDelegate: GradientExtractionDelegate,
@@ -1146,9 +1145,8 @@ class LibraryViewModel @Inject constructor(
 
     fun syncCurrentPlatform() {
         val platform = _uiState.value.currentPlatform ?: return
-        viewModelScope.launch {
-            syncPlatformUseCase(platform.id, platform.name)
-            loadGames()
+        platformSyncQueue.enqueuePlatform(platform.id, platform.name) {
+            viewModelScope.launch { loadGames() }
         }
     }
 

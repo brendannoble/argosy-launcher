@@ -7,6 +7,7 @@
     <!-- SyncPlatformUseCase / SyncPlatformFailureReason -->
     <string name="error_sync_platform_not_connected">RomM कनेक्ट नहीं है</string>
     <string name="error_sync_platform_not_found">प्लेटफ़ॉर्म नहीं मिला</string>
+    <string name="error_sync_platform_disabled">वह प्लेटफ़ॉर्म सिंक से बाहर रखा गया है</string>
     <string name="error_sync_platform_unexpected">सिंक विफल</string>
 
     <!-- RestoreCachedStatesUseCase / RestoreCachedStatesFailureReason -->

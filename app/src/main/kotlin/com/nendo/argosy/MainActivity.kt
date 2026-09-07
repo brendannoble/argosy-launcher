@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var displayAffinityHelper: DisplayAffinityHelper
     @Inject lateinit var permissionHelper: com.nendo.argosy.util.PermissionHelper
     @Inject lateinit var gameActionsDelegate: GameActionsDelegate
-    @Inject lateinit var syncPlatformUseCase: com.nendo.argosy.domain.usecase.sync.SyncPlatformUseCase
+    @Inject lateinit var platformSyncQueue: com.nendo.argosy.data.sync.PlatformSyncQueue
     @Inject lateinit var gameThemeAudioCoordinator: com.nendo.argosy.ui.audio.GameThemeAudioCoordinator
     @Inject lateinit var getPinnedCollectionsUseCase: com.nendo.argosy.domain.usecase.collection.GetPinnedCollectionsUseCase
     @Inject lateinit var advanceCollectionFocusUseCase: com.nendo.argosy.domain.usecase.collection.AdvanceCollectionFocusUseCase
@@ -356,7 +356,7 @@ class MainActivity : ComponentActivity() {
                 gameFileDao = gameFileDao,
                 downloadManager = downloadManagerInstance,
                 gameActionsDelegate = gameActionsDelegate,
-                syncPlatformUseCase = syncPlatformUseCase,
+                platformSyncQueue = platformSyncQueue,
                 gameLaunchDelegate = gameLaunchDelegate,
                 saveCacheManager = saveCacheManager,
                 getUnifiedSavesUseCase = getUnifiedSavesUseCase,

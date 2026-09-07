@@ -15,6 +15,7 @@
     <!-- SyncPlatformUseCase / SyncPlatformFailureReason -->
     <string name="error_sync_platform_not_connected">RomM not connected</string>
     <string name="error_sync_platform_not_found">Platform not found</string>
+    <string name="error_sync_platform_disabled">That platform is excluded from sync</string>
     <string name="error_sync_platform_unexpected">Sync failed</string>
 
     <!-- RestoreCachedStatesUseCase / RestoreCachedStatesFailureReason

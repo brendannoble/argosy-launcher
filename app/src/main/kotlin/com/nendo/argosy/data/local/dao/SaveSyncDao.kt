@@ -247,6 +247,19 @@ interface SaveSyncDao {
     """)
     fun observeSaveCountsByDevice(ownerUserId: Long?): Flow<List<SaveCountByDevice>>
 
+    /**
+     * Games with at least one save, per platform. Counts games rather than rows because a save
+     * record exists per emulator and channel, which is not what a person means by "with saves".
+     */
+    @Query("""
+        SELECT g.platformId AS platformId, COUNT(DISTINCT s.gameId) AS gameCount
+        FROM save_sync s
+        JOIN games g ON g.id = s.gameId
+        WHERE s.ownerUserId IS NULL OR s.ownerUserId IS :ownerUserId
+        GROUP BY g.platformId
+    """)
+    fun observeSaveCountsByPlatform(ownerUserId: Long?): Flow<List<PlatformSaveCount>>
+
     @Query("SELECT COUNT(*) FROM save_sync WHERE ownerUserId IS NULL")
     suspend fun countUnowned(): Int
 
@@ -259,4 +272,9 @@ data class SaveCountByDevice(
     val deviceName: String?,
     val saveCount: Int,
     val latestSyncAt: java.time.Instant?
+)
+
+data class PlatformSaveCount(
+    val platformId: Long,
+    val gameCount: Int
 )

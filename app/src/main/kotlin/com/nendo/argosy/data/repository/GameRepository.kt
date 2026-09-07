@@ -32,10 +32,13 @@ import com.nendo.argosy.data.storage.StorageCategory
 import com.nendo.argosy.data.storage.StorageVolumeHealth
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -946,6 +949,22 @@ class GameRepository @Inject constructor(
      */
     suspend fun countsByPlatform(): Map<Long, Int> =
         gameDao.countsByPlatform(hiddenOwnerId()).associate { it.platformId to it.gameCount }
+
+    /**
+     * The same counts as a flow, re-keyed whenever the signed-in account changes so a switch does
+     * not leave the previous user's totals on screen.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeCountsByPlatform(): Flow<Map<Long, Int>> =
+        overlayWriter.observeActiveOwnerId()
+            .flatMapLatest { owner -> gameDao.observeCountsByPlatform(owner) }
+            .map { rows -> rows.associate { it.platformId to it.gameCount } }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeDownloadedCountsByPlatform(): Flow<Map<Long, Int>> =
+        overlayWriter.observeActiveOwnerId()
+            .flatMapLatest { owner -> gameDao.observeDownloadedCountsByPlatform(owner) }
+            .map { rows -> rows.associate { it.platformId to it.gameCount } }
 
     suspend fun getByPlatformSorted(
         platformId: Long,

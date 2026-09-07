@@ -198,12 +198,20 @@ class RomMLibrarySyncService @Inject constructor(
 
             syncPlatformMetadata(platform)
 
+            val storageId = storagePlatformId(platform)
             _syncProgress.value = _syncProgress.value.copy(
                 currentPlatform = platform.name,
-                currentPlatformSlug = platform.slug
+                currentPlatformSlug = platform.slug,
+                platforms = listOf(
+                    PlatformSyncRow(
+                        platformId = storageId,
+                        name = platform.name,
+                        slug = platform.slug,
+                        state = PlatformSyncState.SYNCING
+                    )
+                )
             )
 
-            val storageId = storagePlatformId(platform)
             gameDao.markSyncDirtyForOwner(storageId, ROMM_SOURCES, scope.ownerUserId)
 
             val result = syncPlatformRoms(currentApi, platform, filters, scope)
@@ -216,11 +224,24 @@ class RomMLibrarySyncService @Inject constructor(
 
             syncVirtualCollectionsUseCase.get()()
 
+            updateRow(storageId) {
+                it.copy(
+                    state = if (result.error == null) {
+                        PlatformSyncState.DONE
+                    } else {
+                        PlatformSyncState.FAILED
+                    },
+                    added = result.added,
+                    updated = result.updated,
+                    removed = gamesDeleted,
+                    error = result.error
+                )
+            }
             return SyncResult(1, result.added, result.updated, gamesDeleted, result.error?.let { listOf(it) } ?: emptyList())
         } catch (e: Exception) {
             return SyncResult(0, 0, 0, 0, listOf(e.message ?: "Platform sync failed"))
         } finally {
-            _syncProgress.value = SyncProgress(isSyncing = false)
+            _syncProgress.update { it.copy(isSyncing = false) }
         }
     }
 
@@ -472,7 +493,7 @@ class RomMLibrarySyncService @Inject constructor(
             errors.add(e.message ?: "Sync failed")
             gameDao.clearAllSyncDirtyForOwner(scope.ownerUserId)
         } finally {
-            _syncProgress.value = SyncProgress(isSyncing = false)
+            _syncProgress.update { it.copy(isSyncing = false) }
         }
 
         gameRepository.get().cleanupEmptyNumericFolders()

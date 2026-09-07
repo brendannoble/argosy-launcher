@@ -1,7 +1,28 @@
 package com.nendo.argosy.ui.screens.syncmonitor
 
-import com.nendo.argosy.data.remote.romm.PlatformSyncRow
+import com.nendo.argosy.data.remote.romm.PlatformSyncState
 import java.time.Instant
+
+/**
+ * One platform as this screen shows it: what the library holds for it, and what a running sync is
+ * doing to it. The counts are local facts and stay readable with no server and no sync.
+ */
+data class SyncMonitorRow(
+    val platformId: Long,
+    val name: String,
+    val slug: String,
+    val syncEnabled: Boolean,
+    val games: Int = 0,
+    val downloaded: Int = 0,
+    val withSaves: Int = 0,
+    val state: PlatformSyncState = PlatformSyncState.IDLE,
+    val gamesDone: Int = 0,
+    val gamesTotal: Int = 0,
+    val added: Int = 0,
+    val updated: Int = 0,
+    val removed: Int = 0,
+    val error: String? = null
+)
 
 /**
  * [followActive] tracks the syncing row on its own until the user moves, at which point their
@@ -11,26 +32,49 @@ import java.time.Instant
 data class SyncMonitorUiState(
     val isSyncing: Boolean = false,
     val isConnected: Boolean = true,
-    val rows: List<PlatformSyncRow> = emptyList(),
+    val libraryBusy: Boolean = false,
+    val busyPlatformIds: Set<Long> = emptySet(),
+    val enabledRows: List<SyncMonitorRow> = emptyList(),
+    val disabledRows: List<SyncMonitorRow> = emptyList(),
     val focusedIndex: Int = 0,
     val followActive: Boolean = true,
-    val lastSyncedAt: Instant? = null,
-    val passErrors: List<String> = emptyList()
+    val lastSyncedAt: Instant? = null
 ) {
-    val activeIndex: Int
-        get() = rows.indexOfFirst { it.state == com.nendo.argosy.data.remote.romm.PlatformSyncState.SYNCING }
+    val rows: List<SyncMonitorRow> get() = enabledRows + disabledRows
 
-    val focusedRow: PlatformSyncRow?
-        get() = rows.getOrNull(focusedIndex)
+    val activeIndex: Int
+        get() = rows.indexOfFirst { it.state == PlatformSyncState.SYNCING }
+
+    val focusedRow: SyncMonitorRow? get() = rows.getOrNull(focusedIndex)
 
     val hasRows: Boolean get() = rows.isNotEmpty()
 
+    val totalGames: Int get() = rows.sumOf { it.games }
+
+    val totalDownloaded: Int get() = rows.sumOf { it.downloaded }
+
     val platformsDone: Int
-        get() = rows.count {
-            it.state == com.nendo.argosy.data.remote.romm.PlatformSyncState.DONE ||
-                it.state == com.nendo.argosy.data.remote.romm.PlatformSyncState.ALREADY_SYNCED ||
-                it.state == com.nendo.argosy.data.remote.romm.PlatformSyncState.FAILED
+        get() = enabledRows.count {
+            it.state == PlatformSyncState.DONE ||
+                it.state == PlatformSyncState.ALREADY_SYNCED ||
+                it.state == PlatformSyncState.FAILED
         }
+
+    val failedCount: Int get() = enabledRows.count { it.state == PlatformSyncState.FAILED }
+
+    /**
+     * Whether the focused row can be synced on its own right now.
+     */
+    val canSyncFocused: Boolean
+        get() {
+            val row = focusedRow ?: return false
+            return isConnected &&
+                row.syncEnabled &&
+                !libraryBusy &&
+                row.platformId !in busyPlatformIds
+        }
+
+    val canSyncAll: Boolean get() = isConnected && !libraryBusy
 
     /**
      * Whole-pass fraction, counting the active platform's own progress so the header advances
@@ -38,13 +82,13 @@ data class SyncMonitorUiState(
      */
     val passFraction: Float
         get() {
-            if (rows.isEmpty()) return 0f
+            if (enabledRows.isEmpty()) return 0f
             val active = rows.getOrNull(activeIndex)
             val activeShare = if (active != null && active.gamesTotal > 0) {
                 active.gamesDone.toFloat() / active.gamesTotal
             } else {
                 0f
             }
-            return ((platformsDone + activeShare) / rows.size).coerceIn(0f, 1f)
+            return ((platformsDone + activeShare) / enabledRows.size).coerceIn(0f, 1f)
         }
 }

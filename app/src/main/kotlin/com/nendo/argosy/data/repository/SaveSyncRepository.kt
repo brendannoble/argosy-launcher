@@ -150,6 +150,9 @@ class SaveSyncRepository @Inject constructor(
 
     fun observePendingCount(): Flow<Int> = entityManager.observePendingCount()
 
+    fun observeSaveCountsByPlatform(): Flow<Map<Long, Int>> =
+        entityManager.observeSaveCountsByPlatform()
+
     suspend fun clearDirtyFlags(gameId: Long) = entityManager.clearDirtyFlags(gameId)
 
     suspend fun discoverSavePathChecked(

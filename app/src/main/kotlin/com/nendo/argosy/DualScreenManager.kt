@@ -112,7 +112,7 @@ class DualScreenManager(
     internal val gameFileDao: GameFileDao,
     internal val downloadManager: DownloadManager,
     private val gameActionsDelegate: GameActionsDelegate,
-    private val syncPlatformUseCase: com.nendo.argosy.domain.usecase.sync.SyncPlatformUseCase,
+    private val platformSyncQueue: com.nendo.argosy.data.sync.PlatformSyncQueue,
     private val gameLaunchDelegate: GameLaunchDelegate,
     private val saveCacheManager: SaveCacheManager,
     private val getUnifiedSavesUseCase: GetUnifiedSavesUseCase,
@@ -3145,7 +3145,7 @@ class DualScreenManager(
         scope.launch(Dispatchers.IO) {
             val game = gameDao.getById(gameId) ?: return@launch
             val platform = platformRepository.getById(game.platformId) ?: return@launch
-            syncPlatformUseCase(platform.id, platform.name)
+            platformSyncQueue.enqueuePlatform(platform.id, platform.name)
         }
     }
 

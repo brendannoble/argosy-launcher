@@ -1,7 +1,6 @@
 package com.nendo.argosy.ui.screens.syncmonitor
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,9 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,7 +47,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.nendo.argosy.R
-import com.nendo.argosy.data.remote.romm.PlatformSyncRow
 import com.nendo.argosy.data.remote.romm.PlatformSyncState
 import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.InputButton
@@ -63,6 +61,7 @@ import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.theme.generated.ColorTokens
 import com.nendo.argosy.ui.theme.generated.MotionTokens
 import com.nendo.argosy.ui.util.clickableNoFocus
+import com.nendo.argosy.util.formatRelativeTime
 
 @Composable
 fun SyncMonitorScreen(
@@ -100,15 +99,12 @@ fun SyncMonitorScreen(
             Spacer(Modifier.height(Dimens.spacingMd))
 
             if (!uiState.hasRows) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = when {
-                            uiState.isSyncing -> stringResource(R.string.syncmonitor_empty_starting)
-                            uiState.isConnected -> stringResource(R.string.syncmonitor_empty_idle)
-                            else -> stringResource(R.string.syncmonitor_empty_disconnected)
+                        text = if (uiState.isConnected) {
+                            stringResource(R.string.syncmonitor_empty_idle)
+                        } else {
+                            stringResource(R.string.syncmonitor_empty_disconnected)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = theme.textDim
@@ -121,12 +117,51 @@ fun SyncMonitorScreen(
                     contentPadding = PaddingValues(bottom = Dimens.footerHeight + Dimens.spacingLg),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
                 ) {
-                    itemsIndexed(uiState.rows, key = { _, row -> row.platformId }) { index, row ->
+                    itemsIndexed(
+                        uiState.enabledRows,
+                        key = { _, row -> row.platformId }
+                    ) { index, row ->
                         PlatformRow(
                             row = row,
                             focused = index == uiState.focusedIndex,
-                            onClick = { viewModel.focusRow(index) }
+                            actionEnabled = uiState.canSyncFocused || index != uiState.focusedIndex,
+                            onClick = { viewModel.focusRow(index) },
+                            onAction = {
+                                viewModel.focusRow(index)
+                                viewModel.activateFocusedRow()
+                            }
                         )
+                    }
+
+                    if (uiState.disabledRows.isNotEmpty()) {
+                        item(key = "disabled-header") {
+                            Text(
+                                text = stringResource(R.string.syncmonitor_group_disabled),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = theme.textMute,
+                                modifier = Modifier.padding(
+                                    start = Dimens.spacingSm,
+                                    top = Dimens.spacingMd,
+                                    bottom = Dimens.spacingXs
+                                )
+                            )
+                        }
+                        itemsIndexed(
+                            uiState.disabledRows,
+                            key = { _, row -> row.platformId }
+                        ) { index, row ->
+                            val listIndex = uiState.enabledRows.size + index
+                            PlatformRow(
+                                row = row,
+                                focused = listIndex == uiState.focusedIndex,
+                                actionEnabled = true,
+                                onClick = { viewModel.focusRow(listIndex) },
+                                onAction = {
+                                    viewModel.focusRow(listIndex)
+                                    viewModel.activateFocusedRow()
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -137,7 +172,8 @@ fun SyncMonitorScreen(
                 hints = buildHints(uiState),
                 onHintClick = { button ->
                     when (button) {
-                        InputButton.Y -> viewModel.syncNow()
+                        InputButton.A -> viewModel.activateFocusedRow()
+                        InputButton.Y -> viewModel.syncAll()
                         InputButton.B -> onBack()
                         else -> Unit
                     }
@@ -159,21 +195,24 @@ private fun SyncMonitorHeader(state: SyncMonitorUiState) {
         )
         Spacer(Modifier.height(Dimens.spacingXs))
         Text(
-            text = when {
-                state.isSyncing && state.hasRows -> stringResource(
-                    R.string.syncmonitor_progress_platforms,
-                    state.platformsDone,
-                    state.rows.size
-                )
-                state.isSyncing -> stringResource(R.string.syncmonitor_progress_starting)
-                else -> stringResource(R.string.syncmonitor_idle_subtitle)
-            },
+            text = headerSubtitle(state),
             style = MaterialTheme.typography.bodyMedium,
-            color = theme.textDim
+            color = if (state.failedCount > 0) warningColor() else theme.textDim
+        )
+        Spacer(Modifier.height(Dimens.spacingXs))
+        Text(
+            text = stringResource(
+                R.string.syncmonitor_library_summary,
+                state.rows.size,
+                state.totalGames,
+                state.totalDownloaded
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = theme.textMute
         )
         if (state.isSyncing) {
             Spacer(Modifier.height(Dimens.spacingSm))
-            if (state.hasRows) {
+            if (state.enabledRows.any { it.gamesTotal > 0 }) {
                 InterpolatedProgressBar(
                     target = state.passFraction,
                     style = ProgressBarStyle.Active,
@@ -191,95 +230,177 @@ private fun SyncMonitorHeader(state: SyncMonitorUiState) {
 }
 
 @Composable
+private fun headerSubtitle(state: SyncMonitorUiState): String = when {
+    state.isSyncing && state.enabledRows.any { it.state == PlatformSyncState.SYNCING } ->
+        stringResource(
+            R.string.syncmonitor_progress_platforms,
+            state.platformsDone,
+            state.enabledRows.size
+        )
+    state.isSyncing -> stringResource(R.string.syncmonitor_progress_starting)
+    state.failedCount > 0 ->
+        stringResource(R.string.syncmonitor_finished_with_failures, state.failedCount)
+    !state.isConnected -> stringResource(R.string.syncmonitor_not_connected)
+    state.lastSyncedAt != null -> stringResource(
+        R.string.syncmonitor_last_synced,
+        formatRelativeTime(LocalContext.current, state.lastSyncedAt)
+    )
+    else -> stringResource(R.string.syncmonitor_never_synced)
+}
+
+@Composable
 private fun PlatformRow(
-    row: PlatformSyncRow,
+    row: SyncMonitorRow,
     focused: Boolean,
-    onClick: () -> Unit
+    actionEnabled: Boolean,
+    onClick: () -> Unit,
+    onAction: () -> Unit
 ) {
     val theme = LocalArgosyTheme.current
-    val background = if (focused) theme.focusAccent.copy(alpha = 0.15f) else theme.surfaceElevated
-
+    val background = when {
+        focused -> theme.focusAccent.copy(alpha = 0.15f)
+        row.state == PlatformSyncState.SYNCING -> theme.surfaceElevated
+        else -> theme.surfaceElevated.copy(alpha = 0.6f)
+    }
     val context = LocalContext.current
     val iconUri = remember(row.slug) { PlatformIconAssets.resolveAssetUri(context, row.slug) }
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .height(Dimens.menuRowHeightLg)
             .clip(RoundedCornerShape(Dimens.radiusMd))
             .background(background)
             .clickableNoFocus(onClick = onClick)
-            .padding(Dimens.spacingMd),
-        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        if (iconUri != null) {
-            AsyncImage(
-                model = iconUri,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(Dimens.iconLg)
-            )
-        } else {
-            StateIcon(row.state)
-        }
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = Dimens.spacingMd),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = row.name,
-                style = MaterialTheme.typography.titleSmall,
-                color = theme.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StateIcon(row.state)
+            if (iconUri != null) {
+                AsyncImage(
+                    model = iconUri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(Dimens.iconLg)
+                )
+            } else {
+                Box(
+                    modifier = Modifier.size(Dimens.iconLg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    StateIcon(row.state)
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = row.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (row.syncEnabled) theme.textPrimary else theme.textDim,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     text = rowSubtitle(row),
                     style = MaterialTheme.typography.bodySmall,
-                    color = stateColor(row.state),
+                    color = subtitleColor(row),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (row.state == PlatformSyncState.SYNCING) {
-                InterpolatedProgressBar(
-                    target = if (row.gamesTotal > 0) {
-                        row.gamesDone.toFloat() / row.gamesTotal
-                    } else {
-                        0f
-                    },
-                    style = ProgressBarStyle.Active,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+
+            RowTrailing(row)
+
+            ActionPill(row = row, focused = focused, enabled = actionEnabled, onClick = onAction)
         }
 
-        RowTrailing(row)
+        if (row.state == PlatformSyncState.SYNCING) {
+            InterpolatedProgressBar(
+                target = if (row.gamesTotal > 0) row.gamesDone.toFloat() / row.gamesTotal else 0f,
+                style = ProgressBarStyle.Active,
+                modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter)
+            )
+        }
     }
 }
 
-/**
- * The line under the platform name: what this row is doing, in words, so the icon and colour are
- * confirmation rather than the only signal.
- */
 @Composable
-private fun rowSubtitle(row: PlatformSyncRow): String = when (row.state) {
-    PlatformSyncState.IDLE -> stringResource(R.string.syncmonitor_state_idle)
-    PlatformSyncState.QUEUED -> stringResource(R.string.syncmonitor_state_queued)
-    PlatformSyncState.SYNCING -> stringResource(
+private fun ActionPill(
+    row: SyncMonitorRow,
+    focused: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val theme = LocalArgosyTheme.current
+    val tint = when {
+        !enabled -> theme.textMute
+        focused -> theme.focusAccent
+        else -> theme.textDim
+    }
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(Dimens.radiusPill))
+            .background(tint.copy(alpha = 0.12f))
+            .clickableNoFocus(onClick = onClick)
+            .padding(horizontal = Dimens.spacingSm, vertical = Dimens.spacingXs),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (row.syncEnabled) Icons.Default.Sync else Icons.Default.Check,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(Dimens.iconXs)
+        )
+        Text(
+            text = if (row.syncEnabled) {
+                stringResource(R.string.syncmonitor_action_sync)
+            } else {
+                stringResource(R.string.syncmonitor_action_enable)
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = tint
+        )
+    }
+}
+
+@Composable
+private fun rowSubtitle(row: SyncMonitorRow): String = when {
+    !row.syncEnabled -> stringResource(
+        R.string.syncmonitor_row_excluded,
+        row.games,
+        row.downloaded
+    )
+    row.state == PlatformSyncState.QUEUED -> stringResource(R.string.syncmonitor_state_queued)
+    row.state == PlatformSyncState.SYNCING && row.gamesTotal > 0 -> stringResource(
         R.string.syncmonitor_state_syncing,
         row.gamesDone,
         row.gamesTotal
     )
-    PlatformSyncState.DONE -> stringResource(R.string.syncmonitor_state_done_desc)
-    PlatformSyncState.ALREADY_SYNCED -> stringResource(R.string.syncmonitor_state_already_synced)
-    PlatformSyncState.FAILED -> row.error ?: stringResource(R.string.syncmonitor_state_failed)
+    row.state == PlatformSyncState.SYNCING -> stringResource(R.string.syncmonitor_progress_starting)
+    row.state == PlatformSyncState.FAILED ->
+        row.error ?: stringResource(R.string.syncmonitor_state_failed)
+    else -> stringResource(
+        R.string.syncmonitor_row_summary,
+        row.games,
+        row.downloaded,
+        row.withSaves
+    )
+}
+
+@Composable
+private fun subtitleColor(row: SyncMonitorRow): Color {
+    val theme = LocalArgosyTheme.current
+    return when {
+        !row.syncEnabled -> theme.textMute
+        row.state == PlatformSyncState.SYNCING -> progressColor()
+        row.state == PlatformSyncState.FAILED -> warningColor()
+        else -> theme.textDim
+    }
 }
 
 @Composable
@@ -331,64 +452,32 @@ private fun stateColor(state: PlatformSyncState): Color {
 private fun StateIcon(state: PlatformSyncState) {
     Icon(
         imageVector = when (state) {
-            PlatformSyncState.IDLE -> Icons.Default.Schedule
-            PlatformSyncState.QUEUED -> Icons.Default.Schedule
+            PlatformSyncState.IDLE, PlatformSyncState.QUEUED -> Icons.Default.Schedule
             PlatformSyncState.SYNCING -> Icons.Default.Sync
             PlatformSyncState.DONE -> Icons.Default.CheckCircle
             PlatformSyncState.ALREADY_SYNCED -> Icons.Default.Check
             PlatformSyncState.FAILED -> Icons.Default.ErrorOutline
         },
-        contentDescription = stateDescription(state),
+        contentDescription = null,
         tint = stateColor(state),
         modifier = Modifier.size(Dimens.iconSm)
     )
 }
 
 @Composable
-private fun stateDescription(state: PlatformSyncState): String = when (state) {
-    PlatformSyncState.IDLE -> stringResource(R.string.syncmonitor_state_idle)
-    PlatformSyncState.QUEUED -> stringResource(R.string.syncmonitor_state_queued)
-    PlatformSyncState.SYNCING -> stringResource(R.string.syncmonitor_state_syncing_desc)
-    PlatformSyncState.DONE -> stringResource(R.string.syncmonitor_state_done_desc)
-    PlatformSyncState.ALREADY_SYNCED -> stringResource(R.string.syncmonitor_state_already_synced)
-    PlatformSyncState.FAILED -> stringResource(R.string.syncmonitor_state_failed)
-}
-
-/**
- * What the row says on its right: counts once a platform is finished, its position in the pass
- * while it runs, and the server's own words when it failed.
- */
-@Composable
-private fun RowTrailing(row: PlatformSyncRow) {
-    val theme = LocalArgosyTheme.current
-
-    when (row.state) {
-        PlatformSyncState.DONE -> Row(
-            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (row.added > 0) {
-                CountBadge(R.string.syncmonitor_badge_added, row.added, successColor())
-            }
-            if (row.updated > 0) {
-                CountBadge(R.string.syncmonitor_badge_updated, row.updated, infoColor())
-            }
-            if (row.removed > 0) {
-                CountBadge(R.string.syncmonitor_badge_removed, row.removed, warningColor())
-            }
-            if (row.added == 0 && row.updated == 0 && row.removed == 0) {
-                Text(
-                    text = stringResource(R.string.syncmonitor_badge_unchanged),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = theme.textMute
-                )
-            }
+private fun RowTrailing(row: SyncMonitorRow) {
+    if (row.state != PlatformSyncState.DONE) return
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (row.added > 0) CountBadge(R.string.syncmonitor_badge_added, row.added, successColor())
+        if (row.updated > 0) {
+            CountBadge(R.string.syncmonitor_badge_updated, row.updated, infoColor())
         }
-        PlatformSyncState.IDLE,
-        PlatformSyncState.QUEUED,
-        PlatformSyncState.SYNCING,
-        PlatformSyncState.FAILED,
-        PlatformSyncState.ALREADY_SYNCED -> Unit
+        if (row.removed > 0) {
+            CountBadge(R.string.syncmonitor_badge_removed, row.removed, warningColor())
+        }
     }
 }
 
@@ -419,19 +508,22 @@ private fun InterpolatedProgressBar(
     LaunchedEffect(target) {
         animatable.animateTo(targetValue = target, animationSpec = MotionTokens.Tween.medium)
     }
-    ArgosyProgressBar(
-        progress = animatable.value,
-        style = style,
-        modifier = modifier
-    )
+    ArgosyProgressBar(progress = animatable.value, style = style, modifier = modifier)
 }
 
 @Composable
 private fun buildHints(state: SyncMonitorUiState): List<Pair<InputButton, String>> {
-    val syncLabel = stringResource(R.string.syncmonitor_footer_sync)
+    val syncAllLabel = stringResource(R.string.syncmonitor_footer_sync_all)
+    val syncOneLabel = stringResource(R.string.syncmonitor_action_sync)
+    val enableLabel = stringResource(R.string.syncmonitor_action_enable)
     val backLabel = stringResource(R.string.syncmonitor_footer_back)
+    val focused = state.focusedRow
     return buildList {
-        if (!state.isSyncing && state.isConnected) add(InputButton.Y to syncLabel)
+        when {
+            focused != null && !focused.syncEnabled -> add(InputButton.A to enableLabel)
+            state.canSyncFocused -> add(InputButton.A to syncOneLabel)
+        }
+        if (state.canSyncAll) add(InputButton.Y to syncAllLabel)
         add(InputButton.B to backLabel)
     }
 }

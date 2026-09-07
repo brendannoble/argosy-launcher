@@ -496,6 +496,25 @@ interface GameDao {
     """)
     suspend fun countsByPlatform(ownerUserId: Long?): List<PlatformGameCount>
 
+    @Query("""
+        SELECT platformId, COUNT(*) AS gameCount FROM games
+        WHERE NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+        GROUP BY platformId
+    """)
+    fun observeCountsByPlatform(ownerUserId: Long?): Flow<List<PlatformGameCount>>
+
+    /**
+     * Counts only what the library also counts, so a downloaded total can never exceed the total
+     * beside it when a game is hidden.
+     */
+    @Query("""
+        SELECT platformId, COUNT(*) AS gameCount FROM games
+        WHERE localPath IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+        GROUP BY platformId
+    """)
+    fun observeDownloadedCountsByPlatform(ownerUserId: Long?): Flow<List<PlatformGameCount>>
+
     @Query("SELECT COUNT(*) FROM games WHERE platformId = :platformId AND localPath IS NOT NULL")
     suspend fun countDownloadedByPlatform(platformId: Long): Int
 

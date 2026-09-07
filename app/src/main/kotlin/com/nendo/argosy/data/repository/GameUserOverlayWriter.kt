@@ -3,6 +3,8 @@ package com.nendo.argosy.data.repository
 import com.nendo.argosy.data.local.dao.GameUserOverlayDao
 import com.nendo.argosy.data.local.dao.UserRomsHiddenDao
 import com.nendo.argosy.data.preferences.SyncPreferencesRepository
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,6 +24,11 @@ class GameUserOverlayWriter @Inject constructor(
     private val syncPreferencesRepository: SyncPreferencesRepository
 ) {
     suspend fun activeOwnerId(): Long? = syncPreferencesRepository.getRommUserId()
+
+    fun observeActiveOwnerId(): kotlinx.coroutines.flow.Flow<Long?> =
+        syncPreferencesRepository.preferences
+            .map { it.rommUserId }
+            .distinctUntilChanged()
 
     /**
      * The user's own hide choice, which lives in `user_roms_hidden` and not on the overlay row.

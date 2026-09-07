@@ -13,6 +13,8 @@ fun SyncPlatformFailureReason.toNotificationText(): NotificationText = when (thi
         NotificationText.Res(R.string.error_sync_platform_not_connected)
     SyncPlatformFailureReason.PlatformNotFound ->
         NotificationText.Res(R.string.error_sync_platform_not_found)
+    SyncPlatformFailureReason.PlatformDisabled ->
+        NotificationText.Res(R.string.error_sync_platform_disabled)
     is SyncPlatformFailureReason.Unexpected ->
         message?.let { NotificationText.Raw(it) } ?: NotificationText.Res(R.string.error_sync_platform_unexpected)
 }
