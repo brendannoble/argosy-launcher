@@ -124,7 +124,7 @@ fun SyncMonitorScreen(
                         PlatformRow(
                             row = row,
                             focused = index == uiState.focusedIndex,
-                            actionEnabled = uiState.canSyncFocused || index != uiState.focusedIndex,
+                            actionEnabled = uiState.canSyncRow(row),
                             onClick = { viewModel.focusRow(index) },
                             onAction = {
                                 viewModel.focusRow(index)
@@ -154,7 +154,7 @@ fun SyncMonitorScreen(
                             PlatformRow(
                                 row = row,
                                 focused = listIndex == uiState.focusedIndex,
-                                actionEnabled = true,
+                                actionEnabled = !uiState.syncRunning,
                                 onClick = { viewModel.focusRow(listIndex) },
                                 onAction = {
                                     viewModel.focusRow(listIndex)
@@ -344,8 +344,8 @@ private fun ActionPill(
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(Dimens.radiusPill))
-            .background(tint.copy(alpha = 0.12f))
-            .clickableNoFocus(onClick = onClick)
+            .background(tint.copy(alpha = if (enabled) 0.12f else 0.05f))
+            .clickableNoFocus(enabled = enabled, onClick = onClick)
             .padding(horizontal = Dimens.spacingSm, vertical = Dimens.spacingXs),
         horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs),
         verticalAlignment = Alignment.CenterVertically

@@ -33,6 +33,12 @@ data class SyncMonitorUiState(
     val isSyncing: Boolean = false,
     val isConnected: Boolean = true,
     val libraryBusy: Boolean = false,
+    /**
+     * A pass is running somewhere, queue or not. The sync service holds one mutex for every kind
+     * of sync, so a second request would be refused there rather than run; this is what the row
+     * actions gate on so they never accept a press that would silently do nothing.
+     */
+    val syncRunning: Boolean = false,
     val busyPlatformIds: Set<Long> = emptySet(),
     val enabledRows: List<SyncMonitorRow> = emptyList(),
     val disabledRows: List<SyncMonitorRow> = emptyList(),
@@ -62,6 +68,13 @@ data class SyncMonitorUiState(
 
     val failedCount: Int get() = enabledRows.count { it.state == PlatformSyncState.FAILED }
 
+    fun canSyncRow(row: SyncMonitorRow): Boolean =
+        isConnected &&
+            row.syncEnabled &&
+            !libraryBusy &&
+            !syncRunning &&
+            row.platformId !in busyPlatformIds
+
     /**
      * Whether the focused row can be synced on its own right now.
      */
@@ -71,10 +84,11 @@ data class SyncMonitorUiState(
             return isConnected &&
                 row.syncEnabled &&
                 !libraryBusy &&
+                !syncRunning &&
                 row.platformId !in busyPlatformIds
         }
 
-    val canSyncAll: Boolean get() = isConnected && !libraryBusy
+    val canSyncAll: Boolean get() = isConnected && !libraryBusy && !syncRunning
 
     /**
      * Whole-pass fraction, counting the active platform's own progress so the header advances

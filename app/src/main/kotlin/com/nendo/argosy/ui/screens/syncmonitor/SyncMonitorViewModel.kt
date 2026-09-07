@@ -59,6 +59,7 @@ class SyncMonitorViewModel @Inject constructor(
                     val active = ordered.indexOfFirst { it.state == PlatformSyncState.SYNCING }
                     state.copy(
                         isSyncing = isSyncing,
+                        syncRunning = isSyncing,
                         enabledRows = enabled,
                         disabledRows = disabled,
                         focusedIndex = resolveFocus(state, ordered, active)
