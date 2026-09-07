@@ -60,11 +60,9 @@ class RomMGameFileSync @Inject constructor(
             gameFileDao.deleteInvalidFilesForRom(gameId, rom.id, validIds)
         }
 
-        val existingByFileId = if (validIds.isEmpty()) {
-            emptyMap()
-        } else {
-            gameFileDao.getByRommFileIds(validIds).associateBy { it.rommFileId }
-        }
+        val existingByFileId = gameFileDao
+            .getByRommFileIds(files.map { it.id })
+            .associateBy { it.rommFileId }
         val classified = files.map { file ->
             val isNested = rootPathLength != null && file.filePath.length > rootPathLength
             val category = when {
