@@ -149,6 +149,16 @@
     <!-- Notification line while saves are syncing without naming a game yet. -->
     <string name="sync_service_saves">Syncing saves...</string>
 
+    <!-- Steam background service notification. "Steam" is Valve's product name and is
+         never translated. -->
+    <string name="steam_service_title" translatable="false">Steam</string>
+    <!-- Notification line while the Steam connection is being opened. Present participle. -->
+    <string name="steam_service_connecting">Connecting...</string>
+    <!-- Notification line while Steam credentials are being presented. Present participle. -->
+    <string name="steam_service_signing_in">Signing in...</string>
+    <!-- Notification line while the Steam library is being fetched. Present participle. -->
+    <string name="steam_service_syncing_library">Syncing Steam library...</string>
+
     <!-- Android system notification shown while downloads run in the background. -->
 
     <!-- Name of the Android notification channel, shown in the system's notification
@@ -177,6 +187,10 @@
     <!-- Notification line when something is waiting but nothing can be named yet.
          Adjective phrase describing the download. -->
     <string name="sync_download_service_pending">Download pending...</string>
+    <!-- Appends the position in the download queue to a notification line, shown only when
+         more than one download is outstanding. %1$s is the line, %2$d the item being worked
+         on, %3$d the total. -->
+    <string name="sync_download_service_batch_position" translatable="false">%1$s (%2$d/%3$d)</string>
     <!-- Notification line while a film or episode is being set up before its bytes
          start arriving. %1$s says which step is running, %2$s is the title. -->
     <string name="sync_download_service_media_preparing">%1$s: %2$s</string>

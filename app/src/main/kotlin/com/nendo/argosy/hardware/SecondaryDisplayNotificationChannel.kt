@@ -12,7 +12,6 @@ import com.nendo.argosy.R
  */
 object SecondaryDisplayNotificationChannel {
     const val CHANNEL_ID = "secondary_display_channel"
-    const val NOTIFICATION_ID = 0x4001
 
     fun create(context: Context) {
         val channel = NotificationChannel(

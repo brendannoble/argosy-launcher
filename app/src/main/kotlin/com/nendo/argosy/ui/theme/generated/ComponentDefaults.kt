@@ -192,6 +192,18 @@ object ComponentDefaults {
         const val stampCellRatio = 0.6f
     }
 
+    object OverlayLegibility {
+        const val shadowAlpha = 0.7f
+        const val shadowOffsetX = 0
+        const val shadowOffsetY = 1
+        const val shadowBlurRadius = 4
+    }
+
+    object BatteryIndicator {
+        const val terminalWidthDp = 3
+        const val haloStrokeMultiplier = 2.5f
+    }
+
     object MediaBackdrop {
         const val blurScale = 0.5f
         const val scrimTopAlphaDark = 0.5f

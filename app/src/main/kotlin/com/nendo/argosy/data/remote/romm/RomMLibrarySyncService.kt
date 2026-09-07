@@ -366,9 +366,6 @@ class RomMLibrarySyncService @Inject constructor(
     /**
      * Advances the game counters once per rom rather than once per page, so a consumer drawing a
      * bar moves by one game at a time instead of jumping a page width when a response lands.
-     *
-     * The total is held at or above the done count. A platform's rom count comes from the server
-     * and can be stale, and a bar that reads past its own end is worse than one that arrives early.
      */
     private fun publishGameProgress(platformId: Long, done: Int, total: Int) {
         val bounded = maxOf(done, total)
@@ -552,13 +549,8 @@ class RomMLibrarySyncService @Inject constructor(
      * halfway through and attribute the remainder to the wrong account.
      */
     /**
-     * The whole library's id set as the server sees it for this account, fetched at most once per
-     * pass and only when something is actually about to be deleted.
-     *
-     * `GET /api/roms/identifiers` walks every rom on the server, so on a large library it costs
-     * tens of seconds. Reading it up front made every sync pay that before touching a single rom,
-     * including a one-rom platform with nothing to reconcile. Deletion is the only reader, and the
-     * common pass deletes nothing.
+     * Fetched at most once per pass and only when a deletion is about to happen.
+     * `GET /api/roms/identifiers` costs tens of seconds on a large library.
      */
     private class ServerRomIds(private val fetch: suspend () -> Set<Long>?) {
         private val mutex = Mutex()

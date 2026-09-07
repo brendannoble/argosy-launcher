@@ -52,6 +52,9 @@
     <string name="sync_service_uploading">Envoi : %1$s</string>
     <string name="sync_service_downloading">Téléchargement : %1$s</string>
     <string name="sync_service_saves">Synchronisation des sauvegardes...</string>
+    <string name="steam_service_connecting">Connexion...</string>
+    <string name="steam_service_signing_in">Authentification...</string>
+    <string name="steam_service_syncing_library">Synchronisation de la bibliothèque Steam...</string>
 
     <string name="sync_download_channel_name">Progression du téléchargement</string>
     <string name="sync_download_channel_description">Affiche la progression du téléchargement en arrière-plan</string>

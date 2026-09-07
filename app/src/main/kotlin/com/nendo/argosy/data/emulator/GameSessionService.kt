@@ -31,6 +31,8 @@ import android.widget.ImageView
 import androidx.core.app.NotificationCompat
 import com.nendo.argosy.MainActivity
 import com.nendo.argosy.R
+import com.nendo.argosy.core.service.ServiceNotificationIds
+import com.nendo.argosy.core.service.startForegroundServiceSafely
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.repository.SaveCacheManager
@@ -640,7 +642,7 @@ class GameSessionService : Service() {
     companion object {
         private const val TAG = "GameSessionService"
         private const val CHANNEL_ID = "game_session_channel"
-        private const val NOTIFICATION_ID = 0x5000
+        private const val NOTIFICATION_ID = ServiceNotificationIds.GAME_SESSION
         private const val ACTION_STOP = "com.nendo.argosy.STOP_GAME_SESSION"
         private const val ACTION_UPDATE_HARDCORE = "com.nendo.argosy.UPDATE_GAME_SESSION_HARDCORE"
         private const val EXTRA_WATCH_PATH = "watch_path"
@@ -700,7 +702,7 @@ class GameSessionService : Service() {
                 putExtra(EXTRA_SESSION_START_TIME, sessionStartTime)
                 putExtra(EXTRA_EMULATOR_PACKAGE, emulatorPackage)
             }
-            context.startForegroundService(intent)
+            context.startForegroundServiceSafely(intent)
         }
 
         /**

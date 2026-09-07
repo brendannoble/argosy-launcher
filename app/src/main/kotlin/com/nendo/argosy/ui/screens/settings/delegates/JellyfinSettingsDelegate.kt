@@ -21,9 +21,11 @@ import com.nendo.argosy.data.preferences.MediaSubtitleMode
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.ui.screens.settings.JellyfinState
 import com.nendo.argosy.ui.screens.settings.MediaRelocationPrompt
+import com.nendo.argosy.util.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +39,7 @@ import java.io.File
 import java.time.Instant
 import javax.inject.Inject
 
+private const val TAG = "JellyfinSettingsDelegate"
 private const val MEDIA_SYNC_NOTIFICATION_KEY = "jellyfin_library_sync"
 
 /**
@@ -351,22 +354,40 @@ class JellyfinSettingsDelegate @Inject constructor(
         scope.launch {
             withContext(NonCancellable) {
                 val progressJob = launch {
-                    mediaRepository.syncProgress.collect { progress ->
-                        if (progress.isSyncing && progress.currentLibrary.isNotBlank()) {
-                            notificationManager.updatePersistent(
-                                key = MEDIA_SYNC_NOTIFICATION_KEY,
-                                subtitle = NotificationText.Raw(progress.currentLibrary),
-                                progress = NotificationProgress(
-                                    progress.librariesDone + 1,
-                                    progress.librariesTotal
-                                )
-                            )
+                    mediaRepository.syncProgress
+                        .distinctUntilChanged { old, new ->
+                            old.isSyncing == new.isSyncing &&
+                                old.currentLibrary == new.currentLibrary &&
+                                old.librariesDone == new.librariesDone &&
+                                old.librariesTotal == new.librariesTotal
                         }
-                    }
+                        .collect { progress ->
+                            if (progress.isSyncing && progress.currentLibrary.isNotBlank()) {
+                                notificationManager.updatePersistent(
+                                    key = MEDIA_SYNC_NOTIFICATION_KEY,
+                                    subtitle = NotificationText.Raw(progress.currentLibrary),
+                                    progress = NotificationProgress(
+                                        progress.librariesDone + 1,
+                                        progress.librariesTotal
+                                    )
+                                )
+                            }
+                        }
                 }
-                val outcome = mediaRepository.refreshLibraries()
-                progressJob.cancel()
-                finishLibrarySync(outcome)
+                try {
+                    finishLibrarySync(mediaRepository.refreshLibraries())
+                } catch (e: Exception) {
+                    Logger.warn(TAG, "syncLibrary failed", e)
+                    notificationManager.completePersistent(
+                        key = MEDIA_SYNC_NOTIFICATION_KEY,
+                        title = NotificationText.Res(R.string.notif_jellyfin_settings_sync_failed_title),
+                        subtitle = e.message?.let { NotificationText.Raw(it) },
+                        type = NotificationType.ERROR
+                    )
+                    _state.update { it.copy(isSyncingLibrary = false) }
+                } finally {
+                    progressJob.cancel()
+                }
             }
         }
     }

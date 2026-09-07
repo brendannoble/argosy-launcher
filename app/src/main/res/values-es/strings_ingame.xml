@@ -447,9 +447,6 @@
     <string name="ingame_touch_editor_toolbar_cancel">Cancelar</string>
     <string name="ingame_touch_editor_toolbar_rotate">Girar</string>
 
-    <string name="ingame_recovery_display_playing_placeholder">Jugando...</string>
-    <string name="ingame_recovery_display_status_in_game">En el juego</string>
-    <string name="ingame_recovery_display_playing_fallback">Jugando...</string>
 
     <string name="ingame_touch_nes_sys_select">Select</string>
     <string name="ingame_touch_nes_sys_start">Start</string>

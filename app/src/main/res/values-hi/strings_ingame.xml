@@ -438,9 +438,6 @@
     <string name="ingame_touch_editor_toolbar_cancel">रद्द करें</string>
     <string name="ingame_touch_editor_toolbar_rotate">घुमाएं</string>
 
-    <string name="ingame_recovery_display_playing_placeholder">खेला जा रहा है...</string>
-    <string name="ingame_recovery_display_status_in_game">गेम में</string>
-    <string name="ingame_recovery_display_playing_fallback">खेला जा रहा है...</string>
 
     <string name="ingame_touch_nes_sys_select">सेलेक्ट</string>
     <string name="ingame_touch_nes_sys_start">स्टार्ट</string>

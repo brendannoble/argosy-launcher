@@ -116,14 +116,6 @@ class RomMGameFileSync @Inject constructor(
         val isNested: Boolean
     )
 
-    /**
-     * Re-attaches soundtrack rows to tracks already sitting in the music library, keyed by RomM
-     * file id.
-     *
-     * Resolving the music root reads DataStore, whose single actor serialises every caller, so it
-     * happens once per rom rather than once per track. A game with no directory under the root has
-     * nothing to re-attach, and that one check stands in for a stat per track.
-     */
     private suspend fun recoverMusicPaths(
         rom: RomMRom,
         tracks: List<ClassifiedFile>

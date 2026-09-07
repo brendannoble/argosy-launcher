@@ -176,6 +176,7 @@
 
     <string name="notif_sync_platform_progress_title">正在同步%1$s</string>
     <string name="notif_sync_platform_progress_fetching">正在取得遊戲...</string>
+    <string name="notif_sync_platform_progress_games">%1$d/%2$d 個遊戲</string>
     <string name="notif_sync_platform_complete_title">%1$s已同步</string>
     <string name="notif_sync_platform_complete_counts">新增%1$d個，更新%2$d個</string>
     <string name="notif_sync_platform_complete_counts_with_removed">新增%1$d個，更新%2$d個，移除%3$d個</string>
@@ -189,4 +190,12 @@
     <string name="notif_review_error_too_long">評論內容過長</string>
     <string name="notif_review_error_invalid">伺服器無法讀取該評論</string>
     <string name="notif_review_error_server">伺服器無法儲存該評論</string>
+    <string name="notif_storage_migrate_failed_title">遷移失敗</string>
+    <string name="notif_storage_migrate_platform_failed_title">%1$s 遷移失敗</string>
+    <string name="notif_storage_purge_failed_title">%1$s 清除失敗</string>
+    <string name="notif_settings_cache_validate_failed">圖片快取檢查失敗</string>
+    <string name="notif_settings_downloads_validate_failed">下載檢查失敗</string>
+    <plurals name="notification_persistent_also_running">
+        <item quantity="other">+%1$d 項</item>
+    </plurals>
 </resources>

@@ -8,6 +8,7 @@ import com.nendo.argosy.R
 import com.nendo.argosy.core.notification.NotificationManager
 import com.nendo.argosy.core.notification.NotificationProgress
 import com.nendo.argosy.core.notification.NotificationText
+import com.nendo.argosy.core.notification.NotificationType
 import com.nendo.argosy.core.notification.showError
 import com.nendo.argosy.core.notification.showSuccess
 import com.nendo.argosy.ui.common.notificationType
@@ -247,38 +248,49 @@ class StorageSettingsDelegate @Inject constructor(
             _isMigrating.value = true
             _pendingStoragePath.value = null
 
-            val result = migrateStorageUseCase(oldPath, newPath) { current, total, gameTitle ->
-                if (current == 0) {
-                    notificationManager.showPersistent(
-                        key = MIGRATE_NOTIFICATION_KEY,
-                        title = NotificationText.Res(R.string.notif_storage_migrate_persistent_title),
-                        subtitle = NotificationText.Res(
-                            R.string.notif_storage_migrate_persistent_subtitle_initial,
-                            listOf(total)
-                        ),
-                        progress = NotificationProgress(0, total)
-                    )
-                } else {
-                    notificationManager.updatePersistent(
-                        key = MIGRATE_NOTIFICATION_KEY,
-                        subtitle = NotificationText.Res(
-                            R.string.notif_storage_migrate_persistent_subtitle_progress,
-                            listOf(current, total, gameTitle)
-                        ),
-                        progress = NotificationProgress(current - 1, total)
-                    )
+            try {
+                val result = migrateStorageUseCase(oldPath, newPath) { current, total, gameTitle ->
+                    if (current == 0) {
+                        notificationManager.showPersistent(
+                            key = MIGRATE_NOTIFICATION_KEY,
+                            title = NotificationText.Res(R.string.notif_storage_migrate_persistent_title),
+                            subtitle = NotificationText.Res(
+                                R.string.notif_storage_migrate_persistent_subtitle_initial,
+                                listOf(total)
+                            ),
+                            progress = NotificationProgress(0, total)
+                        )
+                    } else {
+                        notificationManager.updatePersistent(
+                            key = MIGRATE_NOTIFICATION_KEY,
+                            subtitle = NotificationText.Res(
+                                R.string.notif_storage_migrate_persistent_subtitle_progress,
+                                listOf(current, total, gameTitle)
+                            ),
+                            progress = NotificationProgress(current - 1, total)
+                        )
+                    }
                 }
+
+                notificationManager.completePersistent(
+                    key = MIGRATE_NOTIFICATION_KEY,
+                    title = NotificationText.Res(R.string.notif_storage_migrate_complete_title),
+                    subtitle = result.toNotificationText(R.string.notif_storage_migrate_complete_subtitle),
+                    type = result.notificationType()
+                )
+
+                _state.update { it.copy(romStoragePath = newPath) }
+            } catch (e: Exception) {
+                Logger.warn(TAG, "migrateDownloads failed", e)
+                notificationManager.completePersistent(
+                    key = MIGRATE_NOTIFICATION_KEY,
+                    title = NotificationText.Res(R.string.notif_storage_migrate_failed_title),
+                    subtitle = e.message?.let { NotificationText.Raw(it) },
+                    type = NotificationType.ERROR
+                )
+            } finally {
+                _isMigrating.value = false
             }
-
-            notificationManager.completePersistent(
-                key = MIGRATE_NOTIFICATION_KEY,
-                title = NotificationText.Res(R.string.notif_storage_migrate_complete_title),
-                subtitle = result.toNotificationText(R.string.notif_storage_migrate_complete_subtitle),
-                type = result.notificationType()
-            )
-
-            _state.update { it.copy(romStoragePath = newPath) }
-            _isMigrating.value = false
             rediscoverAllPlatforms()
             refreshCollectionStats(scope)
         }
@@ -504,46 +516,61 @@ class StorageSettingsDelegate @Inject constructor(
         _state.update { it.copy(showMigratePlatformConfirm = null) }
 
         scope.launch {
-            val result = migratePlatformStorageUseCase(
-                platformId = info.platformId,
-                oldPath = info.oldPath,
-                newPath = info.newPath,
-                isResetToGlobal = info.isResetToGlobal
-            ) { current, total, gameTitle ->
-                if (current == 0) {
-                    notificationManager.showPersistent(
-                        key = PLATFORM_MIGRATE_NOTIFICATION_KEY,
-                        title = NotificationText.Res(
-                            R.string.notif_storage_migrate_platform_persistent_title,
-                            listOf(info.platformName)
-                        ),
-                        subtitle = NotificationText.Res(
-                            R.string.notif_storage_migrate_platform_persistent_subtitle_initial,
-                            listOf(total)
-                        ),
-                        progress = NotificationProgress(0, total)
-                    )
-                } else {
-                    notificationManager.updatePersistent(
-                        key = PLATFORM_MIGRATE_NOTIFICATION_KEY,
-                        subtitle = NotificationText.Res(
-                            R.string.notif_storage_migrate_platform_persistent_subtitle_progress,
-                            listOf(current, total, gameTitle)
-                        ),
-                        progress = NotificationProgress(current - 1, total)
-                    )
+            try {
+                val result = migratePlatformStorageUseCase(
+                    platformId = info.platformId,
+                    oldPath = info.oldPath,
+                    newPath = info.newPath,
+                    isResetToGlobal = info.isResetToGlobal
+                ) { current, total, gameTitle ->
+                    if (current == 0) {
+                        notificationManager.showPersistent(
+                            key = PLATFORM_MIGRATE_NOTIFICATION_KEY,
+                            title = NotificationText.Res(
+                                R.string.notif_storage_migrate_platform_persistent_title,
+                                listOf(info.platformName)
+                            ),
+                            subtitle = NotificationText.Res(
+                                R.string.notif_storage_migrate_platform_persistent_subtitle_initial,
+                                listOf(total)
+                            ),
+                            progress = NotificationProgress(0, total)
+                        )
+                    } else {
+                        notificationManager.updatePersistent(
+                            key = PLATFORM_MIGRATE_NOTIFICATION_KEY,
+                            subtitle = NotificationText.Res(
+                                R.string.notif_storage_migrate_platform_persistent_subtitle_progress,
+                                listOf(current, total, gameTitle)
+                            ),
+                            progress = NotificationProgress(current - 1, total)
+                        )
+                    }
                 }
-            }
 
-            notificationManager.completePersistent(
-                key = PLATFORM_MIGRATE_NOTIFICATION_KEY,
-                title = NotificationText.Res(
-                    R.string.notif_storage_migrate_platform_complete_title,
-                    listOf(info.platformName)
-                ),
-                subtitle = result.toNotificationText(R.string.notif_storage_migrate_platform_complete_subtitle),
-                type = result.notificationType()
-            )
+                notificationManager.completePersistent(
+                    key = PLATFORM_MIGRATE_NOTIFICATION_KEY,
+                    title = NotificationText.Res(
+                        R.string.notif_storage_migrate_platform_complete_title,
+                        listOf(info.platformName)
+                    ),
+                    subtitle = result.toNotificationText(
+                        R.string.notif_storage_migrate_platform_complete_subtitle
+                    ),
+                    type = result.notificationType()
+                )
+            } catch (e: Exception) {
+                Logger.warn(TAG, "confirmPlatformMigration failed", e)
+                notificationManager.completePersistent(
+                    key = PLATFORM_MIGRATE_NOTIFICATION_KEY,
+                    title = NotificationText.Res(
+                        R.string.notif_storage_migrate_platform_failed_title,
+                        listOf(info.platformName)
+                    ),
+                    subtitle = e.message?.let { NotificationText.Raw(it) },
+                    type = NotificationType.ERROR
+                )
+            }
 
             rediscoverPlatform(info.platformId)
             loadPlatformConfigs(scope)
@@ -587,32 +614,53 @@ class StorageSettingsDelegate @Inject constructor(
             ?: platformId.toString()
 
         scope.launch {
-            val result = purgePlatformUseCase(platformId, deleteLocalFiles = true) { current, total, gameTitle ->
-                if (current == 0) {
-                    notificationManager.showPersistent(
-                        key = PLATFORM_PURGE_NOTIFICATION_KEY,
-                        title = NotificationText.Res(R.string.notif_storage_purge_persistent_title, listOf(platformName)),
-                        subtitle = NotificationText.Res(R.string.notif_storage_purge_persistent_subtitle_preparing),
-                        progress = NotificationProgress(0, total.coerceAtLeast(1))
-                    )
-                } else {
-                    notificationManager.updatePersistent(
-                        key = PLATFORM_PURGE_NOTIFICATION_KEY,
-                        subtitle = NotificationText.Res(
-                            R.string.notif_storage_purge_persistent_subtitle_progress,
-                            listOf(current, total, gameTitle)
-                        ),
-                        progress = NotificationProgress(current - 1, total)
-                    )
+            try {
+                val result = purgePlatformUseCase(platformId, deleteLocalFiles = true) { current, total, gameTitle ->
+                    if (current == 0) {
+                        notificationManager.showPersistent(
+                            key = PLATFORM_PURGE_NOTIFICATION_KEY,
+                            title = NotificationText.Res(
+                                R.string.notif_storage_purge_persistent_title,
+                                listOf(platformName)
+                            ),
+                            subtitle = NotificationText.Res(
+                                R.string.notif_storage_purge_persistent_subtitle_preparing
+                            ),
+                            progress = NotificationProgress(0, total.coerceAtLeast(1))
+                        )
+                    } else {
+                        notificationManager.updatePersistent(
+                            key = PLATFORM_PURGE_NOTIFICATION_KEY,
+                            subtitle = NotificationText.Res(
+                                R.string.notif_storage_purge_persistent_subtitle_progress,
+                                listOf(current, total, gameTitle)
+                            ),
+                            progress = NotificationProgress(current - 1, total)
+                        )
+                    }
                 }
-            }
 
-            notificationManager.completePersistent(
-                key = PLATFORM_PURGE_NOTIFICATION_KEY,
-                title = NotificationText.Res(R.string.notif_storage_purge_complete_title, listOf(platformName)),
-                subtitle = result.toNotificationText(R.string.notif_storage_purge_complete_subtitle),
-                type = com.nendo.argosy.core.notification.NotificationType.SUCCESS
-            )
+                notificationManager.completePersistent(
+                    key = PLATFORM_PURGE_NOTIFICATION_KEY,
+                    title = NotificationText.Res(
+                        R.string.notif_storage_purge_complete_title,
+                        listOf(platformName)
+                    ),
+                    subtitle = result.toNotificationText(R.string.notif_storage_purge_complete_subtitle),
+                    type = NotificationType.SUCCESS
+                )
+            } catch (e: Exception) {
+                Logger.warn(TAG, "confirmPurgePlatform failed", e)
+                notificationManager.completePersistent(
+                    key = PLATFORM_PURGE_NOTIFICATION_KEY,
+                    title = NotificationText.Res(
+                        R.string.notif_storage_purge_failed_title,
+                        listOf(platformName)
+                    ),
+                    subtitle = e.message?.let { NotificationText.Raw(it) },
+                    type = NotificationType.ERROR
+                )
+            }
 
             loadPlatformConfigs(scope)
             refreshCollectionStats(scope)

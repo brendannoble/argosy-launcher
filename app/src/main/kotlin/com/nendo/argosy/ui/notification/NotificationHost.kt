@@ -80,9 +80,9 @@ fun NotificationHost(
     mutedKeys: Set<String> = emptySet()
 ) {
     val notifications by manager.notifications.collectAsState()
-    val persistentRaw by manager.persistentNotification.collectAsState()
-    val status by manager.statusNotification.collectAsState()
-    val persistent = persistentRaw?.takeUnless { it.key in mutedKeys }
+    val persistentAll by manager.persistentNotifications.collectAsState()
+    val visiblePersistent = persistentAll.filterNot { it.key in mutedKeys }
+    val persistent = visiblePersistent.lastOrNull()
     val current = notifications.firstOrNull { it.key == null || it.key !in mutedKeys }
 
     LaunchedEffect(current?.id) {
@@ -93,19 +93,6 @@ fun NotificationHost(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        AnimatedVisibility(
-            visible = status != null,
-            enter = slideInHorizontally(initialOffsetX = { it }) +
-                    fadeIn(animationSpec = tween(200)),
-            exit = slideOutHorizontally(targetOffsetX = { it / 3 }) +
-                   fadeOut(animationSpec = tween(150)),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = Dimens.spacingMd, top = Dimens.spacingSm)
-        ) {
-            status?.let { StatusNotificationBar(status = it) }
-        }
-
         AnimatedVisibility(
             visible = current != null,
             enter = slideInHorizontally(initialOffsetX = { it }) +
@@ -138,72 +125,11 @@ fun NotificationHost(
                 .padding(end = Dimens.spacingMd, bottom = FOOTER_CLEARANCE)
         ) {
             persistent?.let { notification ->
-                PersistentNotificationBar(notification = notification)
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatusNotificationBar(
-    status: StatusNotification,
-    modifier: Modifier = Modifier
-) {
-    val baseColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f)
-    val accentColor = MaterialTheme.colorScheme.secondary
-    val backgroundColor = accentColor.copy(alpha = 0.10f).compositeOver(baseColor)
-    val textColor = MaterialTheme.colorScheme.onSurface
-
-    Column(
-        modifier = modifier
-            .widthIn(max = Dimens.modalWidth - Dimens.headerHeight + Dimens.spacingSm)
-            .clip(RoundedCornerShape(Dimens.spacingSm + Dimens.borderMedium))
-            .background(backgroundColor)
-    ) {
-        Row(
-            modifier = Modifier.padding(Dimens.spacingSm),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_helm),
-                contentDescription = null,
-                tint = accentColor,
-                modifier = Modifier.size(Dimens.iconSm + Dimens.borderMedium)
-            )
-
-            Spacer(modifier = Modifier.width(Dimens.spacingSm))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = status.title.resolve(),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = textColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                status.subtitle?.let { subtitle ->
-                    Text(
-                        text = subtitle.resolve(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = textColor.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            if (status.progress == null && status.isActive) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(Dimens.iconSm),
-                    color = accentColor,
-                    strokeWidth = Dimens.borderMedium
+                PersistentNotificationBar(
+                    notification = notification,
+                    alsoRunning = visiblePersistent.size - 1
                 )
             }
-        }
-
-        status.progress?.let { progress ->
-            ArgosyProgressBar(progress = progress, tint = accentColor)
         }
     }
 }
@@ -285,6 +211,7 @@ private fun NotificationBar(
 @Composable
 private fun PersistentNotificationBar(
     notification: Notification,
+    alsoRunning: Int,
     modifier: Modifier = Modifier
 ) {
     val baseColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f)
@@ -356,6 +283,19 @@ private fun PersistentNotificationBar(
                     text = progress.displayText(),
                     style = MaterialTheme.typography.labelSmall,
                     color = accentColor
+                )
+            }
+
+            if (alsoRunning > 0) {
+                Spacer(modifier = Modifier.width(Dimens.spacingSm))
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.notification_persistent_also_running,
+                        alsoRunning,
+                        alsoRunning
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor.copy(alpha = 0.7f)
                 )
             }
         }

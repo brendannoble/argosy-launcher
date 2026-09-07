@@ -43,11 +43,6 @@ class MusicDirectoryManager @Inject constructor(
         fileName: String
     ): File = targetFileIn(resolveMusicDir(), platformName, gameName, trackNumber, title, fileName)
 
-    /**
-     * The same path as [targetFileFor] against an already-resolved music root. Resolving the root
-     * reads DataStore, which serialises every caller onto one actor; a batch that walks many tracks
-     * resolves once and calls this.
-     */
     fun targetFileIn(
         musicDir: File,
         platformName: String,

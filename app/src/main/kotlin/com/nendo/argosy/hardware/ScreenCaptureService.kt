@@ -19,6 +19,8 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.nendo.argosy.MainActivity
 import com.nendo.argosy.R
+import com.nendo.argosy.core.service.ServiceNotificationIds
+import com.nendo.argosy.core.service.startForegroundServiceSafely
 import dagger.hilt.android.AndroidEntryPoint
 import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,7 +100,7 @@ class ScreenCaptureService : Service() {
             .setContentIntent(createContentIntent())
             .build()
 
-        startForeground(ScreenCaptureNotificationChannel.NOTIFICATION_ID, notification)
+        startForeground(ServiceNotificationIds.SCREEN_CAPTURE, notification)
     }
 
     private fun createContentIntent(): PendingIntent {
@@ -235,7 +237,7 @@ class ScreenCaptureService : Service() {
                 putExtra(EXTRA_RESULT_CODE, resultCode)
                 putExtra(EXTRA_DATA, data)
             }
-            context.startForegroundService(intent)
+            context.startForegroundServiceSafely(intent)
         }
 
         fun stop(context: Context) {

@@ -430,9 +430,6 @@
     <string name="ingame_touch_editor_toolbar_cancel">取消</string>
     <string name="ingame_touch_editor_toolbar_rotate">旋轉</string>
 
-    <string name="ingame_recovery_display_playing_placeholder">遊玩中...</string>
-    <string name="ingame_recovery_display_status_in_game">遊戲中</string>
-    <string name="ingame_recovery_display_playing_fallback">遊玩中...</string>
 
     <string name="ingame_touch_nes_sys_select">Select</string>
     <string name="ingame_touch_nes_sys_start">Start</string>

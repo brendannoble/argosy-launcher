@@ -45,6 +45,10 @@ data class SyncQueueState(
     val pendingCount: Int get() = operations.count { it.status == SyncStatus.PENDING }
     val completedCount: Int get() = operations.count { it.status == SyncStatus.COMPLETED }
     val inProgressCount: Int get() = operations.count { it.status == SyncStatus.IN_PROGRESS }
+
+    fun hasPendingWork(): Boolean = operations.any {
+        it.status == SyncStatus.PENDING || it.status == SyncStatus.IN_PROGRESS
+    }
 }
 
 @Singleton

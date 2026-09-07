@@ -36,6 +36,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import com.nendo.argosy.ui.theme.ALauncherColors
 import com.nendo.argosy.ui.theme.generated.ColorTokens
+import com.nendo.argosy.ui.theme.generated.ComponentDefaults
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -103,6 +105,15 @@ fun rememberBatteryState(): State<BatteryState> {
  */
 val LocalArtworkScraping = androidx.compose.runtime.compositionLocalOf { false }
 
+private val overlayShadow = Shadow(
+    color = Color.Black.copy(alpha = ComponentDefaults.OverlayLegibility.shadowAlpha),
+    offset = Offset(
+        ComponentDefaults.OverlayLegibility.shadowOffsetX.toFloat(),
+        ComponentDefaults.OverlayLegibility.shadowOffsetY.toFloat()
+    ),
+    blurRadius = ComponentDefaults.OverlayLegibility.shadowBlurRadius.toFloat()
+)
+
 @Composable
 fun SystemStatusBar(
     modifier: Modifier = Modifier,
@@ -135,7 +146,7 @@ fun SystemStatusBar(
 
         Text(
             text = formatClockTime(LocalContext.current, currentTime.longValue),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.copy(shadow = overlayShadow),
             color = effectiveColor
         )
 
@@ -191,7 +202,7 @@ private fun BatteryIndicator(
         )
         Text(
             text = "$level%",
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(shadow = overlayShadow),
             color = color
         )
     }
@@ -210,12 +221,24 @@ internal fun BatteryIcon(
         else -> color
     }
 
+    val haloColor = Color.Black.copy(alpha = ComponentDefaults.OverlayLegibility.shadowAlpha)
+
     Canvas(modifier = modifier) {
         val bodyWidth = size.width - 4.dp.toPx()
         val bodyHeight = size.height
         val cornerRadius = 2.dp.toPx()
         val strokeWidth = 1.5f.dp.toPx()
         val padding = strokeWidth
+        val terminalWidth = ComponentDefaults.BatteryIndicator.terminalWidthDp.dp.toPx()
+        val haloStroke = strokeWidth * ComponentDefaults.BatteryIndicator.haloStrokeMultiplier
+
+        drawRoundRect(
+            color = haloColor,
+            topLeft = Offset(0f, 0f),
+            size = Size(bodyWidth, bodyHeight),
+            cornerRadius = CornerRadius(cornerRadius, cornerRadius),
+            style = Stroke(width = haloStroke)
+        )
 
         drawRoundRect(
             color = color,
@@ -226,9 +249,15 @@ internal fun BatteryIcon(
         )
 
         drawRect(
+            color = haloColor,
+            topLeft = Offset(bodyWidth, bodyHeight * 0.3f - strokeWidth),
+            size = Size(terminalWidth + strokeWidth, bodyHeight * 0.4f + strokeWidth * 2)
+        )
+
+        drawRect(
             color = color,
             topLeft = Offset(bodyWidth, bodyHeight * 0.3f),
-            size = Size(3.dp.toPx(), bodyHeight * 0.4f)
+            size = Size(terminalWidth, bodyHeight * 0.4f)
         )
 
         val fillWidth = ((bodyWidth - padding * 2) * (level / 100f)).coerceAtLeast(0f)

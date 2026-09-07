@@ -15,6 +15,8 @@ import androidx.core.app.NotificationCompat
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.MainActivity
 import com.nendo.argosy.R
+import com.nendo.argosy.core.service.ServiceNotificationIds
+import com.nendo.argosy.core.service.startForegroundServiceSafely
 import com.nendo.argosy.util.SecondaryHomeComponent
 
 class CompanionGuardService : Service() {
@@ -28,7 +30,7 @@ class CompanionGuardService : Service() {
         private const val TAG = "CompanionGuard"
 
         fun start(context: Context) {
-            context.startForegroundService(
+            context.startForegroundServiceSafely(
                 Intent(context, CompanionGuardService::class.java)
             )
         }
@@ -103,7 +105,7 @@ class CompanionGuardService : Service() {
             .setContentIntent(createContentIntent())
             .build()
 
-        val notificationId = SecondaryDisplayNotificationChannel.NOTIFICATION_ID + 1
+        val notificationId = ServiceNotificationIds.COMPANION_GUARD
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(
                 notificationId,

@@ -4,15 +4,22 @@ import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.remote.romm.SyncResult
 import com.nendo.argosy.core.notification.NotificationManager
+import com.nendo.argosy.core.notification.NotificationProgress
 import com.nendo.argosy.core.notification.NotificationText
 import com.nendo.argosy.core.notification.NotificationType
 import com.nendo.argosy.util.Logger
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val TAG = "SyncPlatformUseCase"
 private const val NOTIFICATION_KEY = SyncNotificationKeys.PLATFORM
+private const val PROGRESS_NOTIFICATION_STEP = 25
 
 sealed class SyncPlatformResult {
     data class Success(val result: SyncResult) : SyncPlatformResult()
@@ -46,6 +53,8 @@ class SyncPlatformUseCase @Inject constructor(
     private val notificationManager: NotificationManager,
     private val copy: SyncNotificationCopy
 ) {
+    internal var progressDispatcher: CoroutineDispatcher = Dispatchers.IO
+
     suspend operator fun invoke(platformId: Long, platformName: String): SyncPlatformResult {
         Logger.info(TAG, "invoke: starting sync for platform $platformId ($platformName)")
 
@@ -74,7 +83,28 @@ class SyncPlatformUseCase @Inject constructor(
 
         return try {
             withContext(NonCancellable) {
-                val result = romMRepository.syncPlatform(platformId)
+                val progressJob = CoroutineScope(progressDispatcher).launch {
+                    romMRepository.syncProgress
+                        .distinctUntilChanged { old, new ->
+                            old.gamesTotal == new.gamesTotal &&
+                                old.gamesDone / PROGRESS_NOTIFICATION_STEP ==
+                                new.gamesDone / PROGRESS_NOTIFICATION_STEP
+                        }
+                        .collect { sp ->
+                            if (sp.isSyncing && sp.gamesTotal > 0) {
+                                notificationManager.updatePersistent(
+                                    key = NOTIFICATION_KEY,
+                                    subtitle = copy.platformProgressGames(sp.gamesDone, sp.gamesTotal),
+                                    progress = NotificationProgress(sp.gamesDone, sp.gamesTotal)
+                                )
+                            }
+                        }
+                }
+                val result = try {
+                    romMRepository.syncPlatform(platformId)
+                } finally {
+                    progressJob.cancel()
+                }
 
                 if (result.alreadyInProgress) {
                     notificationManager.dismissByKey(NOTIFICATION_KEY)

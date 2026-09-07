@@ -822,9 +822,6 @@ class MainActivity : ComponentActivity() {
             sessionStateStore.clearSession()
             playSessionTracker.endSessionInBackground()
             dualScreenManager.broadcastSessionCleared()
-            if (displayAffinityHelper.hasSecondaryDisplay) {
-                com.nendo.argosy.hardware.RecoveryDisplayService.stop(this@MainActivity)
-            }
         }
     }
 

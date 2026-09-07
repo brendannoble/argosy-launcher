@@ -10,12 +10,15 @@ import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.nendo.argosy.MainActivity
 import com.nendo.argosy.R
+import com.nendo.argosy.core.service.ServiceNotificationIds
+import com.nendo.argosy.core.service.startForegroundServiceSafely
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.repository.SaveSyncRepository
 import dagger.hilt.android.AndroidEntryPoint
 import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -45,13 +48,7 @@ class SyncForegroundService : Service() {
         observeSyncState()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -63,11 +60,14 @@ class SyncForegroundService : Service() {
 
     private fun acquireWakeLock() {
         val powerManager = getSystemService(PowerManager::class.java)
-        wakeLock = powerManager.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            WAKELOCK_TAG
-        ).apply {
-            acquire(MAX_WAKELOCK_DURATION_MS)
+        val lock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG)
+        wakeLock = lock
+        serviceScope.launch {
+            while (true) {
+                if (!lock.isHeld) lock.acquire(WAKELOCK_LEASE_MS)
+                delay(WAKELOCK_RENEW_MS)
+                if (lock.isHeld) lock.release()
+            }
         }
     }
 
@@ -86,15 +86,15 @@ class SyncForegroundService : Service() {
             ) { saveState, libraryProgress ->
                 Pair(saveState, libraryProgress)
             }.distinctUntilChanged { (oldSave, oldLib), (newSave, newLib) ->
-                oldSave == newSave &&
+                oldSave.completedCount == newSave.completedCount &&
+                    oldSave.operations.size == newSave.operations.size &&
+                    oldSave.currentOperation == newSave.currentOperation &&
+                    oldSave.hasPendingWork() == newSave.hasPendingWork() &&
                     oldLib.isSyncing == newLib.isSyncing &&
                     oldLib.currentPlatform == newLib.currentPlatform &&
-                    oldLib.platformsDone == newLib.platformsDone &&
-                    oldLib.platformsTotal == newLib.platformsTotal
+                    oldLib.passPercent() == newLib.passPercent()
             }.collect { (saveState, libraryProgress) ->
-                val hasSaveWork = saveState.operations.any {
-                    it.status == SyncStatus.PENDING || it.status == SyncStatus.IN_PROGRESS
-                }
+                val hasSaveWork = saveState.hasPendingWork()
 
                 if (!hasSaveWork && !libraryProgress.isSyncing) {
                     stopSelf()
@@ -107,7 +107,7 @@ class SyncForegroundService : Service() {
                     } else {
                         getString(R.string.sync_service_library)
                     }
-                    updateNotification(title, libraryProgress.platformsDone, libraryProgress.platformsTotal)
+                    updateNotification(title, libraryProgress.passPercent(), 100)
                 } else if (hasSaveWork) {
                     val current = saveState.currentOperation
                     if (current != null) {
@@ -192,21 +192,13 @@ class SyncForegroundService : Service() {
     }
 
     companion object {
-        private const val NOTIFICATION_ID = 0x3000
-        private const val ACTION_STOP = "com.nendo.argosy.STOP_SYNC_SERVICE"
+        private const val NOTIFICATION_ID = ServiceNotificationIds.SYNC
         private const val WAKELOCK_TAG = "argosy:sync_wakelock"
-        private const val MAX_WAKELOCK_DURATION_MS = 30 * 60 * 1000L
+        private const val WAKELOCK_LEASE_MS = 10 * 60 * 1000L
+        private const val WAKELOCK_RENEW_MS = 5 * 60 * 1000L
 
         fun start(context: Context) {
-            val intent = Intent(context, SyncForegroundService::class.java)
-            context.startForegroundService(intent)
-        }
-
-        fun stop(context: Context) {
-            val intent = Intent(context, SyncForegroundService::class.java).apply {
-                action = ACTION_STOP
-            }
-            context.startService(intent)
+            context.startForegroundServiceSafely(Intent(context, SyncForegroundService::class.java))
         }
     }
 }

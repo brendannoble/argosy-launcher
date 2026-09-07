@@ -497,11 +497,6 @@ private fun CountBadge(labelRes: Int, count: Int, color: Color) {
 /**
  * Eases toward each new value instead of jumping to it, so a bar fed by network responses reads
  * as motion rather than as a series of steps. It never runs ahead of the value it was given.
- *
- * The spec is a spring rather than a tween because the target moves again before any fixed
- * duration could finish. A restarted tween replays its ease-in from wherever it got to and loses
- * ground on every update, so the bar trails further behind the further the sync gets; a spring
- * carries its velocity into the new target and holds a constant, small distance instead.
  */
 @Composable
 private fun InterpolatedProgressBar(

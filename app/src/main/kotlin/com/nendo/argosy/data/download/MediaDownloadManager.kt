@@ -377,7 +377,6 @@ class MediaDownloadManager @Inject constructor(
                 notify(title, subtitle)
                 return@launch
             }
-            DownloadForegroundService.start(context)
             processNextInQueue()
         }
     }
@@ -469,7 +468,6 @@ class MediaDownloadManager @Inject constructor(
             val known = _downloadQueue.value.map { it.itemId }.toSet()
             _downloadQueue.value = _downloadQueue.value +
                 rows.filterNot { it.itemId in known }.map { it.toQueued() }
-            DownloadForegroundService.start(context)
             processNextInQueue()
         }
     }
@@ -496,7 +494,6 @@ class MediaDownloadManager @Inject constructor(
             if (_downloadQueue.value.none { it.itemId == itemId }) {
                 _downloadQueue.value = _downloadQueue.value + row.toQueued()
             }
-            DownloadForegroundService.start(context)
             if (currentDownloadJob?.isActive != true) processNextInQueue()
         }
     }
@@ -772,6 +769,7 @@ class MediaDownloadManager @Inject constructor(
 
     @Suppress("LongMethod")
     private fun startDownload(queued: QueuedMediaDownload) {
+        DownloadForegroundService.start(context)
         isCancelled = false
         currentDownloadJob = scope.launch {
             val owner = mediaRepository.currentUserId() ?: return@launch

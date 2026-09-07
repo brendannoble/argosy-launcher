@@ -964,6 +964,13 @@ internal fun routeValidateImageCache(vm: SettingsViewModel) {
                 NotificationText.Res(R.string.notif_settings_cache_validate_healthy) to NotificationType.SUCCESS
             }
             vm.notificationManager.completePersistent(key, message, type = type)
+        } catch (e: Exception) {
+            vm.notificationManager.completePersistent(
+                key,
+                NotificationText.Res(R.string.notif_settings_cache_validate_failed),
+                subtitle = e.message?.let { NotificationText.Raw(it) },
+                type = NotificationType.ERROR
+            )
         } finally {
             vm._uiState.update { it.copy(storage = it.storage.copy(isValidatingCache = false)) }
         }
@@ -1001,6 +1008,13 @@ internal fun routeValidateDownloads(vm: SettingsViewModel) {
                 listOf(invalidated, discovered)
             )
             vm.notificationManager.completePersistent(key, message, type = NotificationType.SUCCESS)
+        } catch (e: Exception) {
+            vm.notificationManager.completePersistent(
+                key,
+                NotificationText.Res(R.string.notif_settings_downloads_validate_failed),
+                subtitle = e.message?.let { NotificationText.Raw(it) },
+                type = NotificationType.ERROR
+            )
         } finally {
             vm._uiState.update { it.copy(storage = it.storage.copy(isValidatingDownloads = false)) }
         }

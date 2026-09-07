@@ -78,6 +78,12 @@ class SyncNotificationCopyResources @Inject constructor() : SyncNotificationCopy
     override fun platformProgressFetching(): NotificationText =
         NotificationText.Res(R.string.notif_sync_platform_progress_fetching)
 
+    override fun platformProgressGames(gamesDone: Int, gamesTotal: Int): NotificationText =
+        NotificationText.Res(
+            R.string.notif_sync_platform_progress_games,
+            listOf(gamesDone, gamesTotal)
+        )
+
     override fun platformCompleteTitle(platformName: String): NotificationText =
         NotificationText.Res(R.string.notif_sync_platform_complete_title, listOf(platformName))
 

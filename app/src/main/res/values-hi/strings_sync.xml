@@ -61,6 +61,9 @@
     <string name="sync_service_uploading">अपलोड हो रहा है: %1$s</string>
     <string name="sync_service_downloading">डाउनलोड हो रहा है: %1$s</string>
     <string name="sync_service_saves">सेव सिंक हो रहे हैं...</string>
+    <string name="steam_service_connecting">कनेक्ट हो रहा है...</string>
+    <string name="steam_service_signing_in">साइन इन हो रहा है...</string>
+    <string name="steam_service_syncing_library">Steam लाइब्रेरी सिंक हो रही है...</string>
 
     <!-- Android system notification shown while downloads run in the background. -->
 

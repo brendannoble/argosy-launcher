@@ -10,11 +10,14 @@ import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.nendo.argosy.MainActivity
 import com.nendo.argosy.R
+import com.nendo.argosy.core.service.ServiceNotificationIds
+import com.nendo.argosy.core.service.startForegroundServiceSafely
 import com.nendo.argosy.ui.common.toNotificationText
 import dagger.hilt.android.AndroidEntryPoint
 import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -39,6 +42,9 @@ class DownloadForegroundService : Service() {
 
     private val serviceScope = SafeCoroutineScope(Dispatchers.Main, "DownloadForegroundService")
     private var wakeLock: PowerManager.WakeLock? = null
+    private var lastRendered: Triple<String, Int, Int>? = null
+
+    private val batchIds = mutableSetOf<Long>()
 
     override fun onCreate() {
         super.onCreate()
@@ -47,13 +53,7 @@ class DownloadForegroundService : Service() {
         observeDownloadState()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-        return START_NOT_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -65,19 +65,13 @@ class DownloadForegroundService : Service() {
 
     private fun acquireWakeLock() {
         val powerManager = getSystemService(PowerManager::class.java)
-        wakeLock = powerManager.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            WAKELOCK_TAG
-        ).apply {
-            acquire(MAX_WAKELOCK_DURATION_MS)
-        }
-    }
-
-    private fun renewWakeLock() {
-        wakeLock?.let {
-            if (it.isHeld) {
-                it.release()
-                it.acquire(MAX_WAKELOCK_DURATION_MS)
+        val lock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG)
+        wakeLock = lock
+        serviceScope.launch {
+            while (true) {
+                if (!lock.isHeld) lock.acquire(WAKELOCK_LEASE_MS)
+                delay(WAKELOCK_RENEW_MS)
+                if (lock.isHeld) lock.release()
             }
         }
     }
@@ -137,9 +131,14 @@ class DownloadForegroundService : Service() {
                         return@collect
                     }
 
+                    val outstanding = rommActive + rommQueued
+                    batchIds.addAll(outstanding.map { it.id })
+                    val batchTotal = batchIds.size
+                    val batchDone = batchTotal - outstanding.size
+
                     val currentDownload = rommActive.firstOrNull()
                     if (currentDownload != null) {
-                        val title = when (currentDownload.state) {
+                        val name = when (currentDownload.state) {
                             DownloadState.EXTRACTING -> getString(
                                 R.string.sync_download_service_extracting, currentDownload.displayTitle
                             )
@@ -150,24 +149,47 @@ class DownloadForegroundService : Service() {
                                 R.string.sync_download_service_downloading, currentDownload.displayTitle
                             )
                         }
-                        if (currentDownload.state == DownloadState.EXTRACTING) {
-                            updateNotification(title, 0, 0)
-                        } else if (currentDownload.state == DownloadState.MOVING) {
-                            updateNotification(title, (currentDownload.extractionPercent * 100).toInt(), 100)
-                        } else {
-                            val progressPercent = (currentDownload.progressPercent * 100).toInt()
-                            updateNotification(title, progressPercent, 100)
-                        }
+                        val inFlight = rommActive.sumOf { it.batchFraction().toDouble() }.toFloat()
+                        updateNotification(
+                            withBatchPosition(name, batchDone + rommActive.size, batchTotal),
+                            batchPercent(batchDone + inFlight, batchTotal),
+                            100
+                        )
                     } else {
                         val nextQueued = rommQueued.firstOrNull()
                         val message = nextQueued
                             ?.let { getString(R.string.sync_download_service_queued, it.displayTitle) }
                             ?: getString(R.string.sync_download_service_pending)
-                        updateNotification(message, 0, 0)
+                        updateNotification(
+                            withBatchPosition(message, batchDone + 1, batchTotal),
+                            batchPercent(batchDone.toFloat(), batchTotal),
+                            100
+                        )
                     }
                 }
         }
     }
+
+    private fun DownloadProgress.batchFraction(): Float = when (state) {
+        DownloadState.EXTRACTING -> 0f
+        DownloadState.MOVING -> extractionPercent
+        else -> progressPercent
+    }
+
+    private fun batchPercent(done: Float, total: Int): Int =
+        if (total <= 0) 0 else ((done / total) * 100).toInt().coerceIn(0, 100)
+
+    private fun withBatchPosition(text: String, position: Int, total: Int): String =
+        if (total <= 1) {
+            text
+        } else {
+            getString(
+                R.string.sync_download_service_batch_position,
+                text,
+                position.coerceIn(1, total),
+                total
+            )
+        }
 
     private fun updateMediaNotification(state: MediaDownloadState, progress: MediaDownloadProgress?) {
         when (state) {
@@ -225,7 +247,9 @@ class DownloadForegroundService : Service() {
         progress: Int,
         maxProgress: Int
     ) {
-        renewWakeLock()
+        val rendered = Triple(contentText, progress, maxProgress)
+        if (rendered == lastRendered) return
+        lastRendered = rendered
         val notification = buildNotification(contentText, progress, maxProgress)
         val manager = getSystemService(android.app.NotificationManager::class.java)
         manager.notify(NOTIFICATION_ID, notification)
@@ -260,21 +284,15 @@ class DownloadForegroundService : Service() {
     }
 
     companion object {
-        private const val NOTIFICATION_ID = 0x2000
-        private const val ACTION_STOP = "com.nendo.argosy.STOP_DOWNLOAD_SERVICE"
+        private const val NOTIFICATION_ID = ServiceNotificationIds.DOWNLOAD
         private const val WAKELOCK_TAG = "argosy:download_wakelock"
-        private const val MAX_WAKELOCK_DURATION_MS = 60 * 60 * 1000L
+        private const val WAKELOCK_LEASE_MS = 10 * 60 * 1000L
+        private const val WAKELOCK_RENEW_MS = 5 * 60 * 1000L
 
         fun start(context: Context) {
-            val intent = Intent(context, DownloadForegroundService::class.java)
-            context.startForegroundService(intent)
-        }
-
-        fun stop(context: Context) {
-            val intent = Intent(context, DownloadForegroundService::class.java).apply {
-                action = ACTION_STOP
-            }
-            context.startService(intent)
+            context.startForegroundServiceSafely(
+                Intent(context, DownloadForegroundService::class.java)
+            )
         }
     }
 }

@@ -176,6 +176,7 @@
 
     <string name="notif_sync_platform_progress_title">正在同步%1$s</string>
     <string name="notif_sync_platform_progress_fetching">正在获取游戏...</string>
+    <string name="notif_sync_platform_progress_games">%1$d/%2$d 个游戏</string>
     <string name="notif_sync_platform_complete_title">%1$s已同步</string>
     <string name="notif_sync_platform_complete_counts">新增%1$d个，更新%2$d个</string>
     <string name="notif_sync_platform_complete_counts_with_removed">新增%1$d个，更新%2$d个，移除%3$d个</string>
@@ -189,4 +190,12 @@
     <string name="notif_review_error_too_long">评价内容过长</string>
     <string name="notif_review_error_invalid">服务器无法读取该评价</string>
     <string name="notif_review_error_server">服务器无法保存该评价</string>
+    <string name="notif_storage_migrate_failed_title">迁移失败</string>
+    <string name="notif_storage_migrate_platform_failed_title">%1$s 迁移失败</string>
+    <string name="notif_storage_purge_failed_title">%1$s 清除失败</string>
+    <string name="notif_settings_cache_validate_failed">图片缓存检查失败</string>
+    <string name="notif_settings_downloads_validate_failed">下载检查失败</string>
+    <plurals name="notification_persistent_also_running">
+        <item quantity="other">+%1$d 项</item>
+    </plurals>
 </resources>

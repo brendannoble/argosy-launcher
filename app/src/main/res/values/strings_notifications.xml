@@ -33,6 +33,9 @@
     <!-- Subtitle summarizing migration results. %1$d moved, %2$d missing on disk,
          %3$d failed to copy. -->
     <string name="notif_storage_migrate_complete_subtitle">Moved %1$d, %2$d missing, %3$d failed</string>
+    <!-- Title when the global ROM folder migration stopped on an error. The reason follows
+         as the subtitle. -->
+    <string name="notif_storage_migrate_failed_title">Migration failed</string>
 
     <!-- Persistent notification title while one platform's games are being moved to a
          new folder. %1$s is the platform display name. Present participle. -->
@@ -49,6 +52,9 @@
     <!-- Subtitle summarizing a per-platform migration. %1$d moved, %2$d missing on disk,
          %3$d failed to copy. -->
     <string name="notif_storage_migrate_platform_complete_subtitle">Moved %1$d, %2$d missing, %3$d failed</string>
+    <!-- Title when a single platform's migration stopped on an error. %1$s is the platform
+         display name; the reason follows as the subtitle. -->
+    <string name="notif_storage_migrate_platform_failed_title">%1$s migration failed</string>
 
     <!-- Persistent notification title while a platform's downloaded files and library
          entries are being deleted. %1$s is the platform display name. Present participle,
@@ -65,6 +71,9 @@
     <!-- Subtitle summarizing a platform purge. %1$d library rows deleted, %2$d megabytes
          of disk space freed. -->
     <string name="notif_storage_purge_complete_subtitle">Deleted %1$d games, freed %2$dMB</string>
+    <!-- Title when a platform purge stopped on an error. %1$s is the platform display name;
+         the reason follows as the subtitle. -->
+    <string name="notif_storage_purge_failed_title">%1$s purge failed</string>
 
     <!-- Hard reset blocked: a game is currently running. Command telling the user what to
          do before retrying. -->
@@ -126,6 +135,8 @@
     <!-- Completion subtitle when the cache check found nothing to remove. Adjective
          phrase describing the cache's condition. -->
     <string name="notif_settings_cache_validate_healthy">Image cache is healthy</string>
+    <!-- Title when the cache check stopped on an error. The reason follows as the subtitle. -->
+    <string name="notif_settings_cache_validate_failed">Image cache check failed</string>
 
     <!-- Persistent notification title while downloaded ROM files are being checked
          against the library. Present participle. -->
@@ -137,6 +148,8 @@
     <!-- Completion subtitle for a downloads validation pass. %1$d stale paths cleared,
          %2$d files newly discovered on disk. -->
     <string name="notif_settings_downloads_validate_result">Cleared %1$d invalid paths, discovered %2$d files</string>
+    <!-- Title when the downloads check stopped on an error. The reason follows as the subtitle. -->
+    <string name="notif_settings_downloads_validate_failed">Download check failed</string>
 
     <!-- Settings: storage cache-clearing guards (StorageCachesDelegate). -->
 
@@ -403,6 +416,9 @@
     <!-- Single-platform sync notifications. %1$s is the platform name. -->
     <string name="notif_sync_platform_progress_title">Syncing %1$s</string>
     <string name="notif_sync_platform_progress_fetching">Fetching games...</string>
+    <!-- Subtitle while one platform's games are written. The title already names the platform,
+         so this is the count alone. %1$d games done of %2$d. -->
+    <string name="notif_sync_platform_progress_games">%1$d/%2$d games</string>
     <string name="notif_sync_platform_complete_title">%1$s synced</string>
     <string name="notif_sync_platform_complete_counts">%1$d added, %2$d updated</string>
     <string name="notif_sync_platform_complete_counts_with_removed">%1$d added, %2$d updated, %3$d removed</string>
@@ -422,4 +438,11 @@
     <string name="notif_review_error_invalid">The server could not read the review</string>
     <!-- Error when the server failed to store the review. -->
     <string name="notif_review_error_server">The server could not save the review</string>
+
+    <!-- Trailing count on the progress bar when other jobs are running behind the one shown.
+         %1$d is how many others, never zero. -->
+    <plurals name="notification_persistent_also_running">
+        <item quantity="one">+%1$d more</item>
+        <item quantity="other">+%1$d more</item>
+    </plurals>
 </resources>

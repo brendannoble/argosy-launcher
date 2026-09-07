@@ -183,6 +183,7 @@
 
     <string name="notif_sync_platform_progress_title">%1$s wird synchronisiert</string>
     <string name="notif_sync_platform_progress_fetching">Spiele werden abgerufen...</string>
+    <string name="notif_sync_platform_progress_games">%1$d/%2$d Spiele</string>
     <string name="notif_sync_platform_complete_title">%1$s synchronisiert</string>
     <string name="notif_sync_platform_complete_counts">%1$d hinzugefügt, %2$d aktualisiert</string>
     <string name="notif_sync_platform_complete_counts_with_removed">%1$d hinzugefügt, %2$d aktualisiert, %3$d entfernt</string>
@@ -196,4 +197,13 @@
     <string name="notif_review_error_too_long">Die Rezension ist zu lang</string>
     <string name="notif_review_error_invalid">Der Server konnte die Rezension nicht lesen</string>
     <string name="notif_review_error_server">Der Server konnte die Rezension nicht speichern</string>
+    <string name="notif_storage_migrate_failed_title">Migration fehlgeschlagen</string>
+    <string name="notif_storage_migrate_platform_failed_title">Migration von %1$s fehlgeschlagen</string>
+    <string name="notif_storage_purge_failed_title">Bereinigung von %1$s fehlgeschlagen</string>
+    <string name="notif_settings_cache_validate_failed">Bildcache-Prüfung fehlgeschlagen</string>
+    <string name="notif_settings_downloads_validate_failed">Download-Prüfung fehlgeschlagen</string>
+    <plurals name="notification_persistent_also_running">
+        <item quantity="one">+%1$d weiterer</item>
+        <item quantity="other">+%1$d weitere</item>
+    </plurals>
 </resources>

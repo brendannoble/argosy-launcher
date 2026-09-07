@@ -456,9 +456,6 @@
     <string name="ingame_touch_editor_toolbar_cancel">Отмена</string>
     <string name="ingame_touch_editor_toolbar_rotate">Повернуть</string>
 
-    <string name="ingame_recovery_display_playing_placeholder">Идёт игра...</string>
-    <string name="ingame_recovery_display_status_in_game">В игре</string>
-    <string name="ingame_recovery_display_playing_fallback">Идёт игра...</string>
 
     <string name="ingame_touch_nes_sys_select">Select</string>
     <string name="ingame_touch_nes_sys_start">Start</string>

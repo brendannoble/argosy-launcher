@@ -25,11 +25,8 @@ class NotificationManager @Inject constructor() {
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications: StateFlow<List<Notification>> = _notifications.asStateFlow()
 
-    private val _persistentNotification = MutableStateFlow<Notification?>(null)
-    val persistentNotification: StateFlow<Notification?> = _persistentNotification.asStateFlow()
-
-    private val _statusNotification = MutableStateFlow<StatusNotification?>(null)
-    val statusNotification: StateFlow<StatusNotification?> = _statusNotification.asStateFlow()
+    private val _persistentNotifications = MutableStateFlow<List<Notification>>(emptyList())
+    val persistentNotifications: StateFlow<List<Notification>> = _persistentNotifications.asStateFlow()
 
     fun show(
         title: NotificationText,
@@ -54,11 +51,14 @@ class NotificationManager @Inject constructor() {
             accentColor = accentColor
         )
 
-        if (key != null) {
-            pendingByKey[key]?.cancel()
+        if (key == null) {
+            addNotification(notification)
+            return notification.id
+        }
 
+        scope.launch {
+            pendingByKey.remove(key)?.cancel()
             if (immediate) {
-                pendingByKey.remove(key)
                 removeByKey(key)
                 addNotification(notification)
             } else {
@@ -69,8 +69,6 @@ class NotificationManager @Inject constructor() {
                     addNotification(notification)
                 }
             }
-        } else {
-            addNotification(notification)
         }
 
         return notification.id
@@ -95,30 +93,18 @@ class NotificationManager @Inject constructor() {
     }
 
     fun dismissByKey(key: String) {
-        pendingByKey[key]?.cancel()
-        pendingByKey.remove(key)
+        scope.launch { pendingByKey.remove(key)?.cancel() }
         removeByKey(key)
+        removePersistent(key)
     }
 
     fun clear() {
-        pendingByKey.values.forEach { it.cancel() }
-        pendingByKey.clear()
+        scope.launch {
+            pendingByKey.values.forEach { it.cancel() }
+            pendingByKey.clear()
+        }
         _notifications.value = emptyList()
-        _persistentNotification.value = null
-        _statusNotification.value = null
-    }
-
-    fun updateStatus(title: NotificationText, subtitle: NotificationText? = null, progress: Float? = null) {
-        _statusNotification.value = StatusNotification(
-            title = title,
-            subtitle = subtitle,
-            progress = progress,
-            isActive = true
-        )
-    }
-
-    fun clearStatus() {
-        _statusNotification.value = null
+        _persistentNotifications.value = emptyList()
     }
 
     fun showPersistent(
@@ -127,13 +113,8 @@ class NotificationManager @Inject constructor() {
         key: String,
         progress: NotificationProgress? = null,
         platformSlug: String? = null
-    ): Boolean {
-        val current = _persistentNotification.value
-        if (current != null && current.key != key) {
-            return false
-        }
-
-        _persistentNotification.value = Notification(
+    ) {
+        val notification = Notification(
             key = key,
             type = NotificationType.INFO,
             title = title,
@@ -141,7 +122,9 @@ class NotificationManager @Inject constructor() {
             progress = progress,
             platformSlug = platformSlug
         )
-        return true
+        _persistentNotifications.update { current ->
+            current.filterNot { it.key == key } + notification
+        }
     }
 
     fun updatePersistent(
@@ -151,15 +134,20 @@ class NotificationManager @Inject constructor() {
         progress: NotificationProgress? = null,
         platformSlug: String? = null
     ) {
-        val current = _persistentNotification.value ?: return
-        if (current.key != key) return
-
-        _persistentNotification.value = current.copy(
-            title = title ?: current.title,
-            subtitle = subtitle ?: current.subtitle,
-            progress = progress ?: current.progress,
-            platformSlug = platformSlug ?: current.platformSlug
-        )
+        _persistentNotifications.update { current ->
+            current.map { existing ->
+                if (existing.key != key) {
+                    existing
+                } else {
+                    existing.copy(
+                        title = title ?: existing.title,
+                        subtitle = subtitle ?: existing.subtitle,
+                        progress = progress ?: existing.progress,
+                        platformSlug = platformSlug ?: existing.platformSlug
+                    )
+                }
+            }
+        }
     }
 
     fun completePersistent(
@@ -169,21 +157,7 @@ class NotificationManager @Inject constructor() {
         type: NotificationType,
         platformSlug: String? = null
     ) {
-        Log.d(TAG, "completePersistent: key=$key, title=$title, subtitle=$subtitle, type=$type")
-        val current = _persistentNotification.value
-        Log.d(TAG, "completePersistent: current persistent key=${current?.key}")
-        if (current == null) {
-            Log.d(TAG, "completePersistent: no current persistent notification, returning")
-            return
-        }
-        if (current.key != key) {
-            Log.d(TAG, "completePersistent: key mismatch (current=${current.key}, requested=$key), returning")
-            return
-        }
-
-        Log.d(TAG, "completePersistent: clearing persistent and showing completion notification")
-        _persistentNotification.value = null
-
+        removePersistent(key)
         show(
             title = title,
             subtitle = subtitle,
@@ -192,6 +166,11 @@ class NotificationManager @Inject constructor() {
             duration = NotificationDuration.SHORT,
             immediate = true
         )
-        Log.d(TAG, "completePersistent: done")
+    }
+
+    private fun removePersistent(key: String) {
+        _persistentNotifications.update { current ->
+            current.filterNot { it.key == key }
+        }
     }
 }

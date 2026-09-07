@@ -52,6 +52,9 @@
     <string name="sync_service_uploading">上傳中：%1$s</string>
     <string name="sync_service_downloading">下載中：%1$s</string>
     <string name="sync_service_saves">正在同步存檔...</string>
+    <string name="steam_service_connecting">正在連線...</string>
+    <string name="steam_service_signing_in">正在登入...</string>
+    <string name="steam_service_syncing_library">正在同步 Steam 庫...</string>
 
     <string name="sync_download_channel_name">下載進度</string>
     <string name="sync_download_channel_description">在背景顯示下載進度</string>

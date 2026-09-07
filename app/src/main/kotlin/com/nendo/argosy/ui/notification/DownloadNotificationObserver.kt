@@ -72,8 +72,7 @@ class DownloadNotificationObserver @Inject constructor(
         }
 
         val (titleRes, type, immediate) = when (progress.state) {
-            DownloadState.QUEUED ->
-                Triple(R.string.ui_download_notice_queued, NotificationType.INFO, false)
+            DownloadState.QUEUED -> return
             DownloadState.WAITING_FOR_STORAGE ->
                 Triple(R.string.ui_download_notice_no_space, NotificationType.WARNING, true)
             DownloadState.DOWNLOADING -> return

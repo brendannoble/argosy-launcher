@@ -10,6 +10,9 @@ import android.net.NetworkRequest
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.StringRes
+import com.nendo.argosy.R
+import com.nendo.argosy.core.service.ServiceNotificationIds
 import dagger.hilt.android.AndroidEntryPoint
 import `in`.dragonbra.javasteam.enums.EResult
 import `in`.dragonbra.javasteam.steam.steamclient.SteamClient
@@ -99,6 +102,8 @@ class SteamService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "SteamService created")
+        com.nendo.argosy.data.sync.SyncNotificationChannel.create(this)
+        registerNetworkCallback()
         initializeSteamClient()
     }
 
@@ -106,7 +111,7 @@ class SteamService : Service() {
         Log.d(TAG, "SteamService started")
 
         if (intent?.getBooleanExtra(EXTRA_CONNECT_FOR_AUTH, false) == true) {
-            promoteToForeground("Signing in")
+            promoteToForeground(R.string.steam_service_signing_in)
             observeStateForNotification()
             scope.launch {
                 Log.d(TAG, "Connecting for QR auth, stopping reconnect loop")
@@ -116,7 +121,7 @@ class SteamService : Service() {
                 connectForAuth()
             }
         } else if (intent?.getBooleanExtra(EXTRA_FORCE_CONNECT, false) == true) {
-            promoteToForeground("Connecting")
+            promoteToForeground(R.string.steam_service_connecting)
             observeStateForNotification()
             scope.launch {
                 Log.d(TAG, "Force connecting to Steam (on-demand)")
@@ -134,7 +139,7 @@ class SteamService : Service() {
                 val hasPendingWork = steamContentManager.hasPendingDownloads()
                 if (hasPendingWork) {
                     Log.d(TAG, "Pending downloads found in DB, auto-connecting for ${account.username}")
-                    promoteToForeground("Syncing Steam library")
+                    promoteToForeground(R.string.steam_service_syncing_library)
                     observeStateForNotification()
                     connect()
                 } else {
@@ -150,32 +155,41 @@ class SteamService : Service() {
     }
 
     private var notificationObserverJob: Job? = null
+    private var lastNotificationStatus: Int? = null
 
     private fun observeStateForNotification() {
         if (notificationObserverJob?.isActive == true) return
         notificationObserverJob = scope.launch {
             _state.collect { state ->
                 when (state.connectionState) {
-                    SteamConnectionState.CONNECTING -> updateForegroundNotification("Connecting")
+                    SteamConnectionState.CONNECTING ->
+                        updateForegroundNotification(R.string.steam_service_connecting)
                     SteamConnectionState.CONNECTED,
-                    SteamConnectionState.LOGGING_IN -> updateForegroundNotification("Signing in")
+                    SteamConnectionState.LOGGING_IN ->
+                        updateForegroundNotification(R.string.steam_service_signing_in)
                     SteamConnectionState.LOGGED_IN -> {
                         val hasWork = runCatching { steamContentManager.hasPendingDownloads() }.getOrDefault(false)
                         if (hasWork) {
-                            updateForegroundNotification("Syncing Steam library")
+                            updateForegroundNotification(R.string.steam_service_syncing_library)
                         } else {
                             Log.d(TAG, "Logged in with no pending work, dropping foreground notification")
+                            lastNotificationStatus = null
                             stopForeground(STOP_FOREGROUND_REMOVE)
                         }
                     }
                     SteamConnectionState.DISCONNECTED,
-                    SteamConnectionState.LOGGED_OUT -> stopForeground(STOP_FOREGROUND_REMOVE)
+                    SteamConnectionState.LOGGED_OUT -> {
+                        lastNotificationStatus = null
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                    }
                 }
             }
         }
     }
 
-    private fun updateForegroundNotification(status: String) {
+    private fun updateForegroundNotification(@StringRes status: Int) {
+        if (status == lastNotificationStatus) return
+        lastNotificationStatus = status
         val notification = buildNotification(status)
         val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
         nm.notify(NOTIFICATION_ID, notification)
@@ -186,11 +200,11 @@ class SteamService : Service() {
         const val EXTRA_FORCE_CONNECT = "force_connect"
         const val EXTRA_CONNECT_FOR_AUTH = "connect_for_auth"
         private const val MAX_RECONNECT_ATTEMPTS = 5
-        private const val NOTIFICATION_ID = 9201
+        private const val NOTIFICATION_ID = ServiceNotificationIds.STEAM
     }
 
-    private fun promoteToForeground(status: String) {
-        com.nendo.argosy.data.sync.SyncNotificationChannel.create(this)
+    private fun promoteToForeground(@StringRes status: Int) {
+        lastNotificationStatus = status
         val notification = buildNotification(status)
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -213,14 +227,13 @@ class SteamService : Service() {
         }
     }
 
-    private fun buildNotification(status: String): android.app.Notification {
-        com.nendo.argosy.data.sync.SyncNotificationChannel.create(this)
+    private fun buildNotification(@StringRes status: Int): android.app.Notification {
         return androidx.core.app.NotificationCompat.Builder(
             this, com.nendo.argosy.data.sync.SyncNotificationChannel.CHANNEL_ID
         )
             .setSmallIcon(com.nendo.argosy.R.drawable.ic_helm)
-            .setContentTitle("Steam")
-            .setContentText(status)
+            .setContentTitle(getString(R.string.steam_service_title))
+            .setContentText(getString(status))
             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

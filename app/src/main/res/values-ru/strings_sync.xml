@@ -52,6 +52,9 @@
     <string name="sync_service_uploading">Отправка: %1$s</string>
     <string name="sync_service_downloading">Загрузка: %1$s</string>
     <string name="sync_service_saves">Синхронизация сохранений...</string>
+    <string name="steam_service_connecting">Подключение...</string>
+    <string name="steam_service_signing_in">Вход...</string>
+    <string name="steam_service_syncing_library">Синхронизация библиотеки Steam...</string>
 
     <string name="sync_download_channel_name">Прогресс загрузки</string>
     <string name="sync_download_channel_description">Показывает прогресс загрузки в фоне</string>

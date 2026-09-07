@@ -197,6 +197,7 @@
 
     <string name="notif_sync_platform_progress_title">Синхронизация %1$s</string>
     <string name="notif_sync_platform_progress_fetching">Получение игр...</string>
+    <string name="notif_sync_platform_progress_games">%1$d/%2$d игр</string>
     <string name="notif_sync_platform_complete_title">%1$s синхронизирована</string>
     <string name="notif_sync_platform_complete_counts">Добавлено: %1$d, обновлено: %2$d</string>
     <string name="notif_sync_platform_complete_counts_with_removed">Добавлено: %1$d, обновлено: %2$d, удалено: %3$d</string>
@@ -210,4 +211,15 @@
     <string name="notif_review_error_too_long">Отзыв слишком длинный</string>
     <string name="notif_review_error_invalid">Сервер не смог прочитать отзыв</string>
     <string name="notif_review_error_server">Сервер не смог сохранить отзыв</string>
+    <string name="notif_storage_migrate_failed_title">Не удалось перенести</string>
+    <string name="notif_storage_migrate_platform_failed_title">Не удалось перенести %1$s</string>
+    <string name="notif_storage_purge_failed_title">Не удалось очистить %1$s</string>
+    <string name="notif_settings_cache_validate_failed">Не удалось проверить кэш изображений</string>
+    <string name="notif_settings_downloads_validate_failed">Не удалось проверить загрузки</string>
+    <plurals name="notification_persistent_also_running">
+        <item quantity="one">+ещё %1$d</item>
+        <item quantity="few">+ещё %1$d</item>
+        <item quantity="many">+ещё %1$d</item>
+        <item quantity="other">+ещё %1$d</item>
+    </plurals>
 </resources>

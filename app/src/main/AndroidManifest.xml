@@ -145,7 +145,7 @@
             android:exported="false">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="save_sync" />
+                android:value="library_and_save_sync" />
         </service>
 
         <service
@@ -169,15 +169,6 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="game_session_tracking" />
-        </service>
-
-        <service
-            android:name=".hardware.RecoveryDisplayService"
-            android:foregroundServiceType="specialUse|dataSync"
-            android:exported="false">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="companion_display_recovery" />
         </service>
 
         <service

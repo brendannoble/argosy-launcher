@@ -215,6 +215,7 @@
 
     <string name="notif_sync_platform_progress_title">%1$s सिंक हो रहा है</string>
     <string name="notif_sync_platform_progress_fetching">गेम प्राप्त हो रहे हैं...</string>
+    <string name="notif_sync_platform_progress_games">%1$d/%2$d गेम</string>
     <string name="notif_sync_platform_complete_title">%1$s सिंक हुआ</string>
     <string name="notif_sync_platform_complete_counts">%1$d जोड़े गए, %2$d अपडेट हुए</string>
     <string name="notif_sync_platform_complete_counts_with_removed">%1$d जोड़े गए, %2$d अपडेट हुए, %3$d हटाए गए</string>
@@ -228,4 +229,13 @@
     <string name="notif_review_error_too_long">समीक्षा बहुत लंबी है</string>
     <string name="notif_review_error_invalid">सर्वर समीक्षा को पढ़ नहीं सका</string>
     <string name="notif_review_error_server">सर्वर समीक्षा को सहेज नहीं सका</string>
+    <string name="notif_storage_migrate_failed_title">माइग्रेशन विफल</string>
+    <string name="notif_storage_migrate_platform_failed_title">%1$s का माइग्रेशन विफल</string>
+    <string name="notif_storage_purge_failed_title">%1$s की सफाई विफल</string>
+    <string name="notif_settings_cache_validate_failed">इमेज कैश जाँच विफल</string>
+    <string name="notif_settings_downloads_validate_failed">डाउनलोड जाँच विफल</string>
+    <plurals name="notification_persistent_also_running">
+        <item quantity="one">+%1$d और</item>
+        <item quantity="other">+%1$d और</item>
+    </plurals>
 </resources>

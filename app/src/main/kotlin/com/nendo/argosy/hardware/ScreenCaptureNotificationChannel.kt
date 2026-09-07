@@ -12,7 +12,6 @@ import com.nendo.argosy.R
  */
 object ScreenCaptureNotificationChannel {
     const val CHANNEL_ID = "screen_capture_channel"
-    const val NOTIFICATION_ID = 0x4000
 
     fun create(context: Context) {
         val channel = NotificationChannel(

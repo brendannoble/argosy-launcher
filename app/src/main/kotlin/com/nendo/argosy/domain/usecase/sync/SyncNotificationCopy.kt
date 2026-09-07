@@ -37,6 +37,8 @@ interface SyncNotificationCopy {
 
     fun platformProgressFetching(): NotificationText
 
+    fun platformProgressGames(gamesDone: Int, gamesTotal: Int): NotificationText
+
     fun platformCompleteTitle(platformName: String): NotificationText
 
     fun platformCompleteCounts(added: Int, updated: Int, removed: Int): NotificationText

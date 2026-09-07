@@ -921,14 +921,6 @@
     <string name="ingame_touch_editor_toolbar_cancel">Cancel</string>
     <string name="ingame_touch_editor_toolbar_rotate">Rotate</string>
 
-    <!-- Secondary-display recovery overlay (hardware/RecoveryDisplayPresentation.kt), shown
-         while a game session is active on the primary display. -->
-    <string name="ingame_recovery_display_playing_placeholder">Playing...</string>
-    <!-- Status label opposite the game name/platform on that overlay. -->
-    <string name="ingame_recovery_display_status_in_game">In Game</string>
-    <!-- Fallback game name shown if none was supplied when the overlay updates. -->
-    <string name="ingame_recovery_display_playing_fallback">Playing...</string>
-
     <!--
       Touch overlay button captions (libretro/touch/TouchLayoutRegistry.kt). Each console
       preset owns its own keys even where the caption text repeats across presets (a single

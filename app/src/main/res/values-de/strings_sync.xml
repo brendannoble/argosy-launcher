@@ -52,6 +52,9 @@
     <string name="sync_service_uploading">Wird hochgeladen: %1$s</string>
     <string name="sync_service_downloading">Wird heruntergeladen: %1$s</string>
     <string name="sync_service_saves">Spielstände werden synchronisiert...</string>
+    <string name="steam_service_connecting">Verbinden...</string>
+    <string name="steam_service_signing_in">Anmelden...</string>
+    <string name="steam_service_syncing_library">Steam-Bibliothek wird synchronisiert...</string>
 
     <string name="sync_download_channel_name">Download-Fortschritt</string>
     <string name="sync_download_channel_description">Zeigt den Download-Fortschritt im Hintergrund</string>

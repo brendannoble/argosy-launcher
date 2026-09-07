@@ -190,6 +190,7 @@
 
     <string name="notif_sync_platform_progress_title">Sincronizando %1$s</string>
     <string name="notif_sync_platform_progress_fetching">Obteniendo juegos...</string>
+    <string name="notif_sync_platform_progress_games">%1$d/%2$d juegos</string>
     <string name="notif_sync_platform_complete_title">%1$s sincronizado</string>
     <string name="notif_sync_platform_complete_counts">%1$d agregados, %2$d actualizados</string>
     <string name="notif_sync_platform_complete_counts_with_removed">%1$d agregados, %2$d actualizados, %3$d eliminados</string>
@@ -203,4 +204,13 @@
     <string name="notif_review_error_too_long">La reseña es demasiado larga</string>
     <string name="notif_review_error_invalid">El servidor no pudo leer la reseña</string>
     <string name="notif_review_error_server">El servidor no pudo guardar la reseña</string>
+    <string name="notif_storage_migrate_failed_title">Error en la migración</string>
+    <string name="notif_storage_migrate_platform_failed_title">Error en la migración de %1$s</string>
+    <string name="notif_storage_purge_failed_title">Error al purgar %1$s</string>
+    <string name="notif_settings_cache_validate_failed">Error al comprobar la caché de imágenes</string>
+    <string name="notif_settings_downloads_validate_failed">Error al comprobar las descargas</string>
+    <plurals name="notification_persistent_also_running">
+        <item quantity="one">+%1$d más</item>
+        <item quantity="other">+%1$d más</item>
+    </plurals>
 </resources>
