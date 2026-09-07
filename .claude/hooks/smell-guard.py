@@ -109,7 +109,7 @@ def documented_declaration(lines, end):
     return None
 
 
-def kdoc_findings(text, rel):
+def kdoc_findings(text, rel, added=None):
     if not matches_any(rel, KDOC_PATHS):
         return []
 
@@ -117,6 +117,8 @@ def kdoc_findings(text, rel):
     out = []
 
     for _, end, body in kdoc_blocks(lines):
+        if added is not None and not any(ln in added for ln in body):
+            continue
         prose = " ".join(
             ln.strip().lstrip("/*").lstrip("*").strip() for ln in body
         ).replace("*/", " ").strip()
@@ -206,9 +208,13 @@ def main():
             sys.exit(0)
         carried = set((tool_input.get("old_string") or "").splitlines())
         lines = [ln for ln in text.splitlines() if ln not in carried]
+        block_text = text
+        added_lines = set(lines)
         text = "\n".join(lines)
     else:
         text = tool_input.get("content")
+        block_text = text
+        added_lines = None
     if not text:
         sys.exit(0)
 
@@ -233,7 +239,7 @@ def main():
                 findings.append((rule, line.strip()))
 
     try:
-        doc_findings = kdoc_findings(text, rel)
+        doc_findings = kdoc_findings(block_text, rel, added_lines)
     except Exception:
         doc_findings = []
 
