@@ -119,10 +119,15 @@ private fun Modifier.legibilityScrim(content: Color): Modifier =
         shape = RoundedCornerShape(Dimens.radiusPill)
     )
 
+/**
+ * [scrim] backs the bar with a plate so it reads over artwork. Turn it off on a flat surface,
+ * where the plate has nothing to separate the bar from and only shows as a panel of its own.
+ */
 @Composable
 fun SystemStatusBar(
     modifier: Modifier = Modifier,
-    contentColor: Color = Color.Unspecified
+    contentColor: Color = Color.Unspecified,
+    scrim: Boolean = true
 ) {
     val isScrapingArtwork = LocalArtworkScraping.current
     val effectiveColor = if (contentColor == Color.Unspecified) {
@@ -142,7 +147,7 @@ fun SystemStatusBar(
 
     Row(
         modifier = modifier
-            .legibilityScrim(effectiveColor)
+            .then(if (scrim) Modifier.legibilityScrim(effectiveColor) else Modifier)
             .padding(
                 horizontal = ComponentDefaults.OverlayLegibility.scrimPaddingHorizDp.dp,
                 vertical = ComponentDefaults.OverlayLegibility.scrimPaddingVertDp.dp

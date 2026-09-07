@@ -701,7 +701,8 @@ private fun DrawerDeviceStatus(isRommConnected: Boolean) {
             modifier = Modifier.size(Dimens.iconMd)
         )
         SystemStatusBar(
-            contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            scrim = false
         )
     }
 }
