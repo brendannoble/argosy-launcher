@@ -8,6 +8,7 @@
     <string name="syncmonitor_empty_starting">Obteniendo plataformas…</string>
     <string name="syncmonitor_empty_idle">Inicia una sincronización para ver el progreso aquí</string>
     <string name="syncmonitor_empty_disconnected">Conéctate a RomM para sincronizar tu biblioteca</string>
+    <string name="syncmonitor_state_idle">Sin sincronizar</string>
     <string name="syncmonitor_state_queued">En cola</string>
     <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
     <string name="syncmonitor_badge_added">%1$d nuevos</string>

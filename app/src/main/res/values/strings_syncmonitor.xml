@@ -20,6 +20,8 @@
     <string name="syncmonitor_empty_idle">Start a sync to see progress here</string>
     <!-- Shown instead of rows when there is no server to sync with. -->
     <string name="syncmonitor_empty_disconnected">Connect to RomM to sync your library</string>
+    <!-- Row status when no sync is running: this platform is simply part of the library. -->
+    <string name="syncmonitor_state_idle">Not syncing</string>
     <!-- Row status: waiting its turn. Adjective. -->
     <string name="syncmonitor_state_queued">Queued</string>
     <!-- Row status while running: games processed of the total this platform reports. -->

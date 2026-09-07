@@ -8,6 +8,7 @@
     <string name="syncmonitor_empty_starting">正在获取平台…</string>
     <string name="syncmonitor_empty_idle">开始同步后即可在此查看进度</string>
     <string name="syncmonitor_empty_disconnected">连接到 RomM 以同步你的库</string>
+    <string name="syncmonitor_state_idle">未同步</string>
     <string name="syncmonitor_state_queued">排队中</string>
     <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
     <string name="syncmonitor_badge_added">新增 %1$d</string>

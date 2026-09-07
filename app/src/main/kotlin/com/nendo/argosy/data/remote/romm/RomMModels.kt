@@ -516,7 +516,7 @@ fun <T> RomMResult<T>.toResult(): Result<T> = when (this) {
     is RomMResult.Error -> Result.failure(Exception(message))
 }
 
-enum class PlatformSyncState { QUEUED, SYNCING, DONE, ALREADY_SYNCED, FAILED }
+enum class PlatformSyncState { IDLE, QUEUED, SYNCING, DONE, ALREADY_SYNCED, FAILED }
 
 /**
  * One platform's place in a library pass. [ALREADY_SYNCED] is a platform a resumed pass skipped

@@ -3,8 +3,10 @@ package com.nendo.argosy.ui.screens.syncmonitor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.data.preferences.SyncPreferencesRepository
+import com.nendo.argosy.data.remote.romm.PlatformSyncRow
 import com.nendo.argosy.data.remote.romm.PlatformSyncState
 import com.nendo.argosy.data.remote.romm.RomMRepository
+import com.nendo.argosy.data.repository.PlatformRepository
 import com.nendo.argosy.data.sync.PlatformSyncQueue
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
@@ -21,6 +23,7 @@ import javax.inject.Inject
 class SyncMonitorViewModel @Inject constructor(
     private val romMRepository: RomMRepository,
     private val platformSyncQueue: PlatformSyncQueue,
+    private val platformRepository: PlatformRepository,
     private val syncPreferencesRepository: SyncPreferencesRepository
 ) : ViewModel() {
 
@@ -28,14 +31,15 @@ class SyncMonitorViewModel @Inject constructor(
     val uiState: StateFlow<SyncMonitorUiState> = _uiState.asStateFlow()
 
     init {
+        viewModelScope.launch { seedFromLocalPlatforms() }
         viewModelScope.launch {
             romMRepository.syncProgress.collect { progress ->
                 _uiState.update { state ->
-                    val rows = progress.platforms
+                    val rows = progress.platforms.ifEmpty { state.rows }
                     val active = rows.indexOfFirst { it.state == PlatformSyncState.SYNCING }
                     state.copy(
                         isSyncing = progress.isSyncing,
-                        rows = rows.ifEmpty { state.rows },
+                        rows = rows,
                         focusedIndex = resolveFocus(state, rows, active)
                     )
                 }
@@ -48,6 +52,28 @@ class SyncMonitorViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _uiState.update { it.copy(isConnected = romMRepository.isConnected()) }
+        }
+    }
+
+    /**
+     * Shows the platforms already known locally so the screen is populated before a sync is asked
+     * for, and so pressing sync changes their state rather than replacing an empty screen after
+     * the server answers. A running sync's own rows outrank these.
+     */
+    private suspend fun seedFromLocalPlatforms() {
+        val seeded = platformRepository.getAllPlatformsOrdered()
+            .filter { it.syncEnabled }
+            .map { platform ->
+                PlatformSyncRow(
+                    platformId = platform.id,
+                    name = platform.name,
+                    slug = platform.slug,
+                    state = PlatformSyncState.IDLE
+                )
+            }
+        if (seeded.isEmpty()) return
+        _uiState.update { state ->
+            if (state.rows.isNotEmpty()) state else state.copy(rows = seeded)
         }
     }
 
@@ -86,10 +112,20 @@ class SyncMonitorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Marks every row queued before the request leaves, because the pass does not publish its own
+     * rows until the server has answered and the wait is long enough to read as a dead button.
+     */
     fun syncNow() {
         if (_uiState.value.isSyncing) return
         platformSyncQueue.enqueueLibrary()
-        _uiState.update { it.copy(followActive = true) }
+        _uiState.update { state ->
+            state.copy(
+                isSyncing = true,
+                followActive = true,
+                rows = state.rows.map { it.copy(state = PlatformSyncState.QUEUED) }
+            )
+        }
     }
 
     fun createInputHandler(onBack: () -> Unit): InputHandler = object : InputHandler {

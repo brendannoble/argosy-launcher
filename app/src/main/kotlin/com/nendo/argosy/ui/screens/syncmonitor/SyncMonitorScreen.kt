@@ -270,6 +270,7 @@ private fun PlatformRow(
  */
 @Composable
 private fun rowSubtitle(row: PlatformSyncRow): String = when (row.state) {
+    PlatformSyncState.IDLE -> stringResource(R.string.syncmonitor_state_idle)
     PlatformSyncState.QUEUED -> stringResource(R.string.syncmonitor_state_queued)
     PlatformSyncState.SYNCING -> stringResource(
         R.string.syncmonitor_state_syncing,
@@ -317,6 +318,7 @@ private fun progressColor(): Color =
 private fun stateColor(state: PlatformSyncState): Color {
     val theme = LocalArgosyTheme.current
     return when (state) {
+        PlatformSyncState.IDLE -> theme.textDim
         PlatformSyncState.QUEUED -> theme.textMute
         PlatformSyncState.SYNCING -> progressColor()
         PlatformSyncState.DONE -> successColor()
@@ -329,6 +331,7 @@ private fun stateColor(state: PlatformSyncState): Color {
 private fun StateIcon(state: PlatformSyncState) {
     Icon(
         imageVector = when (state) {
+            PlatformSyncState.IDLE -> Icons.Default.Schedule
             PlatformSyncState.QUEUED -> Icons.Default.Schedule
             PlatformSyncState.SYNCING -> Icons.Default.Sync
             PlatformSyncState.DONE -> Icons.Default.CheckCircle
@@ -343,6 +346,7 @@ private fun StateIcon(state: PlatformSyncState) {
 
 @Composable
 private fun stateDescription(state: PlatformSyncState): String = when (state) {
+    PlatformSyncState.IDLE -> stringResource(R.string.syncmonitor_state_idle)
     PlatformSyncState.QUEUED -> stringResource(R.string.syncmonitor_state_queued)
     PlatformSyncState.SYNCING -> stringResource(R.string.syncmonitor_state_syncing_desc)
     PlatformSyncState.DONE -> stringResource(R.string.syncmonitor_state_done_desc)
@@ -380,6 +384,7 @@ private fun RowTrailing(row: PlatformSyncRow) {
                 )
             }
         }
+        PlatformSyncState.IDLE,
         PlatformSyncState.QUEUED,
         PlatformSyncState.SYNCING,
         PlatformSyncState.FAILED,

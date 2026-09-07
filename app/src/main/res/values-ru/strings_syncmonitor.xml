@@ -8,6 +8,7 @@
     <string name="syncmonitor_empty_starting">Получение платформ…</string>
     <string name="syncmonitor_empty_idle">Запустите синхронизацию, чтобы увидеть здесь ход выполнения</string>
     <string name="syncmonitor_empty_disconnected">Подключитесь к RomM, чтобы синхронизировать библиотеку</string>
+    <string name="syncmonitor_state_idle">Не синхронизируется</string>
     <string name="syncmonitor_state_queued">В очереди</string>
     <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
     <string name="syncmonitor_badge_added">%1$d новых</string>

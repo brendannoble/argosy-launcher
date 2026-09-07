@@ -8,6 +8,7 @@
     <string name="syncmonitor_empty_starting">Plattformen werden abgerufen…</string>
     <string name="syncmonitor_empty_idle">Starten Sie einen Sync, um den Fortschritt hier zu sehen</string>
     <string name="syncmonitor_empty_disconnected">Mit RomM verbinden, um die Bibliothek zu synchronisieren</string>
+    <string name="syncmonitor_state_idle">Nicht aktiv</string>
     <string name="syncmonitor_state_queued">In Warteschlange</string>
     <string name="syncmonitor_state_syncing">%1$d / %2$d</string>
     <string name="syncmonitor_badge_added">%1$d neu</string>
