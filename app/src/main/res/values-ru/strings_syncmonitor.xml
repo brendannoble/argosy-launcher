@@ -3,7 +3,6 @@
     <string name="syncmonitor_title">Синхронизация библиотеки</string>
     <string name="syncmonitor_drawer_title">Синхронизация</string>
 
-    <string name="syncmonitor_progress_platforms">%1$d из %2$d платформ</string>
     <string name="syncmonitor_progress_starting">Запуск</string>
     <string name="syncmonitor_never_synced">Ещё не синхронизировалась</string>
     <string name="syncmonitor_last_synced">Последняя синхронизация %1$s</string>
@@ -21,7 +20,7 @@
     <string name="syncmonitor_state_failed">Ошибка</string>
 
     <string name="syncmonitor_action_sync">Синхронизировать</string>
-    <string name="syncmonitor_action_enable">Включить</string>
+    <string name="syncmonitor_action_enable">Включить и синхронизировать</string>
 
     <string name="syncmonitor_badge_added">%1$d новых</string>
     <string name="syncmonitor_badge_updated">%1$d обновлено</string>

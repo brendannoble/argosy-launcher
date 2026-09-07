@@ -140,6 +140,12 @@
     <string name="sync_service_platform">Syncing: %1$s</string>
     <!-- Notification line while the library sync runs without naming a platform yet. -->
     <string name="sync_service_library">Syncing library...</string>
+    <!-- Marks which platform of the pass is being synced. %1$s is the platform's name,
+         %2$d its position, %3$d how many platforms the pass covers. -->
+    <string name="sync_service_platform_of" translatable="false">%1$s %2$d/%3$d</string>
+    <!-- Appends the game count to a platform notification line. %1$s is the platform line,
+         %2$d games done, %3$d the platform's total. -->
+    <string name="sync_service_platform_games" translatable="false">%1$s (%2$d/%3$d)</string>
     <!-- Notification line while one game's save is being sent to the server. %1$s is
          the game's title. Present participle. -->
     <string name="sync_service_uploading">Uploading: %1$s</string>

@@ -3,7 +3,6 @@
     <string name="syncmonitor_title">लाइब्रेरी सिंक</string>
     <string name="syncmonitor_drawer_title">लाइब्रेरी सिंक</string>
 
-    <string name="syncmonitor_progress_platforms">%2$d में से %1$d प्लेटफ़ॉर्म</string>
     <string name="syncmonitor_progress_starting">शुरू हो रहा है</string>
     <string name="syncmonitor_never_synced">कभी सिंक नहीं हुआ</string>
     <string name="syncmonitor_last_synced">अंतिम सिंक %1$s</string>
@@ -21,7 +20,7 @@
     <string name="syncmonitor_state_failed">विफल</string>
 
     <string name="syncmonitor_action_sync">सिंक करें</string>
-    <string name="syncmonitor_action_enable">चालू करें</string>
+    <string name="syncmonitor_action_enable">चालू करें और सिंक करें</string>
 
     <string name="syncmonitor_badge_added">%1$d नए</string>
     <string name="syncmonitor_badge_updated">%1$d अपडेट</string>

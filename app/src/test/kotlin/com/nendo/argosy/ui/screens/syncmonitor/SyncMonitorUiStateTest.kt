@@ -55,7 +55,7 @@ class SyncMonitorUiStateTest {
     }
 
     @Test
-    fun `pass fraction counts the active platform's own progress and ignores disabled rows`() {
+    fun `pass fraction reads the syncing platform and not the rows finished before it`() {
         val state = SyncMonitorUiState(
             enabledRows = listOf(
                 row(1, PlatformSyncState.DONE),
@@ -65,7 +65,7 @@ class SyncMonitorUiStateTest {
             ),
             disabledRows = listOf(row(5, syncEnabled = false))
         )
-        assertEquals(0.375f, state.passFraction, 0.0001f)
+        assertEquals(0.5f, state.passFraction, 0.0001f)
     }
 
     @Test
@@ -83,7 +83,19 @@ class SyncMonitorUiStateTest {
                 row(2, PlatformSyncState.SYNCING, done = 7, total = 0)
             )
         )
-        assertEquals(0.5f, noTotal.passFraction, 0.0001f)
+        assertEquals(0f, noTotal.passFraction, 0.0001f)
+    }
+
+    @Test
+    fun `one platform syncing does not read against results left by earlier passes`() {
+        val state = SyncMonitorUiState(
+            enabledRows = listOf(
+                row(1, PlatformSyncState.DONE),
+                row(2, PlatformSyncState.DONE),
+                row(3, PlatformSyncState.SYNCING, done = 10, total = 40)
+            )
+        )
+        assertEquals(0.25f, state.passFraction, 0.0001f)
     }
 
     @Test
@@ -103,6 +115,22 @@ class SyncMonitorUiStateTest {
         assertFalse(base.copy(libraryBusy = true).canSyncFocused)
         assertFalse(base.copy(busyPlatformIds = setOf(1L)).canSyncFocused)
         assertFalse(base.copy(isConnected = false).canSyncFocused)
+    }
+
+    @Test
+    fun `a second platform can be queued while another one syncs`() {
+        val state = SyncMonitorUiState(
+            isSyncing = true,
+            enabledRows = listOf(
+                row(1, state = PlatformSyncState.SYNCING),
+                row(2)
+            ),
+            busyPlatformIds = setOf(1L),
+            focusedIndex = 1
+        )
+        assertTrue(state.canSyncFocused)
+        assertFalse(state.canSyncRow(state.enabledRows[0]))
+        assertTrue(state.canSyncAll)
     }
 
     @Test

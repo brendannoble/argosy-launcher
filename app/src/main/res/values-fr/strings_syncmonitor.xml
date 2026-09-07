@@ -3,7 +3,6 @@
     <string name="syncmonitor_title">Synchronisation de la bibliothèque</string>
     <string name="syncmonitor_drawer_title">Synchronisation</string>
 
-    <string name="syncmonitor_progress_platforms">%1$d sur %2$d plateformes</string>
     <string name="syncmonitor_progress_starting">Démarrage</string>
     <string name="syncmonitor_never_synced">Jamais synchronisée</string>
     <string name="syncmonitor_last_synced">Dernière synchronisation %1$s</string>
@@ -21,7 +20,7 @@
     <string name="syncmonitor_state_failed">Échec</string>
 
     <string name="syncmonitor_action_sync">Synchroniser</string>
-    <string name="syncmonitor_action_enable">Activer</string>
+    <string name="syncmonitor_action_enable">Activer et synchroniser</string>
 
     <string name="syncmonitor_badge_added">%1$d ajoutés</string>
     <string name="syncmonitor_badge_updated">%1$d mis à jour</string>

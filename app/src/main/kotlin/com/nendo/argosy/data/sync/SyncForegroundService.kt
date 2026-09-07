@@ -13,6 +13,7 @@ import com.nendo.argosy.R
 import com.nendo.argosy.core.service.ServiceNotificationIds
 import com.nendo.argosy.core.service.startForegroundServiceSafely
 import com.nendo.argosy.data.remote.romm.RomMRepository
+import com.nendo.argosy.data.remote.romm.SyncProgress
 import com.nendo.argosy.data.repository.SaveSyncRepository
 import dagger.hilt.android.AndroidEntryPoint
 import com.nendo.argosy.util.SafeCoroutineScope
@@ -92,7 +93,9 @@ class SyncForegroundService : Service() {
                     oldSave.hasPendingWork() == newSave.hasPendingWork() &&
                     oldLib.isSyncing == newLib.isSyncing &&
                     oldLib.currentPlatform == newLib.currentPlatform &&
-                    oldLib.passPercent() == newLib.passPercent()
+                    oldLib.gamesTotal == newLib.gamesTotal &&
+                    oldLib.gamesDone / GAMES_NOTIFICATION_STEP ==
+                    newLib.gamesDone / GAMES_NOTIFICATION_STEP
             }.collect { (saveState, libraryProgress) ->
                 val hasSaveWork = saveState.hasPendingWork()
 
@@ -102,12 +105,7 @@ class SyncForegroundService : Service() {
                 }
 
                 if (libraryProgress.isSyncing) {
-                    val title = if (libraryProgress.currentPlatform.isNotEmpty()) {
-                        getString(R.string.sync_service_platform, libraryProgress.currentPlatform)
-                    } else {
-                        getString(R.string.sync_service_library)
-                    }
-                    updateNotification(title, libraryProgress.passPercent(), 100)
+                    renderLibraryRow(libraryProgress)
                 } else if (hasSaveWork) {
                     val current = saveState.currentOperation
                     if (current != null) {
@@ -128,6 +126,33 @@ class SyncForegroundService : Service() {
                 }
             }
         }
+    }
+
+    private fun renderLibraryRow(progress: SyncProgress) {
+        val platform = progress.currentPlatform
+        if (platform.isEmpty()) {
+            updateNotification(getString(R.string.sync_service_library), 0, 0)
+            return
+        }
+        if (progress.gamesTotal <= 0) {
+            updateNotification(getString(R.string.sync_service_platform, platform), 0, 0)
+            return
+        }
+        val label = if (progress.platformsTotal > 1) {
+            getString(
+                R.string.sync_service_platform_of,
+                platform,
+                (progress.platformsDone + 1).coerceAtMost(progress.platformsTotal),
+                progress.platformsTotal
+            )
+        } else {
+            platform
+        }
+        updateNotification(
+            getString(R.string.sync_service_platform_games, label, progress.gamesDone, progress.gamesTotal),
+            progress.gamesDone,
+            progress.gamesTotal
+        )
     }
 
     private fun startForegroundWithNotification(
@@ -196,6 +221,7 @@ class SyncForegroundService : Service() {
         private const val WAKELOCK_TAG = "argosy:sync_wakelock"
         private const val WAKELOCK_LEASE_MS = 10 * 60 * 1000L
         private const val WAKELOCK_RENEW_MS = 5 * 60 * 1000L
+        private const val GAMES_NOTIFICATION_STEP = 25
 
         fun start(context: Context) {
             context.startForegroundServiceSafely(Intent(context, SyncForegroundService::class.java))

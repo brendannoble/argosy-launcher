@@ -180,7 +180,15 @@ class RomMLibrarySyncService @Inject constructor(
         boxArtCacheEnabledForSync = prefs.boxArtCacheEnabled
         val scope = resolveSyncScope(currentApi)
 
-        _syncProgress.value = SyncProgress(isSyncing = true, platformsTotal = 1)
+        _syncProgress.update {
+            it.copy(
+                isSyncing = true,
+                platformsTotal = 1,
+                platformsDone = 0,
+                gamesTotal = 0,
+                gamesDone = 0
+            )
+        }
 
         try {
             val remoteQueryId = if (platformId == LocalPlatformIds.ANDROID) {
@@ -203,18 +211,19 @@ class RomMLibrarySyncService @Inject constructor(
             phaseClock.mark("syncPlatformMetadata")
 
             val storageId = storagePlatformId(platform)
-            _syncProgress.value = _syncProgress.value.copy(
-                currentPlatform = platform.name,
-                currentPlatformSlug = platform.slug,
-                platforms = listOf(
-                    PlatformSyncRow(
-                        platformId = storageId,
-                        name = platform.name,
-                        slug = platform.slug,
-                        state = PlatformSyncState.SYNCING
-                    )
-                )
+            val row = PlatformSyncRow(
+                platformId = storageId,
+                name = platform.name,
+                slug = platform.slug,
+                state = PlatformSyncState.SYNCING
             )
+            _syncProgress.update { progress ->
+                progress.copy(
+                    currentPlatform = platform.name,
+                    currentPlatformSlug = platform.slug,
+                    platforms = progress.platforms.filterNot { it.platformId == storageId } + row
+                )
+            }
 
             gameDao.markSyncDirtyForOwner(storageId, ROMM_SOURCES, scope.ownerUserId)
 

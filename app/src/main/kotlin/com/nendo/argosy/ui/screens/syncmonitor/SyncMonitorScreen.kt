@@ -154,7 +154,7 @@ fun SyncMonitorScreen(
                             PlatformRow(
                                 row = row,
                                 focused = listIndex == uiState.focusedIndex,
-                                actionEnabled = !uiState.syncRunning,
+                                actionEnabled = true,
                                 onClick = { viewModel.focusRow(listIndex) },
                                 onAction = {
                                     viewModel.focusRow(listIndex)
@@ -231,13 +231,9 @@ private fun SyncMonitorHeader(state: SyncMonitorUiState) {
 
 @Composable
 private fun headerSubtitle(state: SyncMonitorUiState): String = when {
-    state.isSyncing && state.enabledRows.any { it.state == PlatformSyncState.SYNCING } ->
-        stringResource(
-            R.string.syncmonitor_progress_platforms,
-            state.platformsDone,
-            state.enabledRows.size
-        )
-    state.isSyncing -> stringResource(R.string.syncmonitor_progress_starting)
+    state.isSyncing ->
+        state.rows.getOrNull(state.activeIndex)?.name
+            ?: stringResource(R.string.syncmonitor_progress_starting)
     state.failedCount > 0 ->
         stringResource(R.string.syncmonitor_finished_with_failures, state.failedCount)
     !state.isConnected -> stringResource(R.string.syncmonitor_not_connected)

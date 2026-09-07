@@ -224,6 +224,36 @@ class SyncLibraryUseCaseTest {
                     R.string.notif_sync_library_progress_platform_games,
                     listOf("NES", 3, 10)
                 ),
+                progress = NotificationProgress(3, 10)
+            )
+        }
+    }
+
+    @Test
+    fun `invoke falls back to platform position before a platform reports a game count`() = runTest {
+        val syncProgressFlow = MutableStateFlow(SyncProgress())
+        every { romMRepository.syncProgress } returns syncProgressFlow
+        every { romMRepository.isConnected() } returns true
+        coEvery { romMRepository.getPlatformCount() } returns RomMResult.Success(2)
+        coEvery { romMRepository.syncLibrary(any()) } coAnswers {
+            syncProgressFlow.value = SyncProgress(
+                isSyncing = true,
+                currentPlatform = "NES",
+                platformsTotal = 2,
+                platformsDone = 0,
+                gamesTotal = 0,
+                gamesDone = 0
+            )
+            kotlinx.coroutines.delay(50)
+            SyncResult(2, 10, 0, 0, emptyList())
+        }
+
+        useCase()
+
+        verify {
+            notificationManager.updatePersistent(
+                key = "romm-sync",
+                subtitle = NotificationText.Raw("NES"),
                 progress = NotificationProgress(1, 2)
             )
         }

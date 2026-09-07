@@ -544,15 +544,7 @@ data class SyncProgress(
     val gamesTotal: Int = 0,
     val gamesDone: Int = 0,
     val platforms: List<PlatformSyncRow> = emptyList()
-) {
-    fun passPercent(): Int {
-        if (platformsTotal <= 0) return 0
-        val withinPlatform = if (gamesTotal > 0) gamesDone.toFloat() / gamesTotal else 0f
-        return (((platformsDone + withinPlatform) / platformsTotal) * 100)
-            .toInt()
-            .coerceIn(0, 100)
-    }
-}
+)
 
 data class SyncResult(
     val platformsSynced: Int,

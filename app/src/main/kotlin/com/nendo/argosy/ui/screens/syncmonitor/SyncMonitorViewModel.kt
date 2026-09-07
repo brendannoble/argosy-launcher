@@ -8,6 +8,7 @@ import com.nendo.argosy.data.preferences.SyncPreferencesRepository
 import com.nendo.argosy.data.remote.romm.PlatformSyncRow
 import com.nendo.argosy.data.remote.romm.PlatformSyncState
 import com.nendo.argosy.data.remote.romm.RomMRepository
+import com.nendo.argosy.data.remote.romm.SyncProgress
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.repository.PlatformRepository
 import com.nendo.argosy.data.repository.SaveSyncRepository
@@ -38,20 +39,28 @@ class SyncMonitorViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            combine(
+            val library = combine(
                 platformRepository.observeAllPlatforms(),
                 gameRepository.observeCountsByPlatform(),
                 gameRepository.observeDownloadedCountsByPlatform(),
                 saveSyncRepository.observeSaveCountsByPlatform(),
                 romMRepository.syncProgress
             ) { platforms, games, downloaded, saves, progress ->
-                val activity = progress.platforms.associateBy { it.platformId }
-                platforms
-                    .filter { it.id >= 0 }
-                    .map { platform ->
-                        buildRow(platform, games, downloaded, saves, activity[platform.id])
-                    } to progress.isSyncing
-            }.collect { (rows, isSyncing) ->
+                LibrarySnapshot(platforms.filter { it.id >= 0 }, games, downloaded, saves, progress)
+            }
+            val queue = combine(
+                platformSyncQueue.isLibraryBusy,
+                platformSyncQueue.busyPlatformIds
+            ) { libraryBusy, busyIds -> libraryBusy to busyIds }
+
+            combine(library, queue) { snapshot, (libraryBusy, busyIds) ->
+                val activity = snapshot.progress.platforms.associateBy { it.platformId }
+                val rows = snapshot.platforms.map { platform ->
+                    buildRow(platform, snapshot, activity[platform.id], busyIds)
+                }
+                Triple(rows, snapshot.progress.isSyncing, libraryBusy to busyIds)
+            }.collect { (rows, isSyncing, queueState) ->
+                val (libraryBusy, busyIds) = queueState
                 _uiState.update { state ->
                     val enabled = rows.filter { it.syncEnabled }
                     val disabled = rows.filterNot { it.syncEnabled }
@@ -59,22 +68,14 @@ class SyncMonitorViewModel @Inject constructor(
                     val active = ordered.indexOfFirst { it.state == PlatformSyncState.SYNCING }
                     state.copy(
                         isSyncing = isSyncing,
-                        syncRunning = isSyncing,
+                        libraryBusy = libraryBusy,
+                        busyPlatformIds = busyIds,
                         enabledRows = enabled,
                         disabledRows = disabled,
                         focusedIndex = resolveFocus(state, ordered, active)
                     )
                 }
             }
-        }
-        viewModelScope.launch {
-            combine(
-                platformSyncQueue.isLibraryBusy,
-                platformSyncQueue.busyPlatformIds
-            ) { libraryBusy, busyIds -> libraryBusy to busyIds }
-                .collect { (libraryBusy, busyIds) ->
-                    _uiState.update { it.copy(libraryBusy = libraryBusy, busyPlatformIds = busyIds) }
-                }
         }
         viewModelScope.launch {
             syncPreferencesRepository.preferences.collect { prefs ->
@@ -88,28 +89,43 @@ class SyncMonitorViewModel @Inject constructor(
         }
     }
 
+    private data class LibrarySnapshot(
+        val platforms: List<PlatformEntity>,
+        val games: Map<Long, Int>,
+        val downloaded: Map<Long, Int>,
+        val saves: Map<Long, Int>,
+        val progress: SyncProgress
+    )
+
     private fun buildRow(
         platform: PlatformEntity,
-        games: Map<Long, Int>,
-        downloaded: Map<Long, Int>,
-        saves: Map<Long, Int>,
-        activity: PlatformSyncRow?
-    ) = SyncMonitorRow(
-        platformId = platform.id,
-        name = platform.name,
-        slug = platform.slug,
-        syncEnabled = platform.syncEnabled,
-        games = games[platform.id] ?: 0,
-        downloaded = downloaded[platform.id] ?: 0,
-        withSaves = saves[platform.id] ?: 0,
-        state = activity?.state ?: PlatformSyncState.IDLE,
-        gamesDone = activity?.gamesDone ?: 0,
-        gamesTotal = activity?.gamesTotal ?: 0,
-        added = activity?.added ?: 0,
-        updated = activity?.updated ?: 0,
-        removed = activity?.removed ?: 0,
-        error = activity?.error
-    )
+        snapshot: LibrarySnapshot,
+        activity: PlatformSyncRow?,
+        busyIds: Set<Long>
+    ): SyncMonitorRow {
+        val reported = activity?.state ?: PlatformSyncState.IDLE
+        val state = if (reported == PlatformSyncState.IDLE && platform.id in busyIds) {
+            PlatformSyncState.QUEUED
+        } else {
+            reported
+        }
+        return SyncMonitorRow(
+            platformId = platform.id,
+            name = platform.name,
+            slug = platform.slug,
+            syncEnabled = platform.syncEnabled,
+            games = snapshot.games[platform.id] ?: 0,
+            downloaded = snapshot.downloaded[platform.id] ?: 0,
+            withSaves = snapshot.saves[platform.id] ?: 0,
+            state = state,
+            gamesDone = activity?.gamesDone ?: 0,
+            gamesTotal = activity?.gamesTotal ?: 0,
+            added = activity?.added ?: 0,
+            updated = activity?.updated ?: 0,
+            removed = activity?.removed ?: 0,
+            error = activity?.error
+        )
+    }
 
     /**
      * Following moves focus with the sync; a user who has taken over keeps their row unless it
@@ -150,8 +166,8 @@ class SyncMonitorViewModel @Inject constructor(
     }
 
     /**
-     * Syncs one platform, or enables one that is excluded. Enabling does not also sync: someone
-     * turning several platforms back on wants one pass, not one job each.
+     * Syncs one platform, enabling it first when it was excluded. A platform turned back on holds
+     * no games until it is synced, so enabling several queues one job each and they run in turn.
      */
     fun activateFocusedRow() {
         val state = _uiState.value
@@ -159,6 +175,9 @@ class SyncMonitorViewModel @Inject constructor(
         if (!row.syncEnabled) {
             viewModelScope.launch {
                 platformRepository.updateSyncEnabled(row.platformId, true)
+                if (_uiState.value.isConnected && !_uiState.value.libraryBusy) {
+                    platformSyncQueue.enqueuePlatform(row.platformId, row.name)
+                }
             }
             return
         }

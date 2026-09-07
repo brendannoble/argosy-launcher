@@ -699,10 +699,6 @@ class LibretroActivity : ComponentActivity() {
             }
         }
         lifecycleScope.launch {
-            snapshotFlow { netplay.inSession || speedrunPanelSideState != "Off" }
-                .collect { videoSettings.framesSuppressed = it }
-        }
-        lifecycleScope.launch {
             snapshotFlow { isAnyMenuOpen }.collect { open -> if (open) releaseCoreHeldKeys() }
         }
     }
@@ -766,6 +762,10 @@ class LibretroActivity : ComponentActivity() {
         videoSettings.onPortraitPositionChanged = { value ->
             portraitPositionState = value
             splitColumn?.let { applyPortraitSplit(it) }
+        }
+        lifecycleScope.launch {
+            snapshotFlow { netplay.inSession || speedrunPanelSideState != "Off" }
+                .collect { videoSettings.framesSuppressed = it }
         }
         lifecycleScope.launch {
             preferencesRepository.preferences

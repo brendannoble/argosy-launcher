@@ -33,12 +33,6 @@ data class SyncMonitorUiState(
     val isSyncing: Boolean = false,
     val isConnected: Boolean = true,
     val libraryBusy: Boolean = false,
-    /**
-     * A pass is running somewhere, queue or not. The sync service holds one mutex for every kind
-     * of sync, so a second request would be refused there rather than run; this is what the row
-     * actions gate on so they never accept a press that would silently do nothing.
-     */
-    val syncRunning: Boolean = false,
     val busyPlatformIds: Set<Long> = emptySet(),
     val enabledRows: List<SyncMonitorRow> = emptyList(),
     val disabledRows: List<SyncMonitorRow> = emptyList(),
@@ -68,41 +62,29 @@ data class SyncMonitorUiState(
 
     val failedCount: Int get() = enabledRows.count { it.state == PlatformSyncState.FAILED }
 
+    /**
+     * A platform can be asked for while another is running; the queue runs them in turn. Only a
+     * library pass blocks one, because it covers every platform already.
+     */
     fun canSyncRow(row: SyncMonitorRow): Boolean =
         isConnected &&
             row.syncEnabled &&
             !libraryBusy &&
-            !syncRunning &&
             row.platformId !in busyPlatformIds
 
-    /**
-     * Whether the focused row can be synced on its own right now.
-     */
     val canSyncFocused: Boolean
-        get() {
-            val row = focusedRow ?: return false
-            return isConnected &&
-                row.syncEnabled &&
-                !libraryBusy &&
-                !syncRunning &&
-                row.platformId !in busyPlatformIds
-        }
+        get() = focusedRow?.let { canSyncRow(it) } ?: false
 
-    val canSyncAll: Boolean get() = isConnected && !libraryBusy && !syncRunning
+    val canSyncAll: Boolean get() = isConnected && !libraryBusy
 
     /**
-     * Whole-pass fraction, counting the active platform's own progress so the header advances
-     * between platforms rather than only when one finishes.
+     * The syncing platform's own progress, not a count of finished rows; those survive earlier
+     * passes and would read a single-platform sync against them.
      */
     val passFraction: Float
         get() {
-            if (enabledRows.isEmpty()) return 0f
-            val active = rows.getOrNull(activeIndex)
-            val activeShare = if (active != null && active.gamesTotal > 0) {
-                active.gamesDone.toFloat() / active.gamesTotal
-            } else {
-                0f
-            }
-            return ((platformsDone + activeShare) / enabledRows.size).coerceIn(0f, 1f)
+            val active = rows.getOrNull(activeIndex) ?: return 0f
+            if (active.gamesTotal <= 0) return 0f
+            return (active.gamesDone.toFloat() / active.gamesTotal).coerceIn(0f, 1f)
         }
 }

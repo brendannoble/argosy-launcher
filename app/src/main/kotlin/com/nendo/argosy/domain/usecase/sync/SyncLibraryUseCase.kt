@@ -99,6 +99,11 @@ class SyncLibraryUseCase @Inject constructor(
                                     new.gamesDone / PROGRESS_NOTIFICATION_STEP
                             }.collect { sp ->
                                 if (sp.isSyncing && sp.currentPlatform.isNotEmpty()) {
+                                    val bar = if (sp.gamesTotal > 0) {
+                                        NotificationProgress(sp.gamesDone, sp.gamesTotal)
+                                    } else {
+                                        NotificationProgress(sp.platformsDone + 1, sp.platformsTotal)
+                                    }
                                     notificationManager.updatePersistent(
                                         key = NOTIFICATION_KEY,
                                         subtitle = copy.libraryProgressPlatform(
@@ -106,7 +111,7 @@ class SyncLibraryUseCase @Inject constructor(
                                             sp.gamesDone,
                                             sp.gamesTotal
                                         ),
-                                        progress = NotificationProgress(sp.platformsDone + 1, sp.platformsTotal),
+                                        progress = bar,
                                         platformSlug = sp.currentPlatformSlug.takeIf { it.isNotBlank() }
                                     )
                                 }

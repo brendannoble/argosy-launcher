@@ -9,8 +9,6 @@
     <!-- Drawer entry for the screen. Noun phrase, same subject as the title. -->
     <string name="syncmonitor_drawer_title">Library Sync</string>
 
-    <!-- Header while syncing: how many platforms are finished of the total. -->
-    <string name="syncmonitor_progress_platforms">%1$d of %2$d platforms</string>
     <!-- Header after a sync starts, before the server has named the platforms. -->
     <string name="syncmonitor_progress_starting">Starting</string>
     <!-- Header when a sync has never run. -->
@@ -41,8 +39,9 @@
 
     <!-- Row action: sync this platform alone. Verb. -->
     <string name="syncmonitor_action_sync">Sync</string>
-    <!-- Row action on an excluded platform: include it in future syncs. Verb. -->
-    <string name="syncmonitor_action_enable">Enable</string>
+    <!-- Row action on an excluded platform: include it in future syncs and sync it now.
+         Two verbs sharing one object. -->
+    <string name="syncmonitor_action_enable">Enable &amp; Sync</string>
 
     <!-- Badge on a finished row: how many games this platform gained. -->
     <string name="syncmonitor_badge_added">%1$d new</string>
