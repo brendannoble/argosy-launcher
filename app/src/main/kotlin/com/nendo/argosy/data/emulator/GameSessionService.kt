@@ -658,7 +658,7 @@ class GameSessionService : Service() {
         private const val WIFILOCK_TAG = "argosy:game_session_wifilock"
         private const val MAX_WAKELOCK_DURATION_MS = 4 * 60 * 60 * 1000L // 4 hours max
         private const val RESET_DELAY_MS = 1700L
-        private const val OVERLAY_DEBOUNCE_MS = 5 * 60 * 1000L
+        private const val OVERLAY_DEBOUNCE_MS = 30 * 1000L
         private const val POLL_INTERVAL_MS = 2000L
 
         /**

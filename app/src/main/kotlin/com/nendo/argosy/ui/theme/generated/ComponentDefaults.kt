@@ -193,15 +193,13 @@ object ComponentDefaults {
     }
 
     object OverlayLegibility {
-        const val shadowAlpha = 0.7f
-        const val shadowOffsetX = 0
-        const val shadowOffsetY = 1
-        const val shadowBlurRadius = 4
+        const val scrimAlpha = 0.4f
+        const val scrimPaddingHorizDp = 12
+        const val scrimPaddingVertDp = 6
     }
 
     object BatteryIndicator {
         const val terminalWidthDp = 3
-        const val haloStrokeMultiplier = 2.5f
     }
 
     object MediaBackdrop {

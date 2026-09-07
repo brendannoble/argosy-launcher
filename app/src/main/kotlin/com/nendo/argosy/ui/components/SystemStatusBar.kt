@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Image
@@ -37,7 +38,9 @@ import androidx.compose.ui.graphics.Color
 import com.nendo.argosy.ui.theme.ALauncherColors
 import com.nendo.argosy.ui.theme.generated.ColorTokens
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
-import androidx.compose.ui.graphics.Shadow
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -105,14 +108,16 @@ fun rememberBatteryState(): State<BatteryState> {
  */
 val LocalArtworkScraping = androidx.compose.runtime.compositionLocalOf { false }
 
-private val overlayShadow = Shadow(
-    color = Color.Black.copy(alpha = ComponentDefaults.OverlayLegibility.shadowAlpha),
-    offset = Offset(
-        ComponentDefaults.OverlayLegibility.shadowOffsetX.toFloat(),
-        ComponentDefaults.OverlayLegibility.shadowOffsetY.toFloat()
-    ),
-    blurRadius = ComponentDefaults.OverlayLegibility.shadowBlurRadius.toFloat()
-)
+private fun Color.legibilityGlow(): Color {
+    val base = if (luminance() > 0.5f) Color.Black else Color.White
+    return base.copy(alpha = ComponentDefaults.OverlayLegibility.scrimAlpha)
+}
+
+private fun Modifier.legibilityScrim(content: Color): Modifier =
+    background(
+        color = content.legibilityGlow(),
+        shape = RoundedCornerShape(Dimens.radiusPill)
+    )
 
 @Composable
 fun SystemStatusBar(
@@ -121,7 +126,7 @@ fun SystemStatusBar(
 ) {
     val isScrapingArtwork = LocalArtworkScraping.current
     val effectiveColor = if (contentColor == Color.Unspecified) {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+        MaterialTheme.colorScheme.onSurface
     } else {
         contentColor
     }
@@ -136,7 +141,12 @@ fun SystemStatusBar(
     }
 
     Row(
-        modifier = modifier,
+        modifier = modifier
+            .legibilityScrim(effectiveColor)
+            .padding(
+                horizontal = ComponentDefaults.OverlayLegibility.scrimPaddingHorizDp.dp,
+                vertical = ComponentDefaults.OverlayLegibility.scrimPaddingVertDp.dp
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Dimens.radiusLg)
     ) {
@@ -146,7 +156,7 @@ fun SystemStatusBar(
 
         Text(
             text = formatClockTime(LocalContext.current, currentTime.longValue),
-            style = MaterialTheme.typography.titleMedium.copy(shadow = overlayShadow),
+            style = MaterialTheme.typography.titleMedium,
             color = effectiveColor
         )
 
@@ -202,7 +212,7 @@ private fun BatteryIndicator(
         )
         Text(
             text = "$level%",
-            style = MaterialTheme.typography.labelMedium.copy(shadow = overlayShadow),
+            style = MaterialTheme.typography.labelMedium,
             color = color
         )
     }
@@ -221,8 +231,6 @@ internal fun BatteryIcon(
         else -> color
     }
 
-    val haloColor = Color.Black.copy(alpha = ComponentDefaults.OverlayLegibility.shadowAlpha)
-
     Canvas(modifier = modifier) {
         val bodyWidth = size.width - 4.dp.toPx()
         val bodyHeight = size.height
@@ -230,15 +238,6 @@ internal fun BatteryIcon(
         val strokeWidth = 1.5f.dp.toPx()
         val padding = strokeWidth
         val terminalWidth = ComponentDefaults.BatteryIndicator.terminalWidthDp.dp.toPx()
-        val haloStroke = strokeWidth * ComponentDefaults.BatteryIndicator.haloStrokeMultiplier
-
-        drawRoundRect(
-            color = haloColor,
-            topLeft = Offset(0f, 0f),
-            size = Size(bodyWidth, bodyHeight),
-            cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-            style = Stroke(width = haloStroke)
-        )
 
         drawRoundRect(
             color = color,
@@ -246,12 +245,6 @@ internal fun BatteryIcon(
             size = Size(bodyWidth, bodyHeight),
             cornerRadius = CornerRadius(cornerRadius, cornerRadius),
             style = Stroke(width = strokeWidth)
-        )
-
-        drawRect(
-            color = haloColor,
-            topLeft = Offset(bodyWidth, bodyHeight * 0.3f - strokeWidth),
-            size = Size(terminalWidth + strokeWidth, bodyHeight * 0.4f + strokeWidth * 2)
         )
 
         drawRect(
