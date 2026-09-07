@@ -59,4 +59,45 @@ class UpdateApkSelectionTest {
     fun `non apk assets are never chosen`() {
         assertNull(UpdateRepository.selectApkAsset(listOf(asset("notes.md")), 2_000_332))
     }
+
+    /**
+     * The selector shipped in v2.11.0 through v2.13.0, which every already-installed client runs
+     * and which no release can change. It recognises only arm64 and arm32 and treats every other
+     * name as the universal build, so publishing `-x86.apk` handed universal clients an x86
+     * package and Android refused it with INSTALL_FAILED_NO_MATCHING_ABIS.
+     */
+    private fun legacyPick(assets: List<GitHubAsset>, versionCode: Int): String? {
+        val apks = assets.filter { it.name.endsWith(".apk") }
+        val suffix = when (versionCode / 1_000_000) {
+            1 -> "arm32"
+            2 -> "arm64"
+            else -> null
+        }
+        return (suffix?.let { s -> apks.find { it.name.contains(s) } }
+            ?: apks.find { !it.name.contains("arm64") && !it.name.contains("arm32") }
+            ?: apks.firstOrNull())?.name
+    }
+
+    @Test
+    fun `published asset names stay safe for clients running the frozen selector`() {
+        val published = listOf(
+            asset("argosy-v2.14.0-arm32.apk"),
+            asset("argosy-v2.14.0-arm64.apk"),
+            asset("argosy-v2.14.0.apk")
+        )
+        assertEquals("argosy-v2.14.0.apk", legacyPick(published, 3_000_333))
+        assertEquals("argosy-v2.14.0-arm64.apk", legacyPick(published, 2_000_333))
+        assertEquals("argosy-v2.14.0-arm32.apk", legacyPick(published, 1_000_333))
+    }
+
+    @Test
+    fun `an abi asset the frozen selector cannot recognise is never published`() {
+        val withX86 = listOf(
+            asset("argosy-v2.14.0-arm32.apk"),
+            asset("argosy-v2.14.0-arm64.apk"),
+            asset("argosy-v2.14.0-x86.apk"),
+            asset("argosy-v2.14.0.apk")
+        )
+        assertEquals("argosy-v2.14.0-x86.apk", legacyPick(withX86, 3_000_333))
+    }
 }
