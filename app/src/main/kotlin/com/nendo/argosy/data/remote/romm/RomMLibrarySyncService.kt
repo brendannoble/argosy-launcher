@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Duration
@@ -365,15 +366,19 @@ class RomMLibrarySyncService @Inject constructor(
     /**
      * Advances the game counters once per rom rather than once per page, so a consumer drawing a
      * bar moves by one game at a time instead of jumping a page width when a response lands.
+     *
+     * The total is held at or above the done count. A platform's rom count comes from the server
+     * and can be stale, and a bar that reads past its own end is worse than one that arrives early.
      */
     private fun publishGameProgress(platformId: Long, done: Int, total: Int) {
+        val bounded = maxOf(done, total)
         _syncProgress.update { progress ->
             progress.copy(
                 gamesDone = done,
-                gamesTotal = total,
+                gamesTotal = bounded,
                 platforms = progress.platforms.map { row ->
                     if (row.platformId == platformId) {
-                        row.copy(gamesDone = done, gamesTotal = total)
+                        row.copy(gamesDone = done, gamesTotal = bounded)
                     } else {
                         row
                     }
@@ -547,27 +552,51 @@ class RomMLibrarySyncService @Inject constructor(
      * halfway through and attribute the remainder to the wrong account.
      */
     /**
-     * [serverRomIds] is the whole library's id set as the server sees it for this account, or null
-     * when the call failed. Null means the pass cannot prove any rom is gone and every deletion
-     * path falls back to the evidence it had before the set existed.
+     * The whole library's id set as the server sees it for this account, fetched at most once per
+     * pass and only when something is actually about to be deleted.
+     *
+     * `GET /api/roms/identifiers` walks every rom on the server, so on a large library it costs
+     * tens of seconds. Reading it up front made every sync pay that before touching a single rom,
+     * including a one-rom platform with nothing to reconcile. Deletion is the only reader, and the
+     * common pass deletes nothing.
+     */
+    private class ServerRomIds(private val fetch: suspend () -> Set<Long>?) {
+        private val mutex = Mutex()
+        private var fetched = false
+        private var ids: Set<Long>? = null
+
+        suspend fun get(): Set<Long>? = mutex.withLock {
+            if (!fetched) {
+                ids = fetch()
+                fetched = true
+            }
+            ids
+        }
+    }
+
+    /**
+     * [serverRomIds] resolves to null when the call failed. Null means the pass cannot prove any
+     * rom is gone and every deletion path falls back to the evidence it had before the set existed.
      */
     private data class SyncScope(
         val ownerUserId: Long?,
         val visibility: RomMVisibility,
-        val serverRomIds: Set<Long>?
+        val serverRomIds: ServerRomIds
     )
 
     private suspend fun resolveSyncScope(api: RomMApi): SyncScope {
         val ownerUserId = overlayWriter.activeOwnerId()
         if (ownerUserId != null) overlayWriter.adoptLibraryIfUnclaimed(ownerUserId)
-        val identifiers = when (val result = apiClient.getRomIdentifiers()) {
-            is RomMResult.Success -> result.data
-            is RomMResult.Error -> {
-                Logger.info(
-                    TAG,
-                    "resolveSyncScope: rom identifiers unavailable (${result.message}); deletions fall back to pass evidence"
-                )
-                null
+        val identifiers = ServerRomIds {
+            when (val result = apiClient.getRomIdentifiers()) {
+                is RomMResult.Success -> result.data
+                is RomMResult.Error -> {
+                    Logger.info(
+                        TAG,
+                        "resolveSyncScope: rom identifiers unavailable (${result.message}); deletions fall back to pass evidence"
+                    )
+                    null
+                }
             }
         }
         return SyncScope(ownerUserId, visibilityService.fetch(api), identifiers)
@@ -599,7 +628,6 @@ class RomMLibrarySyncService @Inject constructor(
         val romVolumesReadable = gameRepository.get().romStorageVolumesReadable()
         val visibility = scope.visibility
         val ownerUserId = scope.ownerUserId
-        val serverRomIds = scope.serverRomIds
         var deleted = 0
         var masked = 0
         var stillListed = 0
@@ -622,13 +650,12 @@ class RomMLibrarySyncService @Inject constructor(
                 continue
             }
 
-            if (rommId != null &&
-                rommId !in decidedRomIds &&
-                serverRomIds != null &&
-                rommId in serverRomIds
-            ) {
-                stillListed++
-                continue
+            if (rommId != null && rommId !in decidedRomIds) {
+                val serverRomIds = scope.serverRomIds.get()
+                if (serverRomIds != null && rommId in serverRomIds) {
+                    stillListed++
+                    continue
+                }
             }
 
             if (hasLocalContent(game)) {
@@ -1098,7 +1125,7 @@ class RomMLibrarySyncService @Inject constructor(
         var offset = 0
         var totalFetched = 0
         var processedRoms = 0
-        var platformTotal: Int? = null
+        var platformTotal: Int? = platform.romCount.takeIf { it > 0 }
         val storageId = storagePlatformId(platform)
 
         fun groupFor(rom: RomMRom): SiblingGroup {

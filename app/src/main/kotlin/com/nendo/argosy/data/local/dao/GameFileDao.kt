@@ -52,6 +52,9 @@ interface GameFileDao {
     @Query("SELECT * FROM game_files WHERE rommFileId = :rommFileId")
     suspend fun getByRommFileId(rommFileId: Long): GameFileEntity?
 
+    @Query("SELECT * FROM game_files WHERE rommFileId IN (:rommFileIds)")
+    suspend fun getByRommFileIds(rommFileIds: List<Long>): List<GameFileEntity>
+
     @Query("SELECT * FROM game_files WHERE gameId = :gameId AND fileName = :fileName")
     suspend fun getByGameIdAndFileName(gameId: Long, fileName: String): List<GameFileEntity>
 

@@ -60,15 +60,32 @@ class RomMGameFileSync @Inject constructor(
             gameFileDao.deleteInvalidFilesForRom(gameId, rom.id, validIds)
         }
 
-        val entities = files.map { file ->
-            val existing = gameFileDao.getByRommFileId(file.id)
+        val existingByFileId = if (validIds.isEmpty()) {
+            emptyMap()
+        } else {
+            gameFileDao.getByRommFileIds(validIds).associateBy { it.rommFileId }
+        }
+        val classified = files.map { file ->
             val isNested = rootPathLength != null && file.filePath.length > rootPathLength
             val category = when {
                 file.category != null -> VariantCategory.fromKey(file.category)
                 isNested -> VariantCategory.UNKNOWN
                 else -> VariantCategory.GAME
             }
-            val localPath = existing?.localPath ?: recoverMusicLocalPath(file, category, rom)
+            ClassifiedFile(file, category, isNested)
+        }
+
+        val recoveredMusic = recoverMusicPaths(
+            rom,
+            classified.filter {
+                it.category == VariantCategory.SOUNDTRACK &&
+                    existingByFileId[it.file.id]?.localPath == null
+            }
+        )
+
+        val entities = classified.map { (file, category, isNested) ->
+            val existing = existingByFileId[file.id]
+            val localPath = existing?.localPath ?: recoveredMusic[file.id]
             GameFileEntity(
                 id = existing?.id ?: 0,
                 gameId = gameId,
@@ -93,19 +110,47 @@ class RomMGameFileSync @Inject constructor(
         gameFileDao.insertAll(entities)
     }
 
-    private suspend fun recoverMusicLocalPath(
-        file: RomMRomFile,
-        category: VariantCategory,
-        rom: RomMRom
-    ): String? {
-        if (category != VariantCategory.SOUNDTRACK) return null
-        val target = musicDirectoryManager.targetFileFor(
-            platformName = rom.platformName ?: rom.platformSlug,
+    private data class ClassifiedFile(
+        val file: RomMRomFile,
+        val category: VariantCategory,
+        val isNested: Boolean
+    )
+
+    /**
+     * Re-attaches soundtrack rows to tracks already sitting in the music library, keyed by RomM
+     * file id.
+     *
+     * Resolving the music root reads DataStore, whose single actor serialises every caller, so it
+     * happens once per rom rather than once per track. A game with no directory under the root has
+     * nothing to re-attach, and that one check stands in for a stat per track.
+     */
+    private suspend fun recoverMusicPaths(
+        rom: RomMRom,
+        tracks: List<ClassifiedFile>
+    ): Map<Long, String> {
+        if (tracks.isEmpty()) return emptyMap()
+        val musicDir = musicDirectoryManager.resolveMusicDir()
+        val platformName = rom.platformName ?: rom.platformSlug
+        val probe = musicDirectoryManager.targetFileIn(
+            musicDir = musicDir,
+            platformName = platformName,
             gameName = rom.name,
-            trackNumber = file.trackMeta?.track,
-            title = file.trackMeta?.title,
-            fileName = file.fileName
+            trackNumber = null,
+            title = null,
+            fileName = ""
         )
-        return target.takeIf { it.exists() }?.absolutePath
+        if (probe.parentFile?.isDirectory != true) return emptyMap()
+
+        return tracks.mapNotNull { track ->
+            val target = musicDirectoryManager.targetFileIn(
+                musicDir = musicDir,
+                platformName = platformName,
+                gameName = rom.name,
+                trackNumber = track.file.trackMeta?.track,
+                title = track.file.trackMeta?.title,
+                fileName = track.file.fileName
+            )
+            target.takeIf { it.exists() }?.let { track.file.id to it.absolutePath }
+        }.toMap()
     }
 }

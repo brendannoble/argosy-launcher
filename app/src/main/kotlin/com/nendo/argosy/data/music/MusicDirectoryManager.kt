@@ -41,6 +41,20 @@ class MusicDirectoryManager @Inject constructor(
         trackNumber: Int?,
         title: String?,
         fileName: String
+    ): File = targetFileIn(resolveMusicDir(), platformName, gameName, trackNumber, title, fileName)
+
+    /**
+     * The same path as [targetFileFor] against an already-resolved music root. Resolving the root
+     * reads DataStore, which serialises every caller onto one actor; a batch that walks many tracks
+     * resolves once and calls this.
+     */
+    fun targetFileIn(
+        musicDir: File,
+        platformName: String,
+        gameName: String,
+        trackNumber: Int?,
+        title: String?,
+        fileName: String
     ): File {
         val extension = fileName.substringAfterLast('.', "")
         val baseTitle = sanitize(title ?: fileName.substringBeforeLast('.'))
@@ -50,7 +64,7 @@ class MusicDirectoryManager @Inject constructor(
             baseTitle
         }
         val targetName = if (extension.isNotEmpty()) "$baseName.$extension" else baseName
-        val gameDir = File(File(resolveMusicDir(), sanitize(platformName)), sanitize(gameName))
+        val gameDir = File(File(musicDir, sanitize(platformName)), sanitize(gameName))
         return File(gameDir, targetName)
     }
 
