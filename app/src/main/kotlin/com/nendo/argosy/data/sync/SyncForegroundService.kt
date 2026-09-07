@@ -17,6 +17,7 @@ import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -84,6 +85,12 @@ class SyncForegroundService : Service() {
                 romMRepository.syncProgress
             ) { saveState, libraryProgress ->
                 Pair(saveState, libraryProgress)
+            }.distinctUntilChanged { (oldSave, oldLib), (newSave, newLib) ->
+                oldSave == newSave &&
+                    oldLib.isSyncing == newLib.isSyncing &&
+                    oldLib.currentPlatform == newLib.currentPlatform &&
+                    oldLib.platformsDone == newLib.platformsDone &&
+                    oldLib.platformsTotal == newLib.platformsTotal
             }.collect { (saveState, libraryProgress) ->
                 val hasSaveWork = saveState.operations.any {
                     it.status == SyncStatus.PENDING || it.status == SyncStatus.IN_PROGRESS

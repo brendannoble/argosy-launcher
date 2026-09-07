@@ -188,7 +188,9 @@ class RomMLibrarySyncService @Inject constructor(
             } else {
                 platformId
             }
+            val phaseClock = PhaseClock("platform $platformId")
             val platformResponse = currentApi.getPlatform(remoteQueryId)
+            phaseClock.mark("getPlatform")
             if (!platformResponse.isSuccessful) {
                 return SyncResult(0, 0, 0, 0, listOf("Failed to fetch platform: ${platformResponse.code()}"))
             }
@@ -197,6 +199,7 @@ class RomMLibrarySyncService @Inject constructor(
                 ?: return SyncResult(0, 0, 0, 0, listOf("Platform not found"))
 
             syncPlatformMetadata(platform)
+            phaseClock.mark("syncPlatformMetadata")
 
             val storageId = storagePlatformId(platform)
             _syncProgress.value = _syncProgress.value.copy(
@@ -215,14 +218,19 @@ class RomMLibrarySyncService @Inject constructor(
             gameDao.markSyncDirtyForOwner(storageId, ROMM_SOURCES, scope.ownerUserId)
 
             val result = syncPlatformRoms(currentApi, platform, filters, scope)
+            phaseClock.mark("syncPlatformRoms(${result.added + result.updated} roms)")
 
             val gamesDeleted = processPostPlatformSync(currentApi, storageId, result, filters, scope)
+            phaseClock.mark("processPostPlatformSync")
 
             gameDao.clearAllSyncDirtyForOwner(scope.ownerUserId)
+            phaseClock.mark("clearAllSyncDirty")
 
             androidGameScanner.get().relinkInstalledRommAndroidApps()
+            phaseClock.mark("relinkAndroidApps")
 
             syncVirtualCollectionsUseCase.get()()
+            phaseClock.mark("syncVirtualCollections")
 
             updateRow(storageId) {
                 it.copy(
@@ -277,6 +285,21 @@ class RomMLibrarySyncService @Inject constructor(
         platformDao.updateGameCount(platformId, count)
 
         return gamesDeleted
+    }
+
+    /**
+     * Logs how long each phase of a sync took. A platform holding one rom still pays for every
+     * library-wide step that runs after it, and only a per-phase split says which one.
+     */
+    private class PhaseClock(private val label: String) {
+        private val started = System.currentTimeMillis()
+        private var last = started
+
+        fun mark(phase: String) {
+            val now = System.currentTimeMillis()
+            Logger.info(TAG, "[Timing] $label | $phase took ${now - last}ms (total ${now - started}ms)")
+            last = now
+        }
     }
 
     private data class PlatformPassOutcome(
@@ -387,9 +410,11 @@ class RomMLibrarySyncService @Inject constructor(
         _syncProgress.value = SyncProgress(isSyncing = true)
 
         try {
+            val passClock = PhaseClock("library pass")
             val platformsResponse = retryOnThrow(PLATFORM_FETCH_ATTEMPTS, PLATFORM_FETCH_BACKOFF_MS) {
                 currentApi.getPlatforms()
             }
+            passClock.mark("getPlatforms")
 
             if (!platformsResponse.isSuccessful) {
                 val errorMsg = when (platformsResponse.code()) {
@@ -419,6 +444,7 @@ class RomMLibrarySyncService @Inject constructor(
             for (platform in platforms) {
                 syncPlatformMetadata(platform)
             }
+            passClock.mark("syncPlatformMetadata x${platforms.size}")
 
             val enabledPlatforms = platforms.filter { platform ->
                 val local = platformDao.getById(storagePlatformId(platform))

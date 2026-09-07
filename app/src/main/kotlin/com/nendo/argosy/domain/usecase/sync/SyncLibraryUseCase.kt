@@ -13,12 +13,19 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val TAG = "SyncLibraryUseCase"
 private const val NOTIFICATION_KEY = SyncNotificationKeys.LIBRARY
+
+/**
+ * Games between notification refreshes. Progress advances once per rom, which is the right
+ * granularity for a bar on screen and far too fine for a system notification.
+ */
+private const val PROGRESS_NOTIFICATION_STEP = 25
 
 sealed class SyncLibraryResult {
     data class Success(val result: SyncResult) : SyncLibraryResult()
@@ -84,7 +91,13 @@ class SyncLibraryUseCase @Inject constructor(
                     withContext(NonCancellable) {
                         Logger.info(TAG, "invoke: calling syncLibrary")
                         val progressJob = CoroutineScope(progressDispatcher).launch {
-                            romMRepository.syncProgress.collect { sp ->
+                            romMRepository.syncProgress.distinctUntilChanged { old, new ->
+                                old.isSyncing == new.isSyncing &&
+                                    old.currentPlatform == new.currentPlatform &&
+                                    old.platformsDone == new.platformsDone &&
+                                    old.gamesDone / PROGRESS_NOTIFICATION_STEP ==
+                                    new.gamesDone / PROGRESS_NOTIFICATION_STEP
+                            }.collect { sp ->
                                 if (sp.isSyncing && sp.currentPlatform.isNotEmpty()) {
                                     notificationManager.updatePersistent(
                                         key = NOTIFICATION_KEY,
