@@ -1092,6 +1092,15 @@ fun ArgosyApp(
         .collectAsState()
         .let { state -> remember { derivedStateOf { state.value.isProcessing } } }
 
+    val localAvatarInfo by remember {
+        derivedStateOf {
+            com.nendo.argosy.ui.components.friends.LocalUserAvatarInfo(
+                userId = drawerUiState.localUser?.id,
+                doodle = drawerUiState.localAvatarDoodle
+            )
+        }
+    }
+
     CompositionLocalProvider(
         LocalInputDispatcher provides inputDispatcher,
         LocalGamepadInputHandler provides viewModel.gamepadInputHandler,
@@ -1101,11 +1110,7 @@ fun ArgosyApp(
         LocalFooterHost provides footerHostController,
         com.nendo.argosy.ui.common.LocalImageCacheManager provides viewModel.imageCacheManager,
         com.nendo.argosy.ui.components.LocalArtworkScraping provides isScrapingArtwork,
-        com.nendo.argosy.ui.components.friends.LocalUserAvatarState provides
-            com.nendo.argosy.ui.components.friends.LocalUserAvatarInfo(
-                userId = drawerUiState.localUser?.id,
-                doodle = drawerUiState.localAvatarDoodle
-            )
+        com.nendo.argosy.ui.components.friends.LocalUserAvatarState provides localAvatarInfo
     ) {
         if (uiState.isLoading) {
             AppSplashScreen(statusRes = uiState.startupStatusRes)

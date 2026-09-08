@@ -104,8 +104,10 @@ fun SyncOverlay(
     val isPostSessionConflict = syncProgress is SyncProgress.PostSessionConflict
     val isActiveSync = syncProgress != null && syncProgress !is SyncProgress.Error && !isBlocked && !isHardcoreConflict && !isLocalModified && !isPostSessionConflict
 
-    val infiniteTransition = rememberInfiniteTransition(label = "sync_rotation")
-    val rotation by infiniteTransition.animateFloat(
+    val spinTransition = if (isActiveSync) {
+        rememberInfiniteTransition(label = "sync_rotation")
+    } else null
+    val displayRotation by spinTransition?.animateFloat(
         initialValue = 0f,
         targetValue = -360f,
         animationSpec = infiniteRepeatable(
@@ -113,9 +115,7 @@ fun SyncOverlay(
             repeatMode = RepeatMode.Restart
         ),
         label = "rotation"
-    )
-
-    val displayRotation = if (isActiveSync) rotation else 0f
+    ) ?: remember { mutableStateOf(0f) }
 
     val channelName = syncProgress?.displayChannelName
     val rawStatusMessage = syncProgress?.statusMessage() ?: ""
@@ -766,82 +766,3 @@ private fun ConflictOption(
     }
 }
 
-@Deprecated(
-    "Use SyncOverlay with SyncProgress instead",
-    ReplaceWith("SyncOverlay(syncProgress, modifier, gameTitle)")
-)
-@Composable
-fun SyncOverlay(
-    syncState: SyncState?,
-    modifier: Modifier = Modifier,
-    gameTitle: String? = null
-) {
-    val isVisible = syncState != null && syncState != SyncState.Idle
-    val isActiveSync = syncState != null && syncState !is SyncState.Error
-
-    val infiniteTransition = rememberInfiniteTransition(label = "sync_rotation")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotation"
-    )
-
-    val displayRotation = if (isActiveSync) rotation else 0f
-
-    val message = when (syncState) {
-        is SyncState.Error -> syncState.message
-        else -> stringResource(R.string.ui_sync_overlay_legacy_status)
-    }
-
-    val isDarkTheme = LocalLauncherTheme.current.isDarkTheme
-    val overlayColor = if (isDarkTheme) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.5f)
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn(animationSpec = tween(300)),
-        exit = fadeOut(animationSpec = tween(300)),
-        modifier = modifier
-            .fillMaxSize()
-            .focusProperties { canFocus = false }
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .focusProperties { canFocus = false }
-                .background(overlayColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Sync,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size(Dimens.iconXl + Dimens.spacingMd)
-                        .rotate(displayRotation)
-                )
-                Spacer(modifier = Modifier.height(Dimens.spacingMd))
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (gameTitle != null) {
-                    Spacer(modifier = Modifier.height(Dimens.spacingSm))
-                    Text(
-                        text = gameTitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}

@@ -53,6 +53,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -261,8 +262,10 @@ fun ActionButtons(
     val isExtracting = uiState.downloadStatus == GameDownloadStatus.EXTRACTING
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    val infiniteTransition = rememberInfiniteTransition(label = "extracting_rotation")
-    val rotationAngle by infiniteTransition.animateFloat(
+    val extractTransition = if (isExtracting) {
+        rememberInfiniteTransition(label = "extracting_rotation")
+    } else null
+    val rotationAngle by extractTransition?.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -270,7 +273,7 @@ fun ActionButtons(
             repeatMode = RepeatMode.Restart
         ),
         label = "rotation"
-    )
+    ) ?: remember { mutableStateOf(0f) }
 
     Row(
         modifier = Modifier.fillMaxWidth(),

@@ -654,9 +654,10 @@ class LibraryViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         games = state.games.map { game ->
-                            gradients[game.id]?.let { colors ->
-                                game.copy(gradientColors = colors)
-                            } ?: game
+                            gradients[game.id]
+                                ?.takeIf { it != game.gradientColors }
+                                ?.let { game.copy(gradientColors = it) }
+                                ?: game
                         }
                     )
                 }

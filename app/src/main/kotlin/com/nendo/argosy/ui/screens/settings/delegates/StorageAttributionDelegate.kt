@@ -19,6 +19,12 @@ class StorageAttributionDelegate @Inject constructor(
     private val _state = MutableStateFlow(StorageAttributionState())
     val state: StateFlow<StorageAttributionState> = _state.asStateFlow()
 
+    /**
+     * Read straight from the repository rather than through the settings state, which a walk
+     * updates every few dozen files and which the whole settings screen reads.
+     */
+    val walkProgress = attributionRepository.walkProgress
+
     fun initFlowCollection(scope: CoroutineScope) {
         attributionRepository.snapshot.onEach { snapshot ->
             _state.update { it.copy(snapshot = snapshot) }
@@ -28,9 +34,6 @@ class StorageAttributionDelegate @Inject constructor(
             _state.update { it.copy(volumes = volumes) }
         }.launchIn(scope)
 
-        attributionRepository.walkProgress.onEach { progress ->
-            _state.update { it.copy(walkProgress = progress) }
-        }.launchIn(scope)
 
         attributionRepository.isRefreshing.onEach { refreshing ->
             _state.update { it.copy(isRefreshing = refreshing) }

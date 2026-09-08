@@ -202,13 +202,18 @@ class SecondaryHomeActivity :
             }
             SecondaryHomeTheme(themeState = themeState.value, fonts = customFonts.value) {
                 if (!isInitialized) return@SecondaryHomeTheme
-                val scrapingArtwork by dsm.imageCacheManager.progress.collectAsState()
+                val scrapingArtwork by dsm.imageCacheManager.progress
+                    .collectAsState()
+                    .let { state ->
+                        androidx.compose.runtime.remember {
+                            androidx.compose.runtime.derivedStateOf { state.value.isProcessing }
+                        }
+                    }
                 androidx.compose.runtime.CompositionLocalProvider(
                     LocalABIconsSwapped provides abIconsSwapped,
                     LocalXYIconsSwapped provides xyIconsSwapped,
                     LocalSwapStartSelect provides startSelectSwapped,
-                    com.nendo.argosy.ui.components.LocalArtworkScraping provides
-                        scrapingArtwork.isProcessing
+                    com.nendo.argosy.ui.components.LocalArtworkScraping provides scrapingArtwork
                 ) {
                     val primaryDetail by _companionDetail.collectAsState()
                     val describingPrimary = primaryDetail

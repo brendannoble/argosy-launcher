@@ -58,8 +58,11 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -128,6 +131,15 @@ class HomeViewModel @Inject constructor(
      */
     val downloadIndicators: StateFlow<Map<Long, GameDownloadIndicator>> =
         downloadDelegate.downloadIndicators
+
+    /**
+     * Out of [uiState] for the same reason as [downloadIndicators]: it advances twice a second,
+     * and folding it in also re-ran the row and focus recalculation on every tick.
+     */
+    val mediaDownloadProgress: StateFlow<Map<String, com.nendo.argosy.data.repository.MediaTransferProgress>> =
+        mediaDelegate.state
+            .map { it.downloadProgress }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
 
     private val _events = MutableSharedFlow<HomeEvent>()
@@ -279,7 +291,6 @@ class HomeViewModel @Inject constructor(
                         mediaLibraryItems = media.libraryItems,
                         mediaLibraryItemsFor = media.libraryItemsFor,
                         mediaLibrariesLoaded = media.librariesLoaded,
-                        mediaDownloadProgress = media.downloadProgress,
                         isMediaSignedIn = media.isSignedIn,
                         isMediaLoading = media.isLoading,
                         showNextUpRow = media.showNextUp,
@@ -1157,6 +1168,7 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun disengageTile(): Boolean {
+        flushPlaybackPositions()
         val released = customGrid.disengageTile()
         if (released) videoPreviewDelegate.releaseTileAudio()
         return released
@@ -1182,8 +1194,27 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun rememberTilePlaybackPosition(filePath: String, positionMs: Long) =
-        customGrid.rememberPlaybackPosition(filePath, positionMs)
+    private val livePlaybackPositions = mutableMapOf<String, Long>()
+
+    /**
+     * Held outside the grid state while a tile plays. The engaged tile tracks its own position for
+     * display; publishing every poll rewrote `playbackPositions` twice a second, which handed the
+     * grid a new map and recomposed every tile to change a value only a future start reads.
+     */
+    fun rememberTilePlaybackPosition(filePath: String, positionMs: Long) {
+        livePlaybackPositions[filePath] = positionMs
+    }
+
+    private fun flushPlaybackPositions() {
+        if (livePlaybackPositions.isEmpty()) return
+        livePlaybackPositions.forEach { (path, position) ->
+            customGrid.rememberPlaybackPosition(path, position)
+        }
+        livePlaybackPositions.clear()
+    }
+
+    private fun reachedPositionFor(filePath: String?): Long? =
+        filePath?.let { livePlaybackPositions[it] }
 
     /**
      * Hands the engaged tile to the fullscreen player and lets go of it here, so one file is never
@@ -1195,7 +1226,10 @@ class HomeViewModel @Inject constructor(
         val engaged = grid.engagedTile ?: return
         val target = engaged.target
         if (target !is HomeTileTargetRef.Media) return
-        val reached = grid.tilePlayback[engaged.id]?.let { grid.playbackPositions[it] } ?: 0L
+        val playingPath = grid.tilePlayback[engaged.id]
+        val reached = reachedPositionFor(playingPath)
+            ?: playingPath?.let { grid.playbackPositions[it] }
+            ?: 0L
         disengageTile()
         viewModelScope.launch {
             mediaDelegate.handOffPosition(target.itemId, reached)
@@ -1648,7 +1682,7 @@ class HomeViewModel @Inject constructor(
 }
 
 private fun HomeGameUi.applyGradient(gradients: Map<Long, Pair<androidx.compose.ui.graphics.Color, androidx.compose.ui.graphics.Color>>): HomeGameUi =
-    gradients[id]?.let { copy(gradientColors = it) } ?: this
+    gradients[id]?.takeIf { it != gradientColors }?.let { copy(gradientColors = it) } ?: this
 
 private fun List<HomeGameUi>.applyGradients(gradients: Map<Long, Pair<androidx.compose.ui.graphics.Color, androidx.compose.ui.graphics.Color>>): List<HomeGameUi> =
     map { it.applyGradient(gradients) }
@@ -1662,7 +1696,10 @@ private fun List<HomeMediaUi>.applyMediaGradients(gradients: Map<String, Pair<an
 private fun List<HomeRowItem>.applyRowGradients(gradients: Map<Long, Pair<androidx.compose.ui.graphics.Color, androidx.compose.ui.graphics.Color>>): List<HomeRowItem> =
     map { item ->
         when (item) {
-            is HomeRowItem.Game -> HomeRowItem.Game(item.game.applyGradient(gradients))
+            is HomeRowItem.Game -> {
+                val game = item.game.applyGradient(gradients)
+                if (game === item.game) item else HomeRowItem.Game(game)
+            }
             else -> item
         }
     }

@@ -11,6 +11,9 @@ import com.nendo.argosy.ui.common.GradientColorExtractor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,15 +33,33 @@ data class GameGradientRequest(
  * media server's own id, and the two spaces would collide in one map. The sampling itself is not
  * duplicated, only the bookkeeping it writes into.
  */
-private class GradientStore<K> {
+private const val FLUSH_WINDOW_MS = 120L
+
+private class GradientStore<K>(private val scope: CoroutineScope) {
     val flow = MutableStateFlow<Map<K, Pair<Color, Color>>>(emptyMap())
     val persistedPresets = mutableMapOf<K, Map<GradientPreset, Pair<Color, Color>>>()
     val pending = mutableSetOf<K>()
 
-    fun has(key: K): Boolean = flow.value.containsKey(key)
+    private val buffered = mutableMapOf<K, Pair<Color, Color>>()
+    private var flushJob: Job? = null
 
+    fun has(key: K): Boolean =
+        flow.value.containsKey(key) || synchronized(buffered) { buffered.containsKey(key) }
+
+    /**
+     * Holds a single sampled cover for a short window before publishing it. A library-wide walk
+     * samples one cover at a time, and every subscriber rebuilds its lists per emission, so the
+     * window turns thousands of publishes into one per batch.
+     */
     fun put(key: K, colors: Pair<Color, Color>) {
-        flow.value = flow.value + (key to colors)
+        synchronized(buffered) {
+            buffered[key] = colors
+            if (flushJob?.isActive == true) return
+            flushJob = scope.launch {
+                delay(FLUSH_WINDOW_MS)
+                flushBuffered()
+            }
+        }
     }
 
     fun putAll(entries: Map<K, Pair<Color, Color>>) {
@@ -47,15 +68,33 @@ private class GradientStore<K> {
     }
 
     fun rederive(preset: GradientPreset) {
+        discardBuffered()
         flow.value = persistedPresets.mapNotNull { (key, presets) ->
             presets[preset]?.let { key to it }
         }.toMap()
     }
 
     fun clear() {
+        discardBuffered()
         flow.value = emptyMap()
         persistedPresets.clear()
         pending.clear()
+    }
+
+    private fun flushBuffered() {
+        val batch = synchronized(buffered) {
+            if (buffered.isEmpty()) return
+            buffered.toMap().also { buffered.clear() }
+        }
+        flow.value = flow.value + batch
+    }
+
+    private fun discardBuffered() {
+        synchronized(buffered) {
+            flushJob?.cancel()
+            flushJob = null
+            buffered.clear()
+        }
     }
 }
 
@@ -67,8 +106,9 @@ class GradientExtractionDelegate @Inject constructor(
     private val backgroundProcessor: GradientBackgroundProcessor,
     private val imageCacheManager: ImageCacheManager
 ) {
-    private val games = GradientStore<Long>()
-    private val media = GradientStore<String>()
+    private val publishScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val games = GradientStore<Long>(publishScope)
+    private val media = GradientStore<String>(publishScope)
 
     val gradients: StateFlow<Map<Long, Pair<Color, Color>>> = games.flow.asStateFlow()
     val mediaGradients: StateFlow<Map<String, Pair<Color, Color>>> = media.flow.asStateFlow()

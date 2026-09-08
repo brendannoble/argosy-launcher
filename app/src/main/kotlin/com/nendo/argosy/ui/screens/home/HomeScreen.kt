@@ -181,6 +181,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val downloadIndicators = viewModel.downloadIndicators.collectAsState()
+    val mediaDownloadProgress = viewModel.mediaDownloadProgress.collectAsState()
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
     val isAutoGrid = uiState.layoutKind == HomeLayoutKind.AUTO_GRID
@@ -854,7 +855,8 @@ fun HomeScreen(
                                         is CarouselItem.Game ->
                                             downloadIndicators.value[item.game.id]
                                                 ?: GameDownloadIndicator.NONE
-                                        is CarouselItem.Media -> uiState.mediaDownloadIndicatorFor(item.media)
+                                        is CarouselItem.Media ->
+                                            mediaDownloadProgress.value.indicatorFor(item.media)
                                         else -> GameDownloadIndicator.NONE
                                     }
                                 },
@@ -878,7 +880,8 @@ fun HomeScreen(
                                         is CarouselItem.Game ->
                                             downloadIndicators.value[item.game.id]
                                                 ?: GameDownloadIndicator.NONE
-                                        is CarouselItem.Media -> uiState.mediaDownloadIndicatorFor(item.media)
+                                        is CarouselItem.Media ->
+                                            mediaDownloadProgress.value.indicatorFor(item.media)
                                         else -> GameDownloadIndicator.NONE
                                     }
                                 },

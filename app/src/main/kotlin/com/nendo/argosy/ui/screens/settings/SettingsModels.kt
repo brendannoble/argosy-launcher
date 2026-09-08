@@ -812,7 +812,6 @@ internal const val CACHES_ENTRY_STEAM = 1
 data class StorageAttributionState(
     val snapshot: com.nendo.argosy.data.storage.StorageSnapshot? = null,
     val volumes: List<com.nendo.argosy.data.storage.StorageVolumeInfo> = emptyList(),
-    val walkProgress: Map<com.nendo.argosy.data.storage.StorageCategory, com.nendo.argosy.data.storage.WalkState> = emptyMap(),
     val isRefreshing: Boolean = false,
     val gamesSortMode: StorageGamesSortMode = StorageGamesSortMode.PLATFORM,
     val steamTileLatched: Boolean = false,

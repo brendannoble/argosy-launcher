@@ -42,6 +42,23 @@ data class GameDownloadIndicator(
 }
 
 /**
+ * The same indicator a game tile gets, for a title being fetched. A series answers for whatever
+ * episode of it is on the way, so the row a viewer is looking at is the one that shows the work.
+ */
+fun Map<String, com.nendo.argosy.data.repository.MediaTransferProgress>.indicatorFor(
+    media: HomeMediaUi
+): GameDownloadIndicator {
+    val transfer = this[media.itemId]
+        ?: media.seriesId?.let { this[it] }
+        ?: return GameDownloadIndicator.NONE
+    return GameDownloadIndicator(
+        isDownloading = !transfer.isPaused,
+        isPaused = transfer.isPaused,
+        progress = transfer.fraction
+    )
+}
+
+/**
  * How deep the resume rail runs on the carousel. A rail is walked one cover at a time, so it stays
  * short and ends in the way into the full list; a grid shows the whole shelf at once and does not.
  */
@@ -226,8 +243,6 @@ data class HomeUiState(
     val mediaLibraryItems: List<HomeMediaUi> = emptyList(),
     val mediaLibraryItemsFor: String? = null,
     val mediaLibrariesLoaded: Boolean = false,
-    val mediaDownloadProgress: Map<String, com.nendo.argosy.data.repository.MediaTransferProgress> =
-        emptyMap(),
     val isMediaSignedIn: Boolean = false,
     val isMediaLoading: Boolean = false,
     val showNextUpRow: Boolean = true,
@@ -561,22 +576,6 @@ data class HomeUiState(
                 isCurrent = idx == currentIdx
             )
         }
-    }
-
-    /**
-     * The same indicator a game tile gets, for a title being fetched. A series answers for whatever
-     * episode of it is on the way, so the row a viewer is actually looking at is the one that shows
-     * the work.
-     */
-    fun mediaDownloadIndicatorFor(media: HomeMediaUi): GameDownloadIndicator {
-        val transfer = mediaDownloadProgress[media.itemId]
-            ?: media.seriesId?.let { mediaDownloadProgress[it] }
-            ?: return GameDownloadIndicator.NONE
-        return GameDownloadIndicator(
-            isDownloading = !transfer.isPaused,
-            isPaused = transfer.isPaused,
-            progress = transfer.fraction
-        )
     }
 
     val homeTiles: List<com.nendo.argosy.domain.model.HomeTile> get() = customGrid.tiles

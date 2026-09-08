@@ -203,7 +203,10 @@ class GameDetailViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         relatedGames = state.relatedGames.map { game ->
-                            gradients[game.id]?.let { game.copy(gradientColors = it) } ?: game
+                            gradients[game.id]
+                                ?.takeIf { it != game.gradientColors }
+                                ?.let { game.copy(gradientColors = it) }
+                                ?: game
                         }
                     )
                 }

@@ -836,7 +836,7 @@ class DualHomeViewModel(
     }
 
     private fun HomeGameUi.applyGradient(gradients: Map<Long, Pair<androidx.compose.ui.graphics.Color, androidx.compose.ui.graphics.Color>>): HomeGameUi =
-        gradients[id]?.let { copy(gradientColors = it) } ?: this
+        gradients[id]?.takeIf { it != gradientColors }?.let { copy(gradientColors = it) } ?: this
 
     private fun loadData() {
         viewModelScope.launch {
@@ -907,17 +907,28 @@ class DualHomeViewModel(
                     }
                 } else {
                     _uiState.update { state ->
-                        state.copy(
-                            games = state.games.map { game ->
-                                game.copy(downloadIndicator = indicatorForGame(game.id, downloadsByGameId))
-                            },
-                            libraryGames = state.libraryGames.map { game ->
-                                game.copy(downloadIndicator = indicatorForGame(game.id, downloadsByGameId))
-                            },
-                            collectionGames = state.collectionGames.map { game ->
-                                game.copy(downloadIndicator = indicatorForGame(game.id, downloadsByGameId))
+                        var changed = false
+                        fun List<HomeGameUi>.reindicate(): List<HomeGameUi> = map { game ->
+                            val indicator = indicatorForGame(game.id, downloadsByGameId)
+                            if (game.downloadIndicator == indicator) {
+                                game
+                            } else {
+                                changed = true
+                                game.copy(downloadIndicator = indicator)
                             }
-                        )
+                        }
+                        val games = state.games.reindicate()
+                        val libraryGames = state.libraryGames.reindicate()
+                        val collectionGames = state.collectionGames.reindicate()
+                        if (changed) {
+                            state.copy(
+                                games = games,
+                                libraryGames = libraryGames,
+                                collectionGames = collectionGames
+                            )
+                        } else {
+                            state
+                        }
                     }
                 }
             }

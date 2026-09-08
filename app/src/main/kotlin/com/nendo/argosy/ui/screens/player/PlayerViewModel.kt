@@ -458,7 +458,15 @@ class PlayerViewModel @Inject constructor(
                 val activePlayer = _player.value ?: continue
                 val position = transcodeOffsetMs + activePlayer.currentPosition
                 reporter.setPosition(position, !activePlayer.isPlaying)
-                _uiState.update { it.copy(positionMs = position, activeSkip = skipAt(position)) }
+                _uiState.update { state ->
+                    val skip = skipAt(position)
+                    when {
+                        state.isChromeVisible || state.isScrubbing ->
+                            state.copy(positionMs = position, activeSkip = skip)
+                        skip != state.activeSkip -> state.copy(activeSkip = skip)
+                        else -> state
+                    }
+                }
             }
         }
     }
