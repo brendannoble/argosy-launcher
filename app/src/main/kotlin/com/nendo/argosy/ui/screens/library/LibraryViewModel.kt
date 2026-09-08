@@ -428,6 +428,7 @@ class LibraryViewModel @Inject constructor(
     private val repairImageCacheUseCase: RepairImageCacheUseCase,
     private val modalResetSignal: ModalResetSignal,
     private val gradientExtractionDelegate: GradientExtractionDelegate,
+    downloadIndicatorSource: com.nendo.argosy.ui.screens.common.DownloadIndicatorSource,
     private val emulatorDetector: EmulatorDetector,
     private val steamContentManager: com.nendo.argosy.data.steam.SteamContentManager,
     private val steamDownloadPromptController: com.nendo.argosy.data.steam.SteamDownloadPromptController,
@@ -436,6 +437,9 @@ class LibraryViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
+
+    val downloadIndicators: StateFlow<Map<Long, com.nendo.argosy.ui.screens.home.GameDownloadIndicator>> =
+        downloadIndicatorSource.indicators
 
     private val _events = MutableSharedFlow<LibraryEvent>()
     val events: SharedFlow<LibraryEvent> = _events.asSharedFlow()

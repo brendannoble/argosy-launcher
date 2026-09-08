@@ -3,26 +3,21 @@ package com.nendo.argosy.ui.screens.home.delegates
 import android.content.Context
 import com.nendo.argosy.R
 import com.nendo.argosy.data.download.DownloadManager
-import com.nendo.argosy.data.download.DownloadState
-import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.steam.SteamContentManager
 import com.nendo.argosy.data.steam.SteamDownloadState
 import com.nendo.argosy.data.update.ApkInstallManager
 import com.nendo.argosy.domain.usecase.download.DownloadResult
-import com.nendo.argosy.ui.common.appId
-import com.nendo.argosy.ui.common.toIndicator
 import com.nendo.argosy.ui.common.toNotificationText
 import com.nendo.argosy.core.notification.NotificationManager
 import com.nendo.argosy.core.notification.NotificationText
 import com.nendo.argosy.core.notification.showError
 import com.nendo.argosy.core.notification.showSuccess
+import com.nendo.argosy.ui.screens.common.DownloadIndicatorSource
 import com.nendo.argosy.ui.screens.common.GameActionsDelegate
 import com.nendo.argosy.ui.screens.home.GameDownloadIndicator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,44 +28,18 @@ class HomeDownloadDelegate @Inject constructor(
     private val apkInstallManager: ApkInstallManager,
     private val notificationManager: NotificationManager,
     private val steamContentManager: SteamContentManager,
-    private val gameRepository: GameRepository
+    private val downloadIndicatorSource: DownloadIndicatorSource
 ) {
-    private val rommIndicators = MutableStateFlow<Map<Long, GameDownloadIndicator>>(emptyMap())
-    private val steamIndicators = MutableStateFlow<Map<Long, GameDownloadIndicator>>(emptyMap())
-    private val _downloadIndicators = MutableStateFlow<Map<Long, GameDownloadIndicator>>(emptyMap())
-    val downloadIndicators: StateFlow<Map<Long, GameDownloadIndicator>> = _downloadIndicators.asStateFlow()
+    val downloadIndicators: StateFlow<Map<Long, GameDownloadIndicator>> =
+        downloadIndicatorSource.indicators
 
     private val completedGameIds = mutableSetOf<Long>()
     private var lastDownloadQueueTime = 0L
     private val downloadQueueDebounceMs = 300L
 
-    private fun mergeIndicators() {
-        _downloadIndicators.value = rommIndicators.value + steamIndicators.value
-    }
-
     fun observeDownloadState(scope: CoroutineScope, onNewlyCompleted: suspend () -> Unit) {
         scope.launch {
             downloadManager.state.collect { downloadState ->
-                val indicators = mutableMapOf<Long, GameDownloadIndicator>()
-
-                downloadState.activeDownloads.forEach { download ->
-                    indicators[download.gameId] = when (download.state) {
-                        DownloadState.EXTRACTING,
-                        DownloadState.MOVING -> GameDownloadIndicator(isExtracting = true, progress = download.extractionPercent)
-                        else -> GameDownloadIndicator(isDownloading = true, progress = download.progressPercent)
-                    }
-                }
-
-                downloadState.queue.forEach { download ->
-                    if (download.gameId in indicators) return@forEach
-                    val indicator = download.state.toIndicator(
-                        download.progressPercent, download.extractionPercent
-                    )
-                    if (indicator.isShown) {
-                        indicators[download.gameId] = indicator
-                    }
-                }
-
                 val newlyCompleted = downloadState.completed
                     .map { it.gameId }
                     .filter { it !in completedGameIds }
@@ -79,34 +48,12 @@ class HomeDownloadDelegate @Inject constructor(
                     completedGameIds.addAll(newlyCompleted)
                     onNewlyCompleted()
                 }
-
-                rommIndicators.value = indicators
-                mergeIndicators()
             }
         }
 
         scope.launch {
             steamContentManager.downloadState.collect { steamState ->
-                if (steamState is SteamDownloadState.Idle) {
-                    steamIndicators.value = emptyMap()
-                    mergeIndicators()
-                    return@collect
-                }
-                val appId = steamState.appId ?: return@collect
-                val game = gameRepository.getBySteamAppId(appId) ?: return@collect
-                val activeDl = steamContentManager.activeDownload.value
-                val progress = activeDl?.progress ?: when (steamState) {
-                    is SteamDownloadState.Paused -> steamState.progress
-                    else -> 0f
-                }
-                val indicator = steamState.toIndicator(progress)
-                if (indicator != null) {
-                    steamIndicators.value = mapOf(game.id to indicator)
-                } else {
-                    if (steamState is SteamDownloadState.Completed) onNewlyCompleted()
-                    steamIndicators.value = emptyMap()
-                }
-                mergeIndicators()
+                if (steamState is SteamDownloadState.Completed) onNewlyCompleted()
             }
         }
     }

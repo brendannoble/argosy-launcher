@@ -62,6 +62,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -122,6 +123,7 @@ import com.nendo.argosy.ui.theme.LocalLauncherTheme
 import com.nendo.argosy.ui.theme.generated.ColorTokens
 import com.nendo.argosy.ui.components.GameCard
 import com.nendo.argosy.ui.components.SourceBadge
+import com.nendo.argosy.ui.screens.home.GameDownloadIndicator
 import com.nendo.argosy.ui.screens.home.HomeGameUi
 import com.nendo.argosy.ui.util.clickableNoFocus
 import androidx.compose.foundation.lazy.LazyColumn
@@ -159,6 +161,7 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val downloadIndicators = viewModel.downloadIndicators.collectAsState()
     val initialGridIndex = remember { viewModel.gameIndexToGridIndex(uiState.focusedIndex) }
     val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = initialGridIndex)
     val platformGridState = rememberLazyGridState()
@@ -442,6 +445,9 @@ fun LibraryScreen(
                                                     showPlatformBadge = uiState.currentPlatformIndex < 0,
                                                     coverPathOverride = uiState.repairedCoverPaths[item.game.id],
                                                     onCoverLoadFailed = viewModel::repairCoverImage,
+                                                    downloadIndicatorFor = {
+                                                        downloadIndicators.value[it] ?: GameDownloadIndicator.NONE
+                                                    },
                                                     onClick = { viewModel.handleItemTap(item.gameIndex, onGameSelect) },
                                                     onLongClick = { viewModel.handleItemLongPress(item.gameIndex) },
                                                     modifier = Modifier.zIndex(if (isFocused) 1f else 0f)
@@ -1018,6 +1024,7 @@ private fun LibraryMasonryGrid(
     onGameSelect: (Long) -> Unit
 ) {
     val initialIndex = remember { viewModel.gameIndexToGridIndex(uiState.focusedIndex) }
+    val downloadIndicators = viewModel.downloadIndicators.collectAsState()
     val staggeredState = rememberLazyStaggeredGridState(initialFirstVisibleItemIndex = initialIndex)
     // Local flag so the centering effect and the scroll listener read the same
     // snapshot value with no recomposition lag (otherwise programmatic scrolls
@@ -1151,6 +1158,9 @@ private fun LibraryMasonryGrid(
                         showPlatformBadge = uiState.currentPlatformIndex < 0,
                         coverPathOverride = uiState.repairedCoverPaths[gridItem.game.id],
                         onCoverLoadFailed = viewModel::repairCoverImage,
+                        downloadIndicatorFor = {
+                            downloadIndicators.value[it] ?: GameDownloadIndicator.NONE
+                        },
                         onClick = { viewModel.handleItemTap(gridItem.gameIndex, onGameSelect) },
                         onLongClick = { viewModel.handleItemLongPress(gridItem.gameIndex) },
                         modifier = Modifier
@@ -1173,12 +1183,15 @@ private fun LibraryGameCard(
     showPlatformBadge: Boolean = true,
     coverPathOverride: String? = null,
     onCoverLoadFailed: ((Long, String) -> Unit)? = null,
+    downloadIndicatorFor: (Long) -> GameDownloadIndicator = { GameDownloadIndicator.NONE },
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val effectiveFocused = isFocused && showFocus
     val saturation = if (showFocus && !isFocused) 0.4f else null
+    val indicatorFor by rememberUpdatedState(downloadIndicatorFor)
+    val downloadIndicator by remember(game.id) { derivedStateOf { indicatorFor(game.id) } }
     GameCard(
         game = HomeGameUi(
             id = game.id,
@@ -1199,6 +1212,7 @@ private fun LibraryGameCard(
         showPlatformBadge = showPlatformBadge,
         coverPathOverride = coverPathOverride,
         onCoverLoadFailed = onCoverLoadFailed,
+        downloadIndicator = downloadIndicator,
         saturationOverride = saturation,
         modifier = modifier
             .fillMaxWidth()
