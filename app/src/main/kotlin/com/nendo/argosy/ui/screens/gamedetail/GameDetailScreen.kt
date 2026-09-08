@@ -499,6 +499,7 @@ private fun GameDetailContent(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val pickerState by viewModel.pickerModalDelegate.state.collectAsState()
+    val downloadProgressState = viewModel.downloadProgress.collectAsState()
     val isAnySyncing = uiState.isSyncing || uiState.syncOverlayState != null
     val showAnyOverlay = uiState.showMoreOptions || uiState.showPlayOptions ||
         uiState.showRatingsStatusMenu || pickerState.hasAnyPickerOpen ||
@@ -542,7 +543,6 @@ private fun GameDetailContent(
     val menuDisplayState = GameDetailMenuState(
         focusedIndex = uiState.menuFocusIndex,
         downloadStatus = uiState.downloadStatus,
-        downloadProgress = uiState.downloadProgress,
         isAwaitingServer = uiState.isAwaitingServer,
         isFavorite = game.isFavorite,
         saveStatus = uiState.saveStatusInfo,
@@ -674,6 +674,7 @@ private fun GameDetailContent(
                         GameDetailMenu(
                             layoutState = menuLayoutState,
                             displayState = menuDisplayState,
+                            downloadProgress = downloadProgressState,
                             onItemClick = { item ->
                                 when (item) {
                                     MenuItem.Play -> viewModel.primaryAction()

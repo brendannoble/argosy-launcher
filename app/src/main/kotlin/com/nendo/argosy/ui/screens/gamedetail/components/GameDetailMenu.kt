@@ -50,6 +50,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,7 +111,6 @@ val menuLayout = SettingsLayout<MenuItem, MenuLayoutState>(
 data class GameDetailMenuState(
     val focusedIndex: Int = 0,
     val downloadStatus: GameDownloadStatus = GameDownloadStatus.NOT_DOWNLOADED,
-    val downloadProgress: Float = 0f,
     val isAwaitingServer: Boolean = false,
     val isFavorite: Boolean = false,
     val saveStatus: SaveStatusInfo? = null,
@@ -123,6 +123,7 @@ data class GameDetailMenuState(
 fun GameDetailMenu(
     layoutState: MenuLayoutState,
     displayState: GameDetailMenuState,
+    downloadProgress: State<Float>,
     onItemClick: (MenuItem) -> Unit,
     onFocusChange: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -161,7 +162,7 @@ fun GameDetailMenu(
                 MenuItem.Play -> {
                     PlayMenuItem(
                         downloadStatus = displayState.downloadStatus,
-                        downloadProgress = displayState.downloadProgress,
+                        downloadProgress = downloadProgress,
                         isAwaitingServer = displayState.isAwaitingServer,
                         isFocused = isFocused,
                         downloadSizeBytes = displayState.downloadSizeBytes,
@@ -289,7 +290,7 @@ fun GameDetailMenu(
 @Composable
 private fun PlayMenuItem(
     downloadStatus: GameDownloadStatus,
-    downloadProgress: Float,
+    downloadProgress: State<Float>,
     isAwaitingServer: Boolean,
     isFocused: Boolean,
     downloadSizeBytes: Long?,
@@ -304,7 +305,7 @@ private fun PlayMenuItem(
         } else {
             stringResource(
                 R.string.gamedetail_menu_play_button_progress_percent,
-                (downloadProgress * 100).toInt()
+                (downloadProgress.value * 100).toInt()
             )
         }
         GameDownloadStatus.QUEUED ->
@@ -362,7 +363,7 @@ private fun PlayMenuItem(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         if (isInProgress) {
             val animatedProgress by animateFloatAsState(
-                targetValue = downloadProgress,
+                targetValue = downloadProgress.value,
                 animationSpec = tween(durationMillis = 500, easing = LinearEasing),
                 label = "btn_fill"
             )

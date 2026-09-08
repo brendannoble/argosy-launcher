@@ -135,6 +135,14 @@ class GameDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GameDetailUiState())
     val uiState: StateFlow<GameDetailUiState> = _uiState.asStateFlow()
 
+    private val _downloadProgress = MutableStateFlow(0f)
+
+    /**
+     * Separate from [uiState] because it advances several times a second while a download runs,
+     * and every field of that state shares one invalidation.
+     */
+    val downloadProgress: StateFlow<Float> = _downloadProgress.asStateFlow()
+
     private val _launchEvents = MutableSharedFlow<LaunchEvent>()
     val launchEvents: SharedFlow<LaunchEvent> = _launchEvents.asSharedFlow()
 
@@ -258,10 +266,10 @@ class GameDetailViewModel @Inject constructor(
 
         viewModelScope.launch {
             downloadDelegate.state.collect { dlState ->
+                _downloadProgress.value = dlState.downloadProgress
                 _uiState.update {
                     it.copy(
                         downloadStatus = dlState.downloadStatus,
-                        downloadProgress = dlState.downloadProgress,
                         isAwaitingServer = dlState.isAwaitingServer,
                         downloadSizeBytes = dlState.downloadSizeBytes,
                         isRefreshingGameData = dlState.isRefreshingGameData,

@@ -49,6 +49,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -248,6 +249,7 @@ fun ActionButtons(
     viewModel: GameDetailViewModel
 ) {
     val context = LocalContext.current
+    val downloadProgress by viewModel.downloadProgress.collectAsState()
     val isButtonDisabled = uiState.downloadStatus in listOf(
         GameDownloadStatus.QUEUED,
         GameDownloadStatus.DOWNLOADING,
@@ -391,7 +393,7 @@ fun ActionButtons(
                         } else {
                             stringResource(
                                 R.string.gamedetail_action_buttons_downloading_percent,
-                                (uiState.downloadProgress * 100).toInt()
+                                (downloadProgress * 100).toInt()
                             )
                         }
                     )
@@ -399,7 +401,7 @@ fun ActionButtons(
                     GameDownloadStatus.PAUSED -> Text(
                         stringResource(
                             R.string.gamedetail_action_buttons_resume_percent,
-                            (uiState.downloadProgress * 100).toInt()
+                            (downloadProgress * 100).toInt()
                         )
                     )
                     GameDownloadStatus.FAILED -> Text(stringResource(R.string.gamedetail_action_buttons_retry))
