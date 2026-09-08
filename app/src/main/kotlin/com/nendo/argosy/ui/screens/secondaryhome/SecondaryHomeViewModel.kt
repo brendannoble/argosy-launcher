@@ -159,14 +159,18 @@ class SecondaryHomeViewModel @Inject constructor(
                     // Reload from database to get fresh data and proper sorting
                     loadGamesForCurrentSection()
                 } else {
-                    // Just update progress for in-flight downloads
                     _uiState.update { state ->
-                        state.copy(
-                            games = state.games.map { game ->
-                                val download = downloadsByGameId[game.id]
-                                game.copy(downloadProgress = download?.progressPercent)
+                        var changed = false
+                        val games = state.games.map { game ->
+                            val progress = downloadsByGameId[game.id]?.progressPercent
+                            if (game.downloadProgress == progress) {
+                                game
+                            } else {
+                                changed = true
+                                game.copy(downloadProgress = progress)
                             }
-                        )
+                        }
+                        if (changed) state.copy(games = games) else state
                     }
                 }
             }
