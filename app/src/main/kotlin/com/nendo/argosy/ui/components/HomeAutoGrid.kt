@@ -19,7 +19,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -138,14 +140,16 @@ fun HomeAutoGrid(
                 coverAspectRatio = LocalBoxArtStyle.current.aspectRatio,
             )
             val padding = metrics.padding
+            val indicatorFor by rememberUpdatedState(downloadIndicatorFor)
             val cell: @Composable (Int, CarouselItem) -> Unit = { index, item ->
+                val indicator by remember(item) { derivedStateOf { indicatorFor(item) } }
                 AutoGridCell(
                     item = item,
                     isFocused = index == focusedIndex,
                     showTitle = false,
                     showPlatformBadge = showPlatformBadge,
                     useBoxArt = config.useBoxArt,
-                    downloadIndicator = downloadIndicatorFor(item),
+                    downloadIndicator = indicator,
                     cellWidth = metrics.cellWidth,
                     onTap = { onItemTap(index) },
                     onLongPress = { onItemLongPress(index) },

@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -339,6 +342,7 @@ fun CarouselRail(
         start = horizontalPadding.calculateStartPadding(layoutDirection),
         end = horizontalPadding.calculateEndPadding(layoutDirection)
     )
+    val indicatorFor by rememberUpdatedState(downloadIndicatorFor)
 
     /**
      * Every card carries badge room above its artwork, so aligning the row to a top or centre edge
@@ -384,6 +388,7 @@ fun CarouselRail(
                         Modifier
                     }
                 )
+            val indicator by remember(item) { derivedStateOf { indicatorFor(item) } }
             when (item) {
                 is CarouselItem.Game -> {
                     val cardModifier = placementModifier.then(tapModifier)
@@ -391,7 +396,7 @@ fun CarouselRail(
                         item = item,
                         isFocused = isFocused,
                         showFocusVisuals = showFocusVisuals,
-                        downloadIndicator = downloadIndicatorFor(item),
+                        downloadIndicator = indicator,
                         metrics = metrics,
                         overrides = overrides,
                         nativeAspectRatio = boxArtStyle.nativeAspectRatio,
@@ -409,7 +414,7 @@ fun CarouselRail(
                         item = item,
                         isFocused = isFocused,
                         showFocusVisuals = showFocusVisuals,
-                        downloadIndicator = downloadIndicatorFor(item),
+                        downloadIndicator = indicator,
                         metrics = metrics,
                         overrides = overrides,
                         onPosterLoaded = onPosterLoaded,

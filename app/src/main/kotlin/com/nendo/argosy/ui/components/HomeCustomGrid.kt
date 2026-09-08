@@ -516,11 +516,15 @@ private fun CustomGridCellBox(
                         scaleY = reroll.scale
                     }
             ) {
+                val indicatorFor by androidx.compose.runtime.rememberUpdatedState(downloadIndicatorFor)
+                val indicator by androidx.compose.runtime.remember(game.id) {
+                    androidx.compose.runtime.derivedStateOf { indicatorFor(game.id) }
+                }
                 GameCard(
                     game = game,
                     isFocused = isFocused,
                     focusScale = focusScaleForSpan(rect),
-                    downloadIndicator = downloadIndicatorFor(game.id),
+                    downloadIndicator = indicator,
                     showPlatformBadge = false,
                     saturationOverride = if (isOverlapped) OVERLAPPED_SATURATION else null,
                     alphaOverride = if (isOverlapped) OVERLAPPED_ALPHA else null,
