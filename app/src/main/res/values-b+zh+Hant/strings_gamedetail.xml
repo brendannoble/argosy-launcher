@@ -269,6 +269,9 @@
     <string name="gamedetail_file_picker_deselect_all">取消全選</string>
     <string name="gamedetail_file_picker_select_all">全選</string>
     <string name="gamedetail_file_picker_cancel">取消</string>
+    <string name="gamedetail_file_picker_footer_toggle">切換</string>
+    <string name="gamedetail_file_picker_footer_jump_group">跳至群組</string>
+    <string name="gamedetail_file_picker_footer_confirm">確認</string>
     <string name="gamedetail_file_picker_expand_description">展開</string>
     <string name="gamedetail_file_picker_collapse_description">收合</string>
     <string name="gamedetail_file_picker_default_tag">預設</string>

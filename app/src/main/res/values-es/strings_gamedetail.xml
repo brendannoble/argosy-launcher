@@ -322,6 +322,9 @@
     <string name="gamedetail_file_picker_deselect_all">Deseleccionar todo</string>
     <string name="gamedetail_file_picker_select_all">Seleccionar todo</string>
     <string name="gamedetail_file_picker_cancel">Cancelar</string>
+    <string name="gamedetail_file_picker_footer_toggle">Alternar</string>
+    <string name="gamedetail_file_picker_footer_jump_group">Saltar grupo</string>
+    <string name="gamedetail_file_picker_footer_confirm">Confirmar</string>
     <string name="gamedetail_file_picker_expand_description">Expandir</string>
     <string name="gamedetail_file_picker_collapse_description">Contraer</string>
     <string name="gamedetail_file_picker_default_tag">PREDETERMINADO</string>

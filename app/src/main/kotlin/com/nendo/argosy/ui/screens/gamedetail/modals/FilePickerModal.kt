@@ -43,6 +43,8 @@ import com.nendo.argosy.ui.common.labelRes
 import com.nendo.argosy.ui.components.ArgosyCheckState
 import com.nendo.argosy.ui.components.ArgosyCheckbox
 import com.nendo.argosy.ui.components.FocusedScroll
+import com.nendo.argosy.ui.components.FooterHints
+import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.primitives.ModalActionButton
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
@@ -202,6 +204,17 @@ fun FilePickerModal(
                         enabled = confirmEnabled
                     )
                 }
+
+                FooterHints(
+                    hints = listOfNotNull(
+                        InputButton.A to stringResource(R.string.gamedetail_file_picker_footer_toggle),
+                        if (allRows.any { it.isHeader }) {
+                            InputButton.LB_RB to
+                                stringResource(R.string.gamedetail_file_picker_footer_jump_group)
+                        } else null,
+                        InputButton.X to stringResource(R.string.gamedetail_file_picker_footer_confirm)
+                    )
+                )
             }
         }
     }

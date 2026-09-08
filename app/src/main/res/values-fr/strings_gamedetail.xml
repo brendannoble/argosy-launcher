@@ -322,6 +322,9 @@
     <string name="gamedetail_file_picker_deselect_all">Tout désélectionner</string>
     <string name="gamedetail_file_picker_select_all">Tout sélectionner</string>
     <string name="gamedetail_file_picker_cancel">Annuler</string>
+    <string name="gamedetail_file_picker_footer_toggle">Basculer</string>
+    <string name="gamedetail_file_picker_footer_jump_group">Sauter de groupe</string>
+    <string name="gamedetail_file_picker_footer_confirm">Confirmer</string>
     <string name="gamedetail_file_picker_expand_description">Développer</string>
     <string name="gamedetail_file_picker_collapse_description">Réduire</string>
     <string name="gamedetail_file_picker_default_tag">DÉFAUT</string>

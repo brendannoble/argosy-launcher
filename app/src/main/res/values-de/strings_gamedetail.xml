@@ -318,6 +318,9 @@
     <string name="gamedetail_file_picker_deselect_all">Alle abwählen</string>
     <string name="gamedetail_file_picker_select_all">Alle auswählen</string>
     <string name="gamedetail_file_picker_cancel">Abbrechen</string>
+    <string name="gamedetail_file_picker_footer_toggle">Umschalten</string>
+    <string name="gamedetail_file_picker_footer_jump_group">Gruppe springen</string>
+    <string name="gamedetail_file_picker_footer_confirm">Bestätigen</string>
     <string name="gamedetail_file_picker_expand_description">Ausklappen</string>
     <string name="gamedetail_file_picker_collapse_description">Einklappen</string>
     <string name="gamedetail_file_picker_default_tag">STANDARD</string>

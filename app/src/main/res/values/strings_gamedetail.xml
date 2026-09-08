@@ -790,6 +790,12 @@
     <string name="gamedetail_file_picker_select_all">Select All</string>
     <!-- Button that leaves the file list without acting. Verb. -->
     <string name="gamedetail_file_picker_cancel">Cancel</string>
+    <!-- Footer hint: ticks or unticks the file under the cursor. Verb. -->
+    <string name="gamedetail_file_picker_footer_toggle">Toggle</string>
+    <!-- Footer hint: moves the cursor to the next or previous group heading. Verb phrase. -->
+    <string name="gamedetail_file_picker_footer_jump_group">Jump Group</string>
+    <!-- Footer hint: acts on the current selection without scrolling to the button. Verb. -->
+    <string name="gamedetail_file_picker_footer_confirm">Confirm</string>
     <!-- Spoken description of the arrow on a collapsed group heading. Verb: opens the group to show
          its files. -->
     <string name="gamedetail_file_picker_expand_description">Expand</string>

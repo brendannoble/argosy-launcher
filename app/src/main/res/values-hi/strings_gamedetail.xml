@@ -317,6 +317,9 @@
     <string name="gamedetail_file_picker_deselect_all">सभी अनचुनें</string>
     <string name="gamedetail_file_picker_select_all">सभी चुनें</string>
     <string name="gamedetail_file_picker_cancel">रद्द करें</string>
+    <string name="gamedetail_file_picker_footer_toggle">टॉगल</string>
+    <string name="gamedetail_file_picker_footer_jump_group">समूह पर जाएं</string>
+    <string name="gamedetail_file_picker_footer_confirm">पुष्टि करें</string>
     <string name="gamedetail_file_picker_expand_description">विस्तार करें</string>
     <string name="gamedetail_file_picker_collapse_description">समेटें</string>
     <string name="gamedetail_file_picker_default_tag">डिफ़ॉल्ट</string>
