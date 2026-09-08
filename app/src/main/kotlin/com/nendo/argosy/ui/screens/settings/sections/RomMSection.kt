@@ -5,6 +5,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -13,8 +19,14 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.components.ActionPreference
@@ -36,6 +48,8 @@ internal sealed class RomMItem(val key: String, val section: String) {
     class Header(key: String, section: String, val titleRes: Int) : RomMItem(key, section)
 
     data object RomManager : RomMItem("romManager", "server")
+    data object ServerUrl : RomMItem("serverUrl", "server")
+    data object SaveServerUrl : RomMItem("saveServerUrl", "server")
     data object RomMSignOut : RomMItem("rommSignOut", "server")
     data object Accounts : RomMItem("rommAccounts", "server")
     data object SyncSettings : RomMItem("syncSettings", "library")
@@ -50,6 +64,8 @@ internal fun buildRomMItems(
     add(RomMItem.RomManager)
     add(RomMItem.Accounts)
     if (isSignedIntoRomM) {
+        add(RomMItem.ServerUrl)
+        add(RomMItem.SaveServerUrl)
         add(RomMItem.RomMSignOut)
     }
 
@@ -133,6 +149,15 @@ private fun RomMContent(uiState: SettingsUiState, viewModel: SettingsViewModel) 
     val context = LocalContext.current
     val layout = remember(allItems) { createRomMLayout(allItems) }
     val sections = remember(allItems, context) { layout.buildSections(Unit, context) }
+    val urlFocusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(uiState.server.rommFocusField) {
+        if (uiState.server.rommFocusField != null && isSignedIntoRomM) {
+            urlFocusRequester.requestFocus()
+            viewModel.clearRommFocusField()
+        }
+    }
 
     fun isFocused(item: RomMItem): Boolean =
         uiState.focusedIndex == layout.focusIndexOf(item, Unit)
@@ -194,6 +219,41 @@ private fun RomMContent(uiState: SettingsUiState, viewModel: SettingsViewModel) 
                 isEnabled = !uiState.server.rommSigningOut,
                 isDangerous = true,
                 onClick = { viewModel.requestRommSignOut() }
+            )
+
+            RomMItem.ServerUrl -> OutlinedTextField(
+                value = uiState.server.rommConfigUrl,
+                onValueChange = { viewModel.setRommConfigUrl(it) },
+                label = { Text(stringResource(R.string.settings_romm_url_label)) },
+                singleLine = true,
+                enabled = !uiState.server.rommConnecting,
+                isError = uiState.server.rommConfigError != null,
+                supportingText = {
+                    Text(
+                        text = uiState.server.rommConfigError
+                            ?: stringResource(R.string.settings_romm_url_subtitle),
+                        color = if (uiState.server.rommConfigError != null) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { keyboard?.hide() }),
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = if (isFocused(item)) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline
+                ),
+                modifier = Modifier.fillMaxWidth().focusRequester(urlFocusRequester)
+            )
+
+            RomMItem.SaveServerUrl -> ActionPreference(
+                title = stringResource(
+                    if (uiState.server.rommConnecting) R.string.settings_romm_url_saving
+                    else R.string.settings_romm_url_save
+                ),
+                subtitle = "",
+                isFocused = isFocused(item),
+                isEnabled = !uiState.server.rommConnecting && uiState.server.rommConfigUrl.isNotBlank(),
+                onClick = { viewModel.saveRommUrl() }
             )
 
             RomMItem.Accounts -> NavigationPreference(

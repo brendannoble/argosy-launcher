@@ -322,10 +322,11 @@ class SyncPreferencesRepository @Inject constructor(
         it[Keys.SAVE_WATCHER_ENABLED] ?: false
     }
 
-    suspend fun setRommConfig(url: String?, username: String?) {
+    suspend fun setRommConfig(url: String?, username: String?, token: String? = null) {
         dataStore.edit { prefs ->
             if (url != null) prefs[Keys.ROMM_URL] = url else prefs.remove(Keys.ROMM_URL)
             if (username != null) prefs[Keys.ROMM_USERNAME] = username else prefs.remove(Keys.ROMM_USERNAME)
+            if (token != null) prefs[Keys.ROMM_TOKEN] = token
         }
     }
 

@@ -129,7 +129,7 @@ class ServerSettingsDelegate @Inject constructor(
         _state.update {
             it.copy(
                 rommConfiguring = false,
-                rommConfigUrl = "",
+                rommConfigUrl = it.rommUrl,
                 rommConfigPairingCode = "",
                 rommConfigError = null,
                 rommConnecting = false,
@@ -142,7 +142,32 @@ class ServerSettingsDelegate @Inject constructor(
     }
 
     fun setRommConfigUrl(url: String) {
-        _state.update { it.copy(rommConfigUrl = url) }
+        _state.update { it.copy(rommConfigUrl = url, rommConfigError = null) }
+    }
+
+    fun saveRommUrl(scope: CoroutineScope) {
+        val state = _state.value
+        if (state.rommConnecting || state.rommConfigUrl.isBlank()) return
+        _state.update { it.copy(rommConnecting = true, rommConfigError = null) }
+        scope.launch {
+            try {
+                when (val result = romMRepository.updateServerUrl(state.rommConfigUrl)) {
+                    is RomMResult.Success -> _state.update {
+                        it.copy(rommUrl = result.data, rommConfigUrl = result.data, connectionStatus = ConnectionStatus.ONLINE)
+                    }
+                    is RomMResult.Error -> _state.update {
+                        it.copy(rommConfigError = when {
+                            result.kind != null -> result.describe()
+                            result.code == 401 || result.code == 403 -> context.getString(R.string.settings_romm_url_sign_in_again)
+                            result.code == 409 -> context.getString(R.string.settings_romm_url_account_mismatch)
+                            else -> context.getString(R.string.settings_romm_url_failed)
+                        })
+                    }
+                }
+            } finally {
+                _state.update { it.copy(rommConnecting = false) }
+            }
+        }
     }
 
     fun setRommConfigPairingCode(code: String) {

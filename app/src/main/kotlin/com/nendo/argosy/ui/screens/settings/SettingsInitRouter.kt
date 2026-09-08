@@ -257,7 +257,7 @@ internal fun routeObserveConnectionState(vm: SettingsViewModel) {
             ?.capabilities?.supportsScreenshotUpload == true
         val musicApi = (connectionState as? ConnectionState.Connected)
             ?.capabilities?.supportsMusicApi == true
-        vm.serverDelegate.updateState(vm._uiState.value.server.copy(
+        vm.serverDelegate.updateState(vm.serverDelegate.state.value.copy(
             connectionStatus = status,
             rommVersion = version,
             screenshotUploadSupported = screenshotUpload,
@@ -649,6 +649,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
         vm.serverDelegate.updateState(ServerState(
             connectionStatus = connectionStatus,
             rommUrl = prefs.rommBaseUrl ?: "",
+            rommConfigUrl = prefs.rommBaseUrl ?: "",
             rommUsername = prefs.rommUsername ?: "",
             rommVersion = rommVersion,
             lastRommSync = prefs.lastRommSync,

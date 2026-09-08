@@ -358,6 +358,8 @@ private fun routeRomMConfirm(vm: SettingsViewModel, state: SettingsUiState): Inp
     val items = buildRomMItemsFromState(state)
     when (rommItemAtFocusIndex(state.focusedIndex, items)) {
         RomMItem.RomManager -> vm.startRommConfig()
+        RomMItem.ServerUrl -> vm.serverDelegate.setRommFocusField(state.focusedIndex)
+        RomMItem.SaveServerUrl -> vm.saveRommUrl()
         RomMItem.RomMSignOut -> vm.requestRommSignOut()
         RomMItem.Accounts -> vm.navigateToSection(SettingsSection.ACCOUNTS)
         RomMItem.SyncSettings -> vm.navigateToSection(SettingsSection.SYNC_SETTINGS)

@@ -2139,6 +2139,13 @@
     <!-- Row naming the game server. "Rom Manager" is what the server software calls itself in
          full; leave it untranslated. -->
     <string name="settings_romm_server_title">Rom Manager</string>
+    <string name="settings_romm_url_label">Server URL</string>
+    <string name="settings_romm_url_subtitle">Change the address of this RomM instance without signing out.</string>
+    <string name="settings_romm_url_save">Save URL</string>
+    <string name="settings_romm_url_saving">Validating URL...</string>
+    <string name="settings_romm_url_sign_in_again">Credentials rejected. Sign in again through Rom Manager, then retry. The saved URL has not changed.</string>
+    <string name="settings_romm_url_account_mismatch">This address belongs to a different account. The saved URL has not changed.</string>
+    <string name="settings_romm_url_failed">Could not validate this address. Check the URL and connection, then retry. The saved URL has not changed.</string>
     <!-- Second line of that row while Argosy is testing the connection. -->
     <string name="settings_romm_server_checking">Checking connection...</string>
     <!-- Second line of that row when the server answers but has no address to show. -->

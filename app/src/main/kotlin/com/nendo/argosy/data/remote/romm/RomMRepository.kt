@@ -49,6 +49,8 @@ class RomMRepository @Inject constructor(
     suspend fun probeServerVersion(url: String): RomMResult<String> =
         connectionManager.probeServerVersion(url)
 
+    suspend fun updateServerUrl(url: String): RomMResult<String> = connectionManager.updateServerUrl(url)
+
     suspend fun connectWithToken(url: String, token: String): RomMResult<String> =
         connectionManager.connectWithToken(url, token)
 

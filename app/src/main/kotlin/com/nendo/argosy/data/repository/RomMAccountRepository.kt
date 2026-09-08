@@ -15,6 +15,8 @@ import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.romm.RomMApiProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,6 +52,20 @@ class RomMAccountRepository @Inject constructor(
     suspend fun activeAccount(): RomMAccountEntity? = rommAccountDao.getActive()
 
     suspend fun accountCount(): Int = rommAccountDao.count()
+
+    suspend fun updateServerUrl(oldUrl: String, newUrl: String, token: String) = withContext(NonCancellable) {
+        val prefs = userPreferencesRepository.preferences.first()
+        check(prefs.rommBaseUrl == oldUrl)
+        val oldToken = checkNotNull(prefs.rommToken)
+        rommAccountDao.updateServerUrl(oldUrl, newUrl, token)
+        try {
+            userPreferencesRepository.setRommConfig(newUrl, prefs.rommUsername, token)
+        } catch (e: Exception) {
+            rommAccountDao.updateServerUrl(newUrl, oldUrl, oldToken)
+            throw e
+        }
+        rommApiProvider.invalidateAll()
+    }
 
     /**
      * Records a successful pairing and makes it the live account. Returns the row id.

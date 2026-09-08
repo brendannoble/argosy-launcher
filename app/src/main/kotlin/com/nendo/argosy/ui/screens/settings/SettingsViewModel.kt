@@ -1737,6 +1737,8 @@ class SettingsViewModel @Inject constructor(
     fun cancelRommConfig() = routeCancelRommConfig(this)
 
     fun setRommConfigUrl(url: String) = serverDelegate.setRommConfigUrl(url)
+
+    fun saveRommUrl() = serverDelegate.saveRommUrl(viewModelScope)
     fun commitRommUrl() = serverDelegate.commitRommUrl(viewModelScope)
     fun setRommConfigPairingCode(code: String) = serverDelegate.setRommConfigPairingCode(code)
     fun setRommAuthMethod(method: RomMAuthMethod) = serverDelegate.setRommAuthMethod(method)

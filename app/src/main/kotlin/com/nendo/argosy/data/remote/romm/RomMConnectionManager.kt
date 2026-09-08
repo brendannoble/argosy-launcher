@@ -24,6 +24,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.nendo.argosy.data.remote.ssl.isCertificateTrustFailure
@@ -258,6 +261,64 @@ class RomMConnectionManager @Inject constructor(
         return result
     }
 
+    suspend fun updateServerUrl(url: String, replacementToken: String? = null): RomMResult<String> = withContext(Dispatchers.IO) {
+        connectMutex.withLock {
+            val prefs = userPreferencesRepository.preferences.first()
+            val oldUrl = prefs.rommBaseUrl ?: return@withLock RomMResult.Error("No server configured")
+            val token = replacementToken ?: prefs.rommToken
+                ?: return@withLock RomMResult.Error("Sign in again", code = 401)
+            var lastError = RomMResult.Error("Connection failed")
+            for (candidateUrl in buildUrlsToTry(url)) {
+                val normalizedUrl = candidateUrl.trimEnd('/') + "/"
+                try {
+                    val heartbeat = createApi(normalizedUrl, null).heartbeat()
+                    if (!heartbeat.isSuccessful) {
+                        lastError = RomMResult.Error("Connection failed", code = heartbeat.code())
+                        continue
+                    }
+                    val newApi = createApi(normalizedUrl, token)
+                    val user = newApi.getCurrentUser()
+                    if (!user.isSuccessful) {
+                        return@withLock RomMResult.Error("Authentication failed", code = user.code())
+                    }
+                    if (user.body() == null || (prefs.rommUserId != null && user.body()?.id != prefs.rommUserId)) {
+                        return@withLock RomMResult.Error("Account does not match", code = 409)
+                    }
+                    if (replacementToken != null && replacementToken != prefs.rommToken) {
+                        val deviceId = prefs.rommDeviceId
+                        if (deviceId == null || newApi.getDevices().body()?.none { it.id == deviceId } != false) {
+                            return@withLock RomMResult.Error("Could not verify the existing server", code = 409)
+                        }
+                    }
+                    val body = heartbeat.body()
+                    val version = body?.version ?: "unknown"
+                    val capabilities = RomMCapabilities.from(version, body?.libretroApiEnabled, body?.steamGridDbEnabled)
+                    withContext(NonCancellable) {
+                        rommAccountRepository.get().updateServerUrl(oldUrl, normalizedUrl, token)
+                        baseUrl = normalizedUrl
+                        accessToken = token
+                        api = newApi
+                        saveSyncRepository.get().setApi(newApi)
+                        biosRepository.setApi(newApi)
+                        saveSyncRepository.get().setCapabilities(capabilities)
+                        reconnectJob?.cancel()
+                        reconnectPending = false
+                        _connectionState.value = ConnectionState.Connected(version, capabilities)
+                    }
+                    return@withLock RomMResult.Success(normalizedUrl)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    lastError = RomMResult.Error(
+                        e.message ?: "Connection failed",
+                        kind = if (e.isCertificateTrustFailure()) RomMErrorKind.UNTRUSTED_CERTIFICATE else null
+                    )
+                }
+            }
+            lastError
+        }
+    }
+
     /** Probes a server URL with a throwaway client, leaving the live session untouched. */
     suspend fun probeServerVersion(url: String): RomMResult<String> {
         var lastError: String? = null
@@ -347,6 +408,13 @@ class RomMConnectionManager @Inject constructor(
     }
 
     suspend fun connectWithToken(url: String, token: String): RomMResult<String> {
+        val storedUrl = userPreferencesRepository.preferences.first().rommBaseUrl
+        if (!storedUrl.isNullOrBlank() && storedUrl.trimEnd('/') != url.trim().trimEnd('/')) {
+            return when (val result = updateServerUrl(url, token)) {
+                is RomMResult.Success -> RomMResult.Success(token)
+                is RomMResult.Error -> result
+            }
+        }
         _connectionState.value = ConnectionState.Connecting
         val connectResult = attemptConnection(url, token, registerDevice = false)
         if (connectResult is RomMResult.Error) {
@@ -531,6 +599,16 @@ class RomMConnectionManager @Inject constructor(
     }
 
     private suspend fun finalizeDeviceAuth(base: String, body: RomMDeviceAuthTokenResponse) {
+        val storedUrl = userPreferencesRepository.preferences.first().rommBaseUrl
+        if (!storedUrl.isNullOrBlank() && storedUrl.trimEnd('/') != base.trimEnd('/')) {
+            when (val result = updateServerUrl(base, body.accessToken)) {
+                is RomMResult.Error -> throw IllegalStateException(result.message)
+                is RomMResult.Success -> {
+                    cancelDeviceAuth()
+                    return
+                }
+            }
+        }
         val newApi = createApi(base, body.accessToken)
         val heartbeat = try { newApi.heartbeat() } catch (_: Exception) { null }
         val version = heartbeat?.body()?.version ?: "unknown"

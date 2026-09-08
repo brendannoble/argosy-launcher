@@ -327,7 +327,7 @@ class UserPreferencesRepository @Inject constructor(
 
     // --- Sync delegates ---
 
-    suspend fun setRommConfig(url: String?, username: String?) = syncPrefs.setRommConfig(url, username)
+    suspend fun setRommConfig(url: String?, username: String?, token: String? = null) = syncPrefs.setRommConfig(url, username, token)
     suspend fun setDownloadCategoryDefault(categoryKey: String, include: Boolean) =
         syncPrefs.setDownloadCategoryDefault(categoryKey, include)
     suspend fun setDownloadCategoryPlatformOverride(platformSlug: String, categoryKey: String, include: Boolean?) =
