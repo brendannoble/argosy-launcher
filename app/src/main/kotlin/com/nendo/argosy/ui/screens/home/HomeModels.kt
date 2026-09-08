@@ -260,7 +260,6 @@ data class HomeUiState(
     val collections: List<CollectionItemUi> = emptyList(),
     val collectionModalFocusIndex: Int = 0,
     val showCreateCollectionDialog: Boolean = false,
-    val downloadIndicators: Map<Long, GameDownloadIndicator> = emptyMap(),
     val repairedCoverPaths: Map<Long, String> = emptyMap(),
     val backgroundBlur: Int = 0,
     val backgroundSaturation: Int = 100,
@@ -563,9 +562,6 @@ data class HomeUiState(
             )
         }
     }
-
-    fun downloadIndicatorFor(gameId: Long): GameDownloadIndicator =
-        downloadIndicators[gameId] ?: GameDownloadIndicator.NONE
 
     /**
      * The same indicator a game tile gets, for a title being fetched. A series answers for whatever

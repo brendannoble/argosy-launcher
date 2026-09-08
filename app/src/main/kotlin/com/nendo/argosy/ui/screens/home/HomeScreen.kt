@@ -180,6 +180,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val downloadIndicators = viewModel.downloadIndicators.collectAsState()
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
     val isAutoGrid = uiState.layoutKind == HomeLayoutKind.AUTO_GRID
@@ -804,7 +805,9 @@ fun HomeScreen(
                                 },
                                 onBadgeTap = { index -> viewModel.engageRaTileAt(index) },
                                 onBandTap = { inputHandler.onConfirm() },
-                                downloadIndicatorFor = { uiState.downloadIndicatorFor(it) },
+                                downloadIndicatorFor = {
+                                    downloadIndicators.value[it] ?: GameDownloadIndicator.NONE
+                                },
                                 onCoverLoadFailed = viewModel::repairCoverImage,
                                 onCoverLoaded = viewModel::extractGradientForGame,
                                 onPosterLoaded = viewModel::extractGradientForMedia,
@@ -839,7 +842,6 @@ fun HomeScreen(
                                 items = rememberHomeCarouselItems(
                                     items = uiState.currentItems,
                                     rowKey = uiState.currentRow.toString(),
-                                    downloadIndicators = uiState.downloadIndicators,
                                     repairedCoverPaths = uiState.repairedCoverPaths
                                 ),
                                 focusedIndex = uiState.focusedGameIndex,
@@ -849,7 +851,9 @@ fun HomeScreen(
                                     uiState.currentRow != HomeRow.Steam && uiState.currentRow != HomeRow.Android,
                                 downloadIndicatorFor = { item ->
                                     when (item) {
-                                        is CarouselItem.Game -> uiState.downloadIndicatorFor(item.game.id)
+                                        is CarouselItem.Game ->
+                                            downloadIndicators.value[item.game.id]
+                                                ?: GameDownloadIndicator.NONE
                                         is CarouselItem.Media -> uiState.mediaDownloadIndicatorFor(item.media)
                                         else -> GameDownloadIndicator.NONE
                                     }
@@ -867,9 +871,17 @@ fun HomeScreen(
                                 items = rememberHomeCarouselItems(
                                     items = uiState.currentItems,
                                     rowKey = uiState.currentRow.toString(),
-                                    downloadIndicators = uiState.downloadIndicators,
                                     repairedCoverPaths = uiState.repairedCoverPaths
                                 ),
+                                downloadIndicatorFor = { item ->
+                                    when (item) {
+                                        is CarouselItem.Game ->
+                                            downloadIndicators.value[item.game.id]
+                                                ?: GameDownloadIndicator.NONE
+                                        is CarouselItem.Media -> uiState.mediaDownloadIndicatorFor(item.media)
+                                        else -> GameDownloadIndicator.NONE
+                                    }
+                                },
                                 focusedIndex = uiState.focusedGameIndex,
                                 listState = listState,
                                 metrics = CarouselMetrics.hero(
@@ -1889,15 +1901,13 @@ private fun rememberCarouselCardSize(
 private fun rememberHomeCarouselItems(
     items: List<HomeRowItem>,
     rowKey: String,
-    downloadIndicators: Map<Long, GameDownloadIndicator>,
     repairedCoverPaths: Map<Long, String>
-): List<CarouselItem> = remember(items, rowKey, downloadIndicators, repairedCoverPaths) {
+): List<CarouselItem> = remember(items, rowKey, repairedCoverPaths) {
     items.map { item ->
         when (item) {
             is HomeRowItem.Game -> CarouselItem.Game(
                 key = "$rowKey-${item.game.id}",
                 game = item.game,
-                downloadIndicator = downloadIndicators[item.game.id] ?: GameDownloadIndicator.NONE,
                 coverPathOverride = repairedCoverPaths[item.game.id]
             )
             is HomeRowItem.ViewAll -> CarouselItem.ViewAll(

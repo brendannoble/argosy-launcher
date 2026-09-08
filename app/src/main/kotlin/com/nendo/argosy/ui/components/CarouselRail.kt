@@ -307,6 +307,13 @@ fun CarouselRail(
     showNewBadge: Boolean = true,
     useBoxArt: Boolean = false,
     viewAllStyle: ViewAllCardStyle = ViewAllCardStyle.OUTLINE_GRID,
+    downloadIndicatorFor: (CarouselItem) -> GameDownloadIndicator = { item ->
+        when (item) {
+            is CarouselItem.Game -> item.downloadIndicator
+            is CarouselItem.Media -> item.downloadIndicator
+            else -> GameDownloadIndicator.NONE
+        }
+    },
     onItemTap: (Int) -> Unit = {},
     onItemLongPress: ((Int) -> Unit)? = null,
     onCoverLoadFailed: ((Long, String) -> Unit)? = null,
@@ -384,6 +391,7 @@ fun CarouselRail(
                         item = item,
                         isFocused = isFocused,
                         showFocusVisuals = showFocusVisuals,
+                        downloadIndicator = downloadIndicatorFor(item),
                         metrics = metrics,
                         overrides = overrides,
                         nativeAspectRatio = boxArtStyle.nativeAspectRatio,
@@ -401,6 +409,7 @@ fun CarouselRail(
                         item = item,
                         isFocused = isFocused,
                         showFocusVisuals = showFocusVisuals,
+                        downloadIndicator = downloadIndicatorFor(item),
                         metrics = metrics,
                         overrides = overrides,
                         onPosterLoaded = onPosterLoaded,
@@ -464,6 +473,7 @@ private fun CarouselMediaCard(
     item: CarouselItem.Media,
     isFocused: Boolean,
     showFocusVisuals: Boolean,
+    downloadIndicator: GameDownloadIndicator,
     metrics: CarouselMetrics,
     overrides: CarouselOverrides,
     onPosterLoaded: ((String, Bitmap) -> Unit)?,
@@ -480,7 +490,7 @@ private fun CarouselMediaCard(
         scalePivotY = metrics.scalePivotY,
         scaleOverride = if (isFocused) overrides.focusedScale else null,
         alphaOverride = if (isFocused) overrides.focusedAlpha else overrides.unfocusedAlpha,
-        downloadIndicator = item.downloadIndicator,
+        downloadIndicator = downloadIndicator,
         onPosterLoaded = onPosterLoaded,
         modifier = modifier.size(cardSize.width, cardSize.height)
     )
@@ -491,6 +501,7 @@ private fun CarouselGameCard(
     item: CarouselItem.Game,
     isFocused: Boolean,
     showFocusVisuals: Boolean,
+    downloadIndicator: GameDownloadIndicator,
     metrics: CarouselMetrics,
     overrides: CarouselOverrides,
     nativeAspectRatio: Boolean,
@@ -523,7 +534,7 @@ private fun CarouselGameCard(
         cardHeight = cardSize.height,
         focusScale = metrics.focusScale,
         scalePivotY = metrics.scalePivotY,
-        downloadIndicator = item.downloadIndicator,
+        downloadIndicator = downloadIndicator,
         showPlatformBadge = showPlatformBadge,
         useBoxArt = useBoxArt,
         coverPathOverride = item.coverPathOverride,

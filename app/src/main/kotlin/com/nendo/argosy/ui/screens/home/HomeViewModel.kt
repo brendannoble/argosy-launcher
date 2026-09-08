@@ -122,6 +122,13 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(restoreInitialState())
     override val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    /**
+     * Separate from [uiState] because download progress advances twice a second: folding it in
+     * rebuilt every row and recomposed the whole screen for a game that may not even be on it.
+     */
+    val downloadIndicators: StateFlow<Map<Long, GameDownloadIndicator>> =
+        downloadDelegate.downloadIndicators
+
 
     private val _events = MutableSharedFlow<HomeEvent>()
     val events: SharedFlow<HomeEvent> = _events.asSharedFlow()
@@ -224,11 +231,6 @@ class HomeViewModel @Inject constructor(
                         repairedCoverPaths = lib.repairedCoverPaths
                     )
                 }
-            }
-        }
-        viewModelScope.launch {
-            downloadDelegate.downloadIndicators.collect { indicators ->
-                _uiState.update { it.copy(downloadIndicators = indicators) }
             }
         }
         viewModelScope.launch {
@@ -1313,7 +1315,7 @@ class HomeViewModel @Inject constructor(
      * that is not downloaded fetches it the way the rail would rather than failing to launch.
      */
     override fun activateGame(game: HomeGameUi) {
-        val indicator = _uiState.value.downloadIndicatorFor(game.id)
+        val indicator = downloadIndicators.value[game.id] ?: GameDownloadIndicator.NONE
         when {
             game.needsInstall -> installApk(game.id)
             game.isDownloaded -> launchGame(game.id)
