@@ -19,3 +19,16 @@ fun Context.startForegroundServiceSafely(intent: Intent): Boolean = try {
     Logger.warn(TAG, "start refused for ${intent.component?.shortClassName}: ${e.message}")
     false
 }
+
+/**
+ * Starts a background service under the same protection. Android refuses a background start from a
+ * process that is not itself foreground, and the throw reaches whatever scope made the call.
+ * Returns whether the service was asked to start.
+ */
+fun Context.startServiceSafely(intent: Intent): Boolean = try {
+    startService(intent)
+    true
+} catch (e: Exception) {
+    Logger.warn(TAG, "background start refused for ${intent.component?.shortClassName}: ${e.message}")
+    false
+}

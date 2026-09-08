@@ -6,6 +6,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import com.nendo.argosy.core.service.startServiceSafely
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.platform.PlatformDefinitions
@@ -185,7 +186,7 @@ class ArgosyApp : Application(), Configuration.Provider, ImageLoaderFactory {
         val intent = Intent(this, SteamService::class.java).apply {
             putExtra(SteamService.EXTRA_AUTO_CONNECT, true)
         }
-        startService(intent)
+        startServiceSafely(intent)
     }
 
     /**

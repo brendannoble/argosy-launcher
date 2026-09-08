@@ -26,6 +26,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.nendo.argosy.R
+import com.nendo.argosy.core.service.startServiceSafely
 
 class SocialOverlayService : Service() {
 
@@ -273,11 +274,7 @@ class SocialOverlayService : Service() {
                 putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_SUBTITLE, subtitle)
             }
-            try {
-                context.startService(intent)
-            } catch (e: Exception) {
-                Log.w(TAG, "Cannot start overlay service from background: ${e.message}")
-            }
+            context.startServiceSafely(intent)
         }
     }
 }

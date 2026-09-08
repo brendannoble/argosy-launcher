@@ -2,6 +2,7 @@ package com.nendo.argosy.data.steam
 
 import android.content.Context
 import android.util.Log
+import com.nendo.argosy.core.service.startServiceSafely
 import com.nendo.argosy.data.download.DownloadForegroundService
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.SteamDownloadQueueDao
@@ -469,7 +470,7 @@ class SteamContentManager @Inject constructor(
         val intent = android.content.Intent(context, SteamService::class.java).apply {
             putExtra(SteamService.EXTRA_FORCE_CONNECT, true)
         }
-        context.startService(intent)
+        context.startServiceSafely(intent)
 
         // Poll for connection with timeout
         val deadline = System.currentTimeMillis() + 30_000L
