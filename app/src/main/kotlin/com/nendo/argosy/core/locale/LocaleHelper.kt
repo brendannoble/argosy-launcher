@@ -44,6 +44,17 @@ object LocaleHelper {
     fun resolveLocale(languageTag: String): Locale? =
         if (languageTag == SYSTEM_LANGUAGE_TAG) null else Locale.forLanguageTag(languageTag)
 
+    /**
+     * The override an Activity hands to `applyOverrideConfiguration`. [wrap] alone is dropped by
+     * the first configuration change; an override configuration is re-applied across them.
+     */
+    fun overrideConfiguration(base: Configuration?, languageTag: String): Configuration? {
+        val locale = resolveLocale(languageTag) ?: return base
+        val configuration = base?.let { Configuration(it) } ?: Configuration()
+        configuration.setLocales(LocaleList(locale))
+        return configuration
+    }
+
     fun effectiveLocale(context: Context): Locale = context.resources.configuration.locales[0]
 
     private fun systemLocale(): Locale = Resources.getSystem().configuration.locales[0]

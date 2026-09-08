@@ -63,9 +63,22 @@ class SecondaryHomeActivity :
 
     private lateinit var dsm: DualScreenManager
 
+    private var languageTag: String = com.nendo.argosy.core.locale.LocaleHelper.SYSTEM_LANGUAGE_TAG
+
     override fun attachBaseContext(newBase: android.content.Context) {
-        val tag = SessionStateStore(newBase).getAppLanguage()
-        super.attachBaseContext(com.nendo.argosy.core.locale.LocaleHelper.wrap(newBase, tag))
+        languageTag = SessionStateStore(newBase).getAppLanguage()
+        super.attachBaseContext(
+            com.nendo.argosy.core.locale.LocaleHelper.wrap(newBase, languageTag)
+        )
+    }
+
+    override fun applyOverrideConfiguration(overrideConfiguration: android.content.res.Configuration?) {
+        super.applyOverrideConfiguration(
+            com.nendo.argosy.core.locale.LocaleHelper.overrideConfiguration(
+                overrideConfiguration,
+                languageTag
+            )
+        )
     }
 
     var currentScreen by mutableStateOf(CompanionScreen.HOME)

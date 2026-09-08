@@ -157,9 +157,22 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class LibretroActivity : ComponentActivity() {
 
+    private var languageTag: String = com.nendo.argosy.core.locale.LocaleHelper.SYSTEM_LANGUAGE_TAG
+
     override fun attachBaseContext(newBase: android.content.Context) {
-        val tag = com.nendo.argosy.data.preferences.SessionStateStore(newBase).getAppLanguage()
-        super.attachBaseContext(com.nendo.argosy.core.locale.LocaleHelper.wrap(newBase, tag))
+        languageTag = com.nendo.argosy.data.preferences.SessionStateStore(newBase).getAppLanguage()
+        super.attachBaseContext(
+            com.nendo.argosy.core.locale.LocaleHelper.wrap(newBase, languageTag)
+        )
+    }
+
+    override fun applyOverrideConfiguration(overrideConfiguration: android.content.res.Configuration?) {
+        super.applyOverrideConfiguration(
+            com.nendo.argosy.core.locale.LocaleHelper.overrideConfiguration(
+                overrideConfiguration,
+                languageTag
+            )
+        )
     }
 
     @Inject lateinit var triggerAxisKeyEmitter: com.nendo.argosy.ui.input.TriggerAxisKeyEmitter
