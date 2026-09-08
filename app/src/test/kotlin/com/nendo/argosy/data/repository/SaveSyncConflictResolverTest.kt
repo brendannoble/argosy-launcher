@@ -115,7 +115,7 @@ class SaveSyncConflictResolverTest {
     fun `checkForConflict local matches client anchor returns null`() = runTest {
         val syncEntity = makeSyncEntity(localContentHash = "matching_hash")
         setupConflictCheckMocks(syncEntity)
-        coEvery { mockCacheManager.calculateLocalSaveHash(any()) } returns "matching_hash"
+        coEvery { mockCacheManager.calculateLocalSaveHash(any(), any(), any()) } returns "matching_hash"
 
         val result = resolver.checkForConflict(1L, "retroarch", null)
 
@@ -127,7 +127,7 @@ class SaveSyncConflictResolverTest {
         val syncEntity = makeSyncEntity(lastUploadedHash = "server_anchor", localContentHash = "anchor_local")
         setupConflictCheckMocks(syncEntity, contentHash = "server_anchor")
         every { mockApiClient.getCapabilities() } returns RomMCapabilities.from("4.9.0")
-        coEvery { mockCacheManager.calculateLocalSaveHash(any()) } returns "new_local"
+        coEvery { mockCacheManager.calculateLocalSaveHash(any(), any(), any()) } returns "new_local"
 
         val result = resolver.checkForConflict(1L, "retroarch", null)
 
@@ -139,7 +139,7 @@ class SaveSyncConflictResolverTest {
         val syncEntity = makeSyncEntity(lastUploadedHash = "server_anchor", localContentHash = "anchor_local")
         setupConflictCheckMocks(syncEntity, contentHash = "server_new")
         every { mockApiClient.getCapabilities() } returns RomMCapabilities.from("4.9.0")
-        coEvery { mockCacheManager.calculateLocalSaveHash(any()) } returns "new_local"
+        coEvery { mockCacheManager.calculateLocalSaveHash(any(), any(), any()) } returns "new_local"
 
         val result = resolver.checkForConflict(1L, "retroarch", null)
 
@@ -157,7 +157,7 @@ class SaveSyncConflictResolverTest {
             contentHash = "restored_hash"
         )
         every { mockApiClient.getCapabilities() } returns RomMCapabilities.from("4.9.0")
-        coEvery { mockCacheManager.calculateLocalSaveHash(any()) } returns "restored_hash"
+        coEvery { mockCacheManager.calculateLocalSaveHash(any(), any(), any()) } returns "restored_hash"
 
         val result = resolver.checkForConflict(1L, "retroarch", null)
 
@@ -173,7 +173,7 @@ class SaveSyncConflictResolverTest {
             contentHash = "restored_hash"
         )
         every { mockApiClient.getCapabilities() } returns RomMCapabilities.NONE
-        coEvery { mockCacheManager.calculateLocalSaveHash(any()) } returns "restored_hash"
+        coEvery { mockCacheManager.calculateLocalSaveHash(any(), any(), any()) } returns "restored_hash"
 
         val result = resolver.checkForConflict(1L, "retroarch", null)
 
@@ -187,7 +187,7 @@ class SaveSyncConflictResolverTest {
             syncEntity,
             deviceSyncs = listOf(RomMDeviceSync(deviceId = "device-1", isCurrent = false))
         )
-        coEvery { mockCacheManager.calculateLocalSaveHash(any()) } returns null
+        coEvery { mockCacheManager.calculateLocalSaveHash(any(), any(), any()) } returns null
 
         val result = resolver.checkForConflict(1L, "retroarch", null)
 
@@ -223,7 +223,7 @@ class SaveSyncConflictResolverTest {
         coEvery { saveSyncDao.getByGameEmulatorAndChannel(any(), any(), any(), any()) } returns makeSyncEntity(
             localSavePath = localFile.absolutePath
         )
-        coEvery { mockCacheManager.calculateLocalSaveHash(any()) } returns null
+        coEvery { mockCacheManager.calculateLocalSaveHash(any(), any(), any()) } returns null
 
         val result = resolver.checkForConflict(1L, "retroarch", "Pokemon Violet")
 
@@ -309,7 +309,7 @@ class SaveSyncConflictResolverTest {
         coEvery { emulatorResolver.getEmulatorPackageForGame(any(), any(), any()) } returns "argosy.builtin.libretro"
         coEvery { mockApiClient.resolveCoreForGame(testGame) } returns "ppsspp_libretro"
         coEvery { savePathResolver.discoverSavePath(any(), any(), any(), any(), any(), any(), any(), any()) } returns "/builtin/target.srm"
-        coEvery { mockCacheManager.calculateLocalSaveHash("/builtin/target.srm") } returns null
+        coEvery { mockCacheManager.calculateLocalSaveHash("/builtin/target.srm", any(), any()) } returns null
         coEvery { mockCacheManager.restoreSave(7L, "/builtin/target.srm") } returns true
 
         resolver.crossEmulatorMigrateIfNeeded(1L, currentEmulatorId = "argosy")
@@ -343,7 +343,7 @@ class SaveSyncConflictResolverTest {
         coEvery { emulatorResolver.getEmulatorPackageForGame(any(), any(), any()) } returns "argosy.builtin.libretro"
         coEvery { mockApiClient.resolveCoreForGame(testGame) } returns "ppsspp_libretro"
         coEvery { savePathResolver.discoverSavePath(any(), any(), any(), any(), any(), any(), any(), any()) } returns "/builtin/target.srm"
-        coEvery { mockCacheManager.calculateLocalSaveHash("/builtin/target.srm") } returns "same-hash"
+        coEvery { mockCacheManager.calculateLocalSaveHash("/builtin/target.srm", any(), any()) } returns "same-hash"
 
         resolver.crossEmulatorMigrateIfNeeded(1L, currentEmulatorId = "argosy")
 

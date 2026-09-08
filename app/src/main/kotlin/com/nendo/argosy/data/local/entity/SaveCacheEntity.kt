@@ -26,6 +26,7 @@ data class SaveCacheEntity(
     val isLocked: Boolean = false,
     val note: String? = null,
     val contentHash: String? = null,
+    val identityHash: String? = null,
     val cheatsUsed: Boolean = false,
     val isHardcore: Boolean = false,
     val slotName: String? = null,

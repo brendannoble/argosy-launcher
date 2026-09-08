@@ -344,6 +344,13 @@ class GLRetroView(
         LibretroDroid.getMemoryData(memoryType)
     }
 
+    fun setMemoryData(memoryType: Int, data: ByteArray): Boolean = runOnGLThread {
+        LibretroDroid.setMemoryData(memoryType, data)
+    }
+
+    fun getRtcData(): ByteArray? =
+        if (isDestroyed) null else getMemoryData(LibretroDroid.MEMORY_RTC)?.takeIf { it.isNotEmpty() }
+
     fun getMemorySize(memoryType: Int): Int = runOnGLThread {
         LibretroDroid.getMemorySize(memoryType)
     } ?: 0
@@ -664,6 +671,12 @@ class GLRetroView(
                 sramLoadFailed = true
             }
             data.saveRAMState = null
+        }
+        data.rtcState?.let { rtc ->
+            if (!LibretroDroid.setMemoryData(LibretroDroid.MEMORY_RTC, rtc)) {
+                Log.w(TAG_LOG, "RTC state not applied: ${rtc.size} bytes rejected by the core")
+            }
+            data.rtcState = null
         }
         LibretroDroid.onSurfaceCreated()
         isGameLoaded = true

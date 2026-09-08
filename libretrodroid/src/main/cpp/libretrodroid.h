@@ -82,6 +82,7 @@ public:
 
     std::pair<int8_t *, size_t> getMemoryData(unsigned int memoryType);
     size_t getMemorySize(unsigned int memoryType);
+    bool setMemoryData(unsigned int memoryType, const int8_t *data, size_t size);
 
     std::vector<uint8_t> captureRawFrame(int& outWidth, int& outHeight);
 

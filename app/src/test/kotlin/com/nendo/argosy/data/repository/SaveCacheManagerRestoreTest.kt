@@ -56,6 +56,8 @@ class SaveCacheManagerRestoreTest {
             fal = fal,
             saveHandlerRegistry = saveHandlerRegistry,
             saveOwnershipTracker = mockk(relaxed = true),
+            saveOwnershipDao = mockk(relaxed = true),
+            saveUnitResolver = mockk(relaxed = true),
         )
     }
 

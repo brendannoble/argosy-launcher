@@ -28,7 +28,8 @@ class TitleIdDownloadObserver @Inject constructor(
     private val gameDao: GameDao,
     private val titleIdExtractor: TitleIdExtractor,
     private val emulatorResolver: EmulatorResolver,
-    private val baseRomFileResolver: BaseRomFileResolver
+    private val baseRomFileResolver: BaseRomFileResolver,
+    private val cartFeatureScanner: CartFeatureScanner
 ) {
     private val scope = SafeCoroutineScope(Dispatchers.IO, "TitleIdDownloadObserver")
 
@@ -52,6 +53,11 @@ class TitleIdDownloadObserver @Inject constructor(
         val game = gameDao.getById(event.gameId)
         if (game == null) {
             Logger.error(TAG, "Game ${event.gameId} not found")
+            return
+        }
+
+        if (cartFeatureScanner.appliesTo(game.platformSlug)) {
+            cartFeatureScanner.scan(game.copy(localPath = event.localPath))
             return
         }
 

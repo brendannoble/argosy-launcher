@@ -28,6 +28,7 @@ class GLRetroViewData(context: Context) {
     var savesDirectory: String = context.filesDir.absolutePath
     var variables: Array<Variable> = arrayOf()
     var saveRAMState: ByteArray? = null
+    var rtcState: ByteArray? = null
     var shader: ShaderConfig = ShaderConfig.Default
     var rumbleEventsEnabled: Boolean = true
     var preferLowLatencyAudio: Boolean = true

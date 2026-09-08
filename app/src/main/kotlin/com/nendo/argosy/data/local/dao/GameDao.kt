@@ -925,6 +925,9 @@ interface GameDao {
     @Query("UPDATE games SET saveId = :saveId WHERE id = :gameId")
     suspend fun setSaveId(gameId: Long, saveId: String?)
 
+    @Query("UPDATE games SET saveFeatures = :features WHERE id = :gameId")
+    suspend fun setSaveFeatures(gameId: Long, features: Int)
+
     @Query("SELECT saveId FROM games WHERE id = :gameId")
     suspend fun getSaveId(gameId: Long): String?
 

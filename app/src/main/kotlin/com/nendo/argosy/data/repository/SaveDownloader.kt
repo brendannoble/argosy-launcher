@@ -15,10 +15,15 @@ import com.nendo.argosy.data.remote.romm.originDeviceName
 import com.nendo.argosy.data.storage.FileAccessLayer
 import com.nendo.argosy.data.sync.SaveArchiver
 import com.nendo.argosy.data.sync.SavePathResolver
+import com.nendo.argosy.data.sync.SaveUnitResolver
+import com.nendo.argosy.data.local.entity.GameEntity
+import com.nendo.argosy.data.sync.platform.ExtractResult
 import com.nendo.argosy.data.sync.platform.FolderSaveHandler
 import com.nendo.argosy.data.sync.platform.GciSaveHandler
+import com.nendo.argosy.data.sync.platform.PlatformSaveHandlerRegistry
 import com.nendo.argosy.data.sync.platform.SaveContext
 import com.nendo.argosy.data.sync.platform.SwitchSaveHandler
+import com.nendo.argosy.data.sync.platform.UnitSaveHandler
 import com.nendo.argosy.data.titledb.TitleDbRepository
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SaveDebugLogger
@@ -50,8 +55,50 @@ class SaveDownloader @Inject constructor(
     private val gciSaveHandler: GciSaveHandler,
     private val apiClient: dagger.Lazy<SaveSyncApiClient>,
     private val saveUploader: dagger.Lazy<SaveUploader>,
-    private val emulatorSaveConfigRepository: EmulatorSaveConfigRepository
+    private val emulatorSaveConfigRepository: EmulatorSaveConfigRepository,
+    private val unitSaveHandler: UnitSaveHandler,
+    private val saveUnitResolver: SaveUnitResolver
 ) {
+
+    private suspend fun unitPrimaryTarget(
+        anchorPath: String,
+        game: GameEntity,
+        emulatorId: String,
+        coreName: String?
+    ): String? {
+        if (emulatorId !in PlatformSaveHandlerRegistry.UNIT_EMULATOR_IDS) return null
+        val layout = saveUnitResolver.layoutFor(game, emulatorId, coreName)?.takeIf { it.isNotBlank() } ?: return null
+        val contentName = game.localPath?.let { File(it).name } ?: return null
+        return saveUnitResolver.expectedPrimaryPath(anchorPath, layout, game.platformSlug, contentName, game)
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    private suspend fun unitBundleResult(
+        tempFile: File,
+        targetPath: String,
+        config: SavePathConfig?,
+        game: GameEntity,
+        emulatorId: String,
+        emulatorPackage: String?,
+        coreName: String?
+    ): ExtractResult? {
+        if (config == null || coreName == null) return null
+        if (emulatorId !in PlatformSaveHandlerRegistry.UNIT_EMULATOR_IDS) return null
+        val saveContext = SaveContext(
+            config = config,
+            romPath = game.localPath,
+            saveId = game.saveId ?: game.titleId,
+            emulatorPackage = emulatorPackage,
+            gameId = game.id,
+            gameTitle = game.title,
+            platformSlug = game.platformSlug,
+            emulatorId = emulatorId,
+            localSavePath = targetPath,
+            coreName = coreName,
+            basePathOverride = overrideBaseFor(config, game.platformSlug)
+        )
+        return unitSaveHandler.extractBundle(tempFile, saveContext)
+    }
 
     /**
      * The folder the user pointed this emulator at, keyed by the platform-aware config id so a
@@ -294,7 +341,7 @@ class SaveDownloader @Inject constructor(
                             lastSyncedAt = Instant.now(),
                             syncStatus = SaveSyncEntity.STATUS_SYNCED,
                             lastUploadedHash = serverSave.contentHash?.takeIf { client.getCapabilities().trustsServerHash },
-                            localContentHash = saveCacheManager.get().calculateLocalSaveHash(preDownloadTargetPath),
+                            localContentHash = saveCacheManager.get().calculateLocalSaveHash(preDownloadTargetPath, gameId, resolvedEmulatorId),
                             lastSyncDeviceId = serverSave.originDeviceId ?: currentDeviceSync?.deviceId ?: deviceId ?: syncEntity.lastSyncDeviceId,
                             lastSyncDeviceName = serverSave.originDeviceName() ?: currentDeviceSync?.deviceName ?: syncEntity.lastSyncDeviceName
                         )
@@ -611,17 +658,28 @@ class SaveDownloader @Inject constructor(
                         }
                     }
 
-                    val bytesWithoutTrailer = saveArchiver.readBytesWithoutTrailer(tempSaveFile!!)
-                    val written = if (bytesWithoutTrailer != null) {
-                        saveArchiver.writeBytesToPath(targetPath, bytesWithoutTrailer)
+                    val bundleResult = unitBundleResult(tempSaveFile!!, targetPath, config, game, resolvedEmulatorId, emulatorPackage, preferredCore)
+                    if (bundleResult != null) {
+                        if (!bundleResult.success) {
+                            Logger.error(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Bundle placement failed | error=${bundleResult.error}")
+                            return@withContext SaveSyncResult.Error(bundleResult.error ?: "Failed to place save bundle")
+                        }
+                        targetPath = bundleResult.targetPath ?: targetPath
+                        Logger.debug(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Bundle placed | primary=$targetPath")
                     } else {
-                        saveArchiver.copyFileToPath(tempSaveFile!!, targetPath)
+                        targetPath = unitPrimaryTarget(targetPath, game, resolvedEmulatorId, preferredCore) ?: targetPath
+                        val bytesWithoutTrailer = saveArchiver.readBytesWithoutTrailer(tempSaveFile!!)
+                        val written = if (bytesWithoutTrailer != null) {
+                            saveArchiver.writeBytesToPath(targetPath, bytesWithoutTrailer)
+                        } else {
+                            saveArchiver.copyFileToPath(tempSaveFile!!, targetPath)
+                        }
+                        if (!written) {
+                            Logger.error(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Failed to write file save | path=$targetPath")
+                            return@withContext SaveSyncResult.Error("Failed to write save file")
+                        }
+                        Logger.debug(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | File save written | path=$targetPath")
                     }
-                    if (!written) {
-                        Logger.error(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Failed to write file save | path=$targetPath")
-                        return@withContext SaveSyncResult.Error("Failed to write save file")
-                    }
-                    Logger.debug(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | File save written | path=$targetPath")
                 } finally {
                     tempSaveFile?.delete()
                 }
@@ -683,7 +741,7 @@ class SaveDownloader @Inject constructor(
                     lastSyncedAt = Instant.now(),
                     syncStatus = SaveSyncEntity.STATUS_SYNCED,
                     lastUploadedHash = serverSave.contentHash?.takeIf { client.getCapabilities().trustsServerHash },
-                    localContentHash = saveCacheManager.get().calculateLocalSaveHash(targetPath),
+                    localContentHash = saveCacheManager.get().calculateLocalSaveHash(targetPath, gameId, resolvedEmulatorId),
                     lastSyncDeviceId = serverSave.originDeviceId ?: completedUploaderSync?.deviceId ?: syncEntity.lastSyncDeviceId,
                     lastSyncDeviceName = serverSave.originDeviceName() ?: completedUploaderSync?.deviceName ?: syncEntity.lastSyncDeviceName
                 )

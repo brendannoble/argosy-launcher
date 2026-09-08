@@ -28,7 +28,8 @@ data class TitleIdResult(
     val fromBinary: Boolean,
     val rawSerial: String = titleId,
     val saveId: String = titleId,
-    val usage: SaveUsage = SaveUsage.FOLDER_EXACT
+    val usage: SaveUsage = SaveUsage.FOLDER_EXACT,
+    val features: Int = 0
 ) {
     enum class SaveUsage { FOLDER_EXACT, FOLDER_PREFIX, FILE_EXACT, FILE_PREFIX, FOLDER_SPLIT }
 }
@@ -84,7 +85,8 @@ class TitleIdExtractor @Inject constructor(
                 SigilResult.Usage.FileExact    -> TitleIdResult.SaveUsage.FILE_EXACT
                 SigilResult.Usage.FilePrefix   -> TitleIdResult.SaveUsage.FILE_PREFIX
                 SigilResult.Usage.FolderSplit  -> TitleIdResult.SaveUsage.FOLDER_SPLIT
-            }
+            },
+            features = r.features
         )
     }
 }

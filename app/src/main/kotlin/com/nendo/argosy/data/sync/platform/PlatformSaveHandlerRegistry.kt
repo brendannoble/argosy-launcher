@@ -37,7 +37,8 @@ class PlatformSaveHandlerRegistry @Inject constructor(
     private val gciSaveHandler: GciSaveHandler,
     private val retroArchSaveHandler: RetroArchSaveHandler,
     private val dreamcastSaveHandler: DreamcastSaveHandler,
-    private val defaultSaveHandler: DefaultSaveHandler
+    private val defaultSaveHandler: DefaultSaveHandler,
+    private val unitSaveHandler: UnitSaveHandler
 ) {
     /**
      * Folder-bundle handlers keyed by canonical platform slug. Adding a new platform: drop a
@@ -77,10 +78,12 @@ class PlatformSaveHandlerRegistry @Inject constructor(
             if (canonical == "switch") return switchSaveHandler
             folderHandlers[canonical]?.let { return it }
         }
-        if (emulatorId in RETROARCH_EMULATOR_IDS) return retroArchSaveHandler
+        if (emulatorId in RETROARCH_EMULATOR_IDS) return unitSaveHandler
         if (canonical == "switch") return switchSaveHandler
         if (canonical == "dreamcast") return dreamcastSaveHandler
-        return folderHandlers[canonical] ?: defaultSaveHandler
+        folderHandlers[canonical]?.let { return it }
+        if (emulatorId in UNIT_EMULATOR_IDS) return unitSaveHandler
+        return defaultSaveHandler
     }
 
     /**
@@ -153,7 +156,8 @@ class PlatformSaveHandlerRegistry @Inject constructor(
 
     companion object {
         private const val TAG = "PlatformSaveHandlerRegistry"
-        private val RETROARCH_EMULATOR_IDS = setOf("retroarch", "retroarch_64", "retroarch_32")
+        val RETROARCH_EMULATOR_IDS = setOf("retroarch", "retroarch_64", "retroarch_32")
+        val UNIT_EMULATOR_IDS = RETROARCH_EMULATOR_IDS + EmulatorRegistry.BUILTIN_ID + EmulatorRegistry.LEGACY_BUILTIN_ID
     }
 }
 

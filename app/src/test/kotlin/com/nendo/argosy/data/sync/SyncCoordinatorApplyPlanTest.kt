@@ -334,7 +334,7 @@ class SyncCoordinatorApplyPlanTest {
             lastUploadedHash = "server-anchor",
             localContentHash = "client-anchor"
         )
-        coEvery { mockSaveCacheManager.calculateLocalSaveHash("/storage/saves/g.srm") } returns "live-local"
+        coEvery { mockSaveCacheManager.calculateLocalSaveHash("/storage/saves/g.srm", any(), any()) } returns "live-local"
         val captured = slot<PendingConflictEntity>()
         coEvery { pendingConflictDao.upsert(capture(captured)) } returns 1L
 

@@ -51,6 +51,7 @@ class SavePathResolverDiscoveryTest {
     private val switchSaveHandler = mockk<SwitchSaveHandler>(relaxed = true)
     private val gciSaveHandler = mockk<GciSaveHandler>(relaxed = true)
     private val saveHandlerRegistry = mockk<PlatformSaveHandlerRegistry>(relaxed = true)
+    private val saveUnitResolver = mockk<SaveUnitResolver>(relaxed = true)
     private val builtinPreferences =
         mockk<com.nendo.argosy.data.preferences.BuiltinEmulatorPreferencesRepository>(relaxed = true)
     private val platformLibretroSettingsDao =
@@ -81,6 +82,7 @@ class SavePathResolverDiscoveryTest {
         coEvery { titleDbRepository.resolveTitleIdCandidates(any(), any(), any()) } returns emptyList()
         every { titleIdExtractor.extractTitleIdWithSource(any(), any(), any()) } returns null
         every { saveHandlerRegistry.getFolderHandler(any()) } returns null
+        coEvery { saveUnitResolver.resolve(any(), any(), any(), any(), any(), any()) } returns null
 
         resolver = SavePathResolver(
             context, realFsFal(), emulatorSaveConfigDao,
@@ -91,6 +93,7 @@ class SavePathResolverDiscoveryTest {
             com.nendo.argosy.data.emulator.LibretroSavePathResolver(
                 context, platformLibretroSettingsDao, builtinPreferences
             ),
+            saveUnitResolver,
         )
     }
 

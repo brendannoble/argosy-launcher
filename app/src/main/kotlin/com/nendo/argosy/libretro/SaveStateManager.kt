@@ -25,6 +25,7 @@ class SaveStateManager(
     private val usesExternalMemcard: Boolean = false,
     private val channelName: String? = null,
     private val isVariant: Boolean = false,
+    primarySavePath: String? = null,
     private val onLiveStateWritten: ((Int, File) -> Unit)? = null,
     private val onLiveStateRemoved: ((Int, File) -> Unit)? = null
 ) {
@@ -33,12 +34,20 @@ class SaveStateManager(
         private set
 
     private val romBaseName: String = File(romPath).nameWithoutExtension
+    private val primarySaveFile: File = primarySavePath?.let { File(it) } ?: File(savesDir, "$romBaseName.srm")
+    private val coreOwnsPrimary: Boolean = primarySaveFile.name != "$romBaseName.srm"
 
     data class RestoreResult(
         val sramData: ByteArray?,
         val switchToHardcore: Boolean = false,
-        val casualSaveInHardcore: Boolean = false
+        val casualSaveInHardcore: Boolean = false,
+        val rtcData: ByteArray? = null
     )
+
+    fun getRtcFile(): File = File(savesDir, "$romBaseName.rtc")
+
+    fun withRtcFromDisk(result: RestoreResult): RestoreResult =
+        result.copy(rtcData = getRtcFile().takeIf { it.isFile && it.length() > 0 }?.readBytes())
 
     data class SlotInfo(
         val slotNumber: Int,
@@ -112,6 +121,48 @@ class SaveStateManager(
         }
     }
 
+    /**
+     * Copies a shared `scd_<region>.brm` or `<size>_cart.brm` to the per-game name Genesis Plus
+     * GX reads under per-game BRAM. Copies only, and only when the per-game file is absent.
+     */
+    fun adoptSharedSegaCdBramIfMissing() {
+        val internalTarget = File(savesDir, "$romBaseName.brm")
+        if (!internalTarget.exists()) {
+            sharedSegaCdRegionFile()?.let { source ->
+                copyAdopted(source, internalTarget)
+            }
+        }
+        val sharedCart = savesDir.listFiles()
+            ?.filter { it.isFile && SHARED_CART_BRAM.matches(it.name) }
+            ?.maxByOrNull { it.lastModified() }
+            ?: return
+        val cartTarget = File(savesDir, "${romBaseName}_${sharedCart.name}")
+        if (!cartTarget.exists()) copyAdopted(sharedCart, cartTarget)
+    }
+
+    private fun sharedSegaCdRegionFile(): File? {
+        val candidates = SEGACD_REGION_TAGS.mapNotNull { (tag, region) ->
+            File(savesDir, "scd_$region.brm").takeIf { it.isFile && it.length() > 0 }?.let { tag to it }
+        }
+        if (candidates.isEmpty()) return null
+        val name = romBaseName.lowercase()
+        return candidates.firstOrNull { (tag, _) -> tag in name }?.second
+            ?: candidates.maxByOrNull { (_, file) -> file.lastModified() }?.second
+    }
+
+    private fun copyAdopted(source: File, target: File) {
+        try {
+            source.copyTo(target, overwrite = false)
+            Log.w(
+                TAG,
+                "[SRAM] adopted shared save | ${source.absolutePath} -> ${target.absolutePath} " +
+                    "(${source.length()} bytes). Original left in place."
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "[SRAM] adopt FAILED | ${source.absolutePath} -> ${target.absolutePath}", e)
+        }
+    }
+
     private fun legacySaveCandidates(): List<File> {
         val names = buildList {
             add(romBaseName)
@@ -172,17 +223,17 @@ class SaveStateManager(
         if (isVariant) {
             return when (launchMode) {
                 LaunchMode.NEW_HARDCORE, LaunchMode.NEW_CASUAL -> {
-                    getSramFile().delete()
+                    primarySaveFile.delete()
                     deleteAllStates()
                     RestoreResult(null)
                 }
-                else -> RestoreResult(getSramFile().takeIf { it.exists() }?.readBytes())
+                else -> RestoreResult(coreBytes(primarySaveFile.takeIf { it.exists() }?.readBytes()))
             }
         }
         if (gameId < 0) {
             Log.w(TAG, "No valid gameId, using existing save")
-            val bytes = getSramFile().takeIf { it.exists() }?.readBytes()
-            return RestoreResult(bytes)
+            val bytes = primarySaveFile.takeIf { it.exists() }?.readBytes()
+            return RestoreResult(coreBytes(bytes))
         }
 
         val activeSave = if (launchMode == LaunchMode.RESUME || launchMode == LaunchMode.RESUME_HARDCORE) {
@@ -192,22 +243,22 @@ class SaveStateManager(
         }
 
         if (activeSave?.activeSaveApplied == true) {
-            val sramFile = getSramFile()
-            if (sramFile.exists()) {
-                val bytes = sramFile.readBytes()
-                Log.i(TAG, "Honoring explicit restore (activeSaveApplied): on-disk .srm ${bytes.size} bytes")
-                return RestoreResult(bytes)
+            if (primarySaveFile.exists()) {
+                val bytes = primarySaveFile.readBytes()
+                Log.i(TAG, "Honoring explicit restore (activeSaveApplied): on-disk ${primarySaveFile.name} ${bytes.size} bytes")
+                return RestoreResult(coreBytes(bytes))
             }
         }
 
         return when (launchMode) {
             LaunchMode.NEW_HARDCORE, LaunchMode.NEW_CASUAL -> {
                 Log.d(TAG, "New game mode - starting fresh (no save)")
-                val sramFile = getSramFile()
+                val sramFile = primarySaveFile
+                val members = saveCacheManager.unitMemberPaths(gameId, EmulatorRegistry.BUILTIN_ID, sramFile.absolutePath)
                 if (sramFile.exists()) {
                     val result = saveCacheManager.cacheAsRollback(
                         gameId,
-                        EmulatorRegistry.BUILTIN_PACKAGE,
+                        EmulatorRegistry.BUILTIN_ID,
                         sramFile.absolutePath
                     )
                     when (result) {
@@ -220,6 +271,10 @@ class SaveStateManager(
                     }
                     sramFile.delete()
                     Log.d(TAG, "Deleted existing save file for fresh start")
+                }
+                members.filter { it != sramFile.absolutePath }.forEach { path ->
+                    val removed = File(path).delete()
+                    Log.d(TAG, "Fresh start removed unit member | path=$path removed=$removed")
                 }
                 deleteAllStates()
                 RestoreResult(null)
@@ -234,10 +289,11 @@ class SaveStateManager(
                     }
                     val bytes = saveCacheManager.getSaveBytesFromEntity(hardcoreSave)
                     if (bytes != null) {
-                        getSramFile().writeBytes(bytes)
+                        primarySaveFile.writeBytes(bytes)
+                        materializeUnitMembers(hardcoreSave)
                         Log.d(TAG, "Restored hardcore save (${bytes.size} bytes, valid=$isValid)")
                     }
-                    RestoreResult(bytes)
+                    RestoreResult(coreBytes(bytes))
                 } else {
                     Log.d(TAG, "No hardcore save; using active save for hardcore session")
                     val fallback = restoreResumeSave(activeSave)
@@ -250,6 +306,12 @@ class SaveStateManager(
             }
             LaunchMode.RESUME -> restoreResumeSave(activeSave)
         }
+    }
+
+    private suspend fun materializeUnitMembers(entity: SaveCacheEntity) {
+        if (!saveCacheManager.isUnitCache(entity)) return
+        val ok = saveCacheManager.materializeUnit(entity, primarySaveFile.absolutePath)
+        Log.i(TAG, "[SRAM] unit members ${if (ok) "placed" else "NOT placed"} | cache=${entity.id}")
     }
 
     private suspend fun restoreResumeSave(activeSave: SaveCacheEntity?): RestoreResult {
@@ -274,22 +336,25 @@ class SaveStateManager(
             }
             val bytes = saveCacheManager.getSaveBytesFromEntity(targetSave)
             if (bytes != null) {
-                getSramFile().writeBytes(bytes)
-                Log.d(TAG, "RESUME: Restored save (${bytes.size} bytes, hardcore=${targetSave.isHardcore})")
+                primarySaveFile.writeBytes(bytes)
+                materializeUnitMembers(targetSave)
+                Log.d(TAG, "RESUME: Restored save (${bytes.size} bytes, hardcore=${targetSave.isHardcore}) -> ${primarySaveFile.name}")
             }
-            return RestoreResult(bytes, switchToHardcore)
+            return RestoreResult(coreBytes(bytes), switchToHardcore)
         } else {
-            val f = getSramFile()
+            val f = primarySaveFile
             val bytes = f.takeIf { it.exists() }?.readBytes()
             Log.i(
                 TAG,
-                "[SRAM] restore fallback | no cached saves, using on-disk .srm | " +
+                "[SRAM] restore fallback | no cached saves, using on-disk primary | " +
                     "file=${f.absolutePath} exists=${f.exists()} bytes=${bytes?.size ?: -1} " +
                     "nonZero=${bytes?.count { it != 0.toByte() } ?: -1}"
             )
-            return RestoreResult(bytes)
+            return RestoreResult(coreBytes(bytes))
         }
     }
+
+    private fun coreBytes(bytes: ByteArray?): ByteArray? = if (coreOwnsPrimary) null else bytes
 
     @Synchronized
     fun saveSram(retroView: GLRetroView) {
@@ -305,6 +370,7 @@ class SaveStateManager(
             Log.w(TAG, "[SRAM] saveSram SKIP | external memcard platform, nothing written")
             return
         }
+        saveRtc(retroView)
         try {
             val sramData = retroView.serializeSRAM()
             Log.i(TAG, "[SRAM] serializeSRAM returned ${sramData.size} bytes")
@@ -339,6 +405,22 @@ class SaveStateManager(
             )
         } catch (e: Exception) {
             Log.e(TAG, "[SRAM] saveSram FAILED | ${target.absolutePath}", e)
+        }
+    }
+
+    private var lastRtcHash: String? = null
+
+    private fun saveRtc(retroView: GLRetroView) {
+        val target = getRtcFile()
+        try {
+            val rtc = retroView.getRtcData() ?: return
+            val hash = hashBytes(rtc)
+            if (hash == lastRtcHash) return
+            target.writeBytes(rtc)
+            lastRtcHash = hash
+            Log.i(TAG, "[RTC] wrote ${rtc.size} bytes -> ${target.absolutePath}")
+        } catch (e: Exception) {
+            Log.e(TAG, "[RTC] write FAILED | ${target.absolutePath}", e)
         }
     }
 
@@ -530,6 +612,8 @@ class SaveStateManager(
     companion object {
         private const val TAG = "SaveStateManager"
         private const val LEGACY_CARD_SUFFIX = "_1.mcd"
+        private val SHARED_CART_BRAM = Regex("""^(128Kbit|256Kbit|512Kbit|1Mbit|2Mbit|4Mbit)_cart\.brm$""")
+        private val SEGACD_REGION_TAGS = listOf("(usa)" to "U", "(europe)" to "E", "(japan)" to "J")
         const val AUTO_SLOT = LibretroStateSlots.AUTO_SLOT
         const val RESUME_SLOT = LibretroStateSlots.RESUME_SLOT
         const val MAX_SLOT = LibretroStateSlots.MAX_SLOT

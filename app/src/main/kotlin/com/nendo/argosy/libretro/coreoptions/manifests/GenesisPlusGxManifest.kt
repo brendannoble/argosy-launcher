@@ -41,14 +41,16 @@ object GenesisPlusGxManifest : CoreOptionManifest {
             key = "genesis_plus_gx_system_bram",
             displayName = "CD System BRAM",
             values = listOf("per bios", "per game"),
-            defaultValue = "per bios",
+            defaultValue = "per game",
+            coreDefault = "per bios",
             description = "Selects whether CD system saves are shared per BIOS or per game"
         ),
         CoreOptionDef(
             key = "genesis_plus_gx_cart_bram",
             displayName = "CD Backup Cart BRAM",
             values = listOf("per cart", "per game"),
-            defaultValue = "per cart",
+            defaultValue = "per game",
+            coreDefault = "per cart",
             description = "Selects whether backup cart saves are shared or per game"
         ),
         CoreOptionDef(

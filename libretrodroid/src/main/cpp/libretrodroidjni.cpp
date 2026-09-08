@@ -352,6 +352,32 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
     return nullptr;
 }
 
+JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setMemoryData(
+    JNIEnv* env,
+    jclass obj,
+    jint memoryType,
+    jbyteArray bytes
+) {
+    if (bytes == nullptr) {
+        return JNI_FALSE;
+    }
+    try {
+        jboolean isCopy = JNI_FALSE;
+        jbyte* data = env->GetByteArrayElements(bytes, &isCopy);
+        jsize size = env->GetArrayLength(bytes);
+
+        bool applied = LibretroDroid::getInstance().setMemoryData(memoryType, data, size);
+
+        env->ReleaseByteArrayElements(bytes, data, JNI_ABORT);
+        return applied ? JNI_TRUE : JNI_FALSE;
+
+    } catch (std::exception &exception) {
+        LOGE("Error in setMemoryData: %s", exception.what());
+    }
+
+    return JNI_FALSE;
+}
+
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_getMemoryData(
     JNIEnv* env,
     jclass obj,

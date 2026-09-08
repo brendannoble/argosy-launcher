@@ -23,6 +23,7 @@ class PlatformSaveHandlerRegistryRoutingTest {
     private val retroArchHandler = mockk<RetroArchSaveHandler>(relaxed = true)
     private val dreamcastHandler = mockk<DreamcastSaveHandler>(relaxed = true)
     private val defaultHandler = mockk<DefaultSaveHandler>(relaxed = true)
+    private val unitHandler = mockk<UnitSaveHandler>(relaxed = true)
 
     private lateinit var registry: PlatformSaveHandlerRegistry
 
@@ -37,6 +38,7 @@ class PlatformSaveHandlerRegistryRoutingTest {
             retroArchSaveHandler = retroArchHandler,
             dreamcastSaveHandler = dreamcastHandler,
             defaultSaveHandler = defaultHandler,
+            unitSaveHandler = unitHandler,
         )
     }
 
@@ -87,11 +89,27 @@ class PlatformSaveHandlerRegistryRoutingTest {
     }
 
     @Test
-    fun `retroarch + standard core (snes) still routes to RetroArchSaveHandler`() {
+    fun `retroarch + standard core (snes) routes to the unit handler`() {
         val config = SavePathRegistry.getConfigForPlatform("retroarch_64", "snes")
         val handler = registry.getHandler(config, "snes", "retroarch_64")
 
-        assertSame(retroArchHandler, handler)
+        assertSame(unitHandler, handler)
+    }
+
+    @Test
+    fun `builtin file save routes to the unit handler`() {
+        val config = SavePathRegistry.getConfigForPlatform("argosy", "gbc")
+        val handler = registry.getHandler(config, "gbc", "argosy")
+
+        assertSame(unitHandler, handler)
+    }
+
+    @Test
+    fun `standalone file save keeps the default handler`() {
+        val config = SavePathRegistry.getConfigForPlatform("pizza_boy_gb", "gb")
+        val handler = registry.getHandler(config, "gb", "pizza_boy_gb")
+
+        assertSame(defaultHandler, handler)
     }
 
     @Test

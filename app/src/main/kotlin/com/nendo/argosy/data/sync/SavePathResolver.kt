@@ -57,7 +57,8 @@ class SavePathResolver @Inject constructor(
     private val switchSaveHandler: SwitchSaveHandler,
     private val gciSaveHandler: GciSaveHandler,
     private val saveHandlerRegistry: PlatformSaveHandlerRegistry,
-    private val libretroSavePathResolver: com.nendo.argosy.data.emulator.LibretroSavePathResolver
+    private val libretroSavePathResolver: com.nendo.argosy.data.emulator.LibretroSavePathResolver,
+    private val saveUnitResolver: SaveUnitResolver
 ) {
     suspend fun discoverSavePath(
         emulatorId: String,
@@ -165,6 +166,22 @@ class SavePathResolver @Inject constructor(
     private fun isUnreadableDir(path: String): Boolean =
         fal.exists(path) && fal.isDirectory(path) && fal.listFiles(path) == null
 
+    private suspend fun unitPrimaryIn(
+        baseDir: String,
+        layout: String?,
+        platformSlug: String,
+        romPath: String,
+        gameId: Long?
+    ): String? {
+        if (layout == null) return null
+        val game = gameId?.let { gameDao.getById(it) }
+        val resolved = saveUnitResolver.resolve(baseDir, layout, platformSlug, File(romPath).name, game, hash = false)
+            ?: return null
+        val primary = resolved.primaryPath ?: return null
+        Logger.debug(TAG, "discoverSavePath: unit primary | path=$primary, members=${resolved.members.size}, shape=${resolved.unit.shape}")
+        return primary
+    }
+
     private suspend fun discoverSavePathInternal(
         emulatorId: String,
         gameTitle: String,
@@ -191,10 +208,18 @@ class SavePathResolver @Inject constructor(
         }
 
         val saveIdNames = saveIdFileNames(config, platformSlug, romPath, cachedSaveId, emulatorPackage, gameId)
+        val unitLayout = coreName?.takeIf {
+            config.emulatorId in PlatformSaveHandlerRegistry.UNIT_EMULATOR_IDS &&
+                !config.usesFolderBasedSaves && !config.usesGciFormat && romPath != null
+        }
 
         val perGameDir = perGameSaveDir(gameId, config, platformSlug)
         if (perGameDir != null) {
             if (romPath != null) {
+                unitPrimaryIn(perGameDir, unitLayout, platformSlug, romPath, gameId)?.let {
+                    onDecision("perGame+unit", null, perGameDir)
+                    return@withContext it
+                }
                 val savePath = findSaveByRomName(perGameDir, romPath, config.saveExtensions, saveIdNames)
                 if (savePath != null) {
                     onDecision("perGame+romName", null, perGameDir)
@@ -240,6 +265,10 @@ class SavePathResolver @Inject constructor(
                 }
             }
             if (romPath != null) {
+                unitPrimaryIn(overrideBaseDir, unitLayout, platformSlug, romPath, gameId)?.let {
+                    onDecision("override+unit", selectedMemcardForLog, savePathOverrideForLog)
+                    return@withContext it
+                }
                 val savePath = findSaveByRomName(overrideBaseDir, romPath, config.saveExtensions, saveIdNames)
                 if (savePath != null) {
                     onDecision("override+romName", selectedMemcardForLog, savePathOverrideForLog)
@@ -300,6 +329,12 @@ class SavePathResolver @Inject constructor(
         Logger.debug(TAG, "discoverSavePath: searching ${paths.size} paths for '$gameTitle' (romPath=$romPath)")
 
         if (romPath != null) {
+            for (basePath in paths) {
+                unitPrimaryIn(basePath, unitLayout, platformSlug, romPath, gameId)?.let {
+                    onDecision("unit", selectedMemcardForLog, savePathOverrideForLog)
+                    return@withContext it
+                }
+            }
             for (basePath in paths) {
                 val savePath = findSaveByRomName(basePath, romPath, config.saveExtensions, saveIdNames)
                 if (savePath != null) {

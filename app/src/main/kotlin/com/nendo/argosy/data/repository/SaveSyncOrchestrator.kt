@@ -6,6 +6,7 @@ import com.nendo.argosy.data.local.dao.getByIdsChunked
 import com.nendo.argosy.data.local.dao.PendingSyncQueueDao
 import com.nendo.argosy.data.local.dao.SaveCacheDao
 import com.nendo.argosy.data.local.dao.SaveSyncDao
+import com.nendo.argosy.data.local.entity.SaveCacheEntity
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.PendingSyncQueueEntity
 import com.nendo.argosy.data.local.entity.SaveSyncEntity
@@ -276,7 +277,7 @@ class SaveSyncOrchestrator @Inject constructor(
         val dirty = if (localFile.isDirectory) {
             scan.newestMillis > anchorMillis
         } else {
-            scan.newestMillis > anchorMillis && systemDiffersFromCache(savePath, latest.contentHash)
+            scan.newestMillis > anchorMillis && systemDiffersFromCache(savePath, latest)
         }
         if (!dirty) return@withContext RefreshOutcome.Unchanged
 
@@ -309,9 +310,10 @@ class SaveSyncOrchestrator @Inject constructor(
     private suspend fun refreshedSaveId(gameId: Long): String? =
         gameDao.getById(gameId)?.let { it.saveId ?: it.titleId }
 
-    private suspend fun systemDiffersFromCache(savePath: String, cachedHash: String?): Boolean {
-        val systemHash = saveCacheManager.get().calculateLocalSaveHash(savePath) ?: return false
-        return systemHash != cachedHash
+    private suspend fun systemDiffersFromCache(savePath: String, latest: SaveCacheEntity): Boolean {
+        val systemHash = saveCacheManager.get().calculateLocalSaveHash(savePath, latest.gameId, latest.emulatorId)
+            ?: return false
+        return systemHash != latest.contentHash
     }
 
     private suspend fun cacheSystemSave(

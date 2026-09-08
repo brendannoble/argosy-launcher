@@ -163,6 +163,7 @@ public class LibretroDroid {
 
     public static native byte[] getMemoryData(int memoryType);
     public static native int getMemorySize(int memoryType);
+    public static native boolean setMemoryData(int memoryType, byte[] data);
 
     public static native void updateVariable(Variable variable);
     public static native Variable[] getVariables();

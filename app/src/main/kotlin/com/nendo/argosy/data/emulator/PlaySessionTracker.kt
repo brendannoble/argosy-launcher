@@ -576,7 +576,7 @@ class PlaySessionTracker @Inject constructor(
                                     gameId = gameId
                                 )
                             } else null
-                            val onDiskHash = onDiskPath?.let { saveCacheManager.get().calculateLocalSaveHash(it) }
+                            val onDiskHash = onDiskPath?.let { saveCacheManager.get().calculateLocalSaveHash(it, gameId, emuId) }
                             onDiskHash == null || latestCache.contentHash == null || onDiskHash != latestCache.contentHash
                         }
                     }
@@ -1146,7 +1146,8 @@ class PlaySessionTracker @Inject constructor(
                 isLocked = false,
                 isHardcore = session.isHardcore,
                 skipDuplicateCheck = false,
-                needsRemoteSync = true
+                needsRemoteSync = true,
+                coreName = session.coreName
             ).also { result ->
                 Logger.debug(TAG, "[SaveSync] QUIT gameId=${session.gameId} | Pre-quit cache result=${result::class.simpleName}")
             }
@@ -1232,7 +1233,8 @@ class PlaySessionTracker @Inject constructor(
                     channelName = activeChannel,
                     isLocked = false,
                     isHardcore = session.isHardcore,
-                    skipDuplicateCheck = false
+                    skipDuplicateCheck = false,
+                    coreName = session.coreName
                 )
                 when (cacheResult) {
                     is SaveCacheManager.CacheResult.Created -> {

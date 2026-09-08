@@ -72,7 +72,9 @@ class ReconcileEffectApplier @Inject constructor(
                 saveSyncDao.getByGameAndEmulator(gid, emu, ownerUserId)
             }
         }
-        val clientHash = existing?.localSavePath?.let { saveCacheManager.get().calculateLocalSaveHash(it) }
+        val clientHash = existing?.localSavePath?.let {
+            saveCacheManager.get().calculateLocalSaveHash(it, existing.gameId, existing.emulatorId)
+        }
         val localTime = resolveLocalTimeFromEntity(existing, fallback = null)
 
         return when (val res = conflictAutoResolver.classify(op, clientHash)) {

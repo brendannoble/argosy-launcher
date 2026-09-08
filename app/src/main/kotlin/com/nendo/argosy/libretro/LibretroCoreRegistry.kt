@@ -20,7 +20,13 @@ object LibretroCoreRegistry {
         val estimatedSizeBytes: Long = 0L,
         val requiresBios: List<String> = emptyList(),
         val isDefault: Boolean = false,
-        val netplaySupport: NetplaySupportLevel = NetplaySupportLevel.UNSUPPORTED
+        val netplaySupport: NetplaySupportLevel = NetplaySupportLevel.UNSUPPORTED,
+        /**
+         * How long the core must keep running after a battery write before that write reaches
+         * its own save file. Non-zero only for cores that flush from inside retro_run on a
+         * timer and never at unload, so pausing or quitting inside the window loses the save.
+         */
+        val saveFlushWindowMs: Long = 0L
     )
 
     private val cores = listOf(
@@ -249,7 +255,8 @@ object LibretroCoreRegistry {
             platforms = setOf("nds", "ds", "dsi"),
             estimatedSizeBytes = 4_000_000L,
             requiresBios = listOf("bios7.bin", "bios9.bin", "firmware.bin"),
-            isDefault = true
+            isDefault = true,
+            saveFlushWindowMs = 2_500L
         ),
         CoreInfo(
             coreId = "melondsds",

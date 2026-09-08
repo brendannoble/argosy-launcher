@@ -311,6 +311,24 @@ size_t LibretroDroid::getMemorySize(unsigned int memoryType) {
     return core->retro_get_memory_size(memoryType);
 }
 
+bool LibretroDroid::setMemoryData(unsigned int memoryType, const int8_t *data, size_t size) {
+    if (core == nullptr || data == nullptr) {
+        return false;
+    }
+    size_t regionSize = core->retro_get_memory_size(memoryType);
+    void *region = core->retro_get_memory_data(memoryType);
+    if (region == nullptr || regionSize == 0) {
+        LOGE("Cannot set memory %u: core exposes no such region", memoryType);
+        return false;
+    }
+    if (size != regionSize) {
+        LOGE("Cannot set memory %u: size %zu does not match region %zu", memoryType, size, regionSize);
+        return false;
+    }
+    memcpy(region, data, size);
+    return true;
+}
+
 void LibretroDroid::onSurfaceChanged(unsigned int width, unsigned int height) {
     LOGD("Performing libretrodroid onSurfaceChanged");
     if (video) video->updateScreenSize(width, height);

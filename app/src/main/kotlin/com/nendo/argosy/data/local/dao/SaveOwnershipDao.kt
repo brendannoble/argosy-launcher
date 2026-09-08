@@ -12,6 +12,9 @@ interface SaveOwnershipDao {
     @Query("SELECT * FROM save_ownership WHERE savePath = :savePath AND emulatorId = :emulatorId LIMIT 1")
     suspend fun get(savePath: String, emulatorId: String): SaveOwnershipEntity?
 
+    @Query("SELECT * FROM save_ownership WHERE savePath = :savePath ORDER BY updatedAt DESC LIMIT 1")
+    suspend fun getLatestByPath(savePath: String): SaveOwnershipEntity?
+
     @Query("SELECT * FROM save_ownership WHERE id = :id")
     suspend fun getById(id: Long): SaveOwnershipEntity?
 

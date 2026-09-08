@@ -19,6 +19,7 @@ import com.nendo.argosy.data.sync.SaveArchiver
 import com.nendo.argosy.data.sync.SavePathResolver
 import com.nendo.argosy.data.sync.platform.SaveContext
 import com.nendo.argosy.data.sync.platform.PlatformSaveHandlerRegistry
+import com.nendo.argosy.data.sync.platform.UnitSaveHandler
 import com.nendo.argosy.data.titledb.TitleDbRepository
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SaveDebugLogger
@@ -177,11 +178,11 @@ class SaveUploader @Inject constructor(
             }?.takeIf { it.isNotBlank() }
         )
 
+        val unitPaths = handler.sourcePathsFor(localPath, saveContext) + localPath
         val localModified = if (isDirectory) {
-            val unitPaths = handler.sourcePathsFor(localPath, saveContext) + localPath
             Instant.ofEpochMilli(unitPaths.maxOf { savePathResolver.findNewestFileTime(it) })
         } else {
-            Instant.ofEpochMilli(fal.lastModified(localPath))
+            Instant.ofEpochMilli(unitPaths.maxOf { fal.lastModified(it) })
         }
         Logger.debug(TAG, "[SaveSync] UPLOAD gameId=$gameId | Local modified time | localModified=$localModified")
 
@@ -233,8 +234,13 @@ class SaveUploader @Inject constructor(
                 )
             }
 
-            if (syncEntity?.localContentHash == contentHash) {
-                Logger.debug(TAG, "[SaveSync] UPLOAD gameId=$gameId | Skipped - content unchanged (hash=$contentHash)")
+            val identityMappedHash = if (handler is UnitSaveHandler && syncEntity?.localContentHash != null) {
+                saveCacheManager.get().calculateLocalSaveHash(localPath, gameId, resolvedEmulatorId)
+            } else null
+            val unchangedByIdentity = identityMappedHash != null && identityMappedHash == syncEntity?.localContentHash
+
+            if (syncEntity?.localContentHash == contentHash || unchangedByIdentity) {
+                Logger.debug(TAG, "[SaveSync] UPLOAD gameId=$gameId | Skipped - content unchanged (hash=$contentHash, byIdentity=$unchangedByIdentity)")
                 if (prepared.isTemporary) fileToUpload.delete()
                 tempTrailerFile?.delete()
                 syncEntity.rommSaveId?.let { knownId ->
@@ -250,7 +256,7 @@ class SaveUploader @Inject constructor(
                     syncEntity.copy(
                         localUpdatedAt = localMtime ?: syncEntity.localUpdatedAt,
                         lastSyncedAt = Instant.now(),
-                        localContentHash = contentHash
+                        localContentHash = if (unchangedByIdentity) syncEntity.localContentHash else contentHash
                     )
                 )
                 return@withContext SaveSyncResult.Success(noOp = true)
@@ -260,8 +266,10 @@ class SaveUploader @Inject constructor(
             val romBaseName = romFile?.nameWithoutExtension
             val latestSlotName = romBaseName ?: SaveSyncApiClient.DEFAULT_SAVE_NAME
 
+            val isUnitBundle = prepared.isTemporary && !isDirectory && !isGciBundle &&
+                saveArchiver.isZipArchive(fileToUpload)
             val uploadFileName = SaveSyncApiClient.computeUploadFileName(
-                localSavePath = localPath,
+                localSavePath = if (isUnitBundle) null else localPath,
                 channelName = channelName,
                 romBaseName = romBaseName
             )
@@ -296,8 +304,10 @@ class SaveUploader @Inject constructor(
             val needsGciMigration = isGciBundle && existingServerSave != null &&
                 !existingServerSave.fileName.endsWith(".gci.zip", ignoreCase = true) &&
                 existingServerSave.fileName.endsWith(".gci", ignoreCase = true)
+            val needsUnitMigration = isUnitBundle && existingServerSave != null &&
+                !existingServerSave.fileName.endsWith(".zip", ignoreCase = true)
 
-            if (needsGciMigration) {
+            if (needsGciMigration || needsUnitMigration) {
                 Logger.debug(TAG, "[SaveSync] UPLOAD gameId=$gameId | GCI migration: deleting old single-file save | saveId=${existingServerSave!!.id}, fileName=${existingServerSave.fileName}")
                 try {
                     val deleteResponse = api.deleteSaves(RomMDeleteSavesRequest(listOf(existingServerSave.id)))

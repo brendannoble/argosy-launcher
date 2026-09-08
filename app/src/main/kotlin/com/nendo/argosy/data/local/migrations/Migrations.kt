@@ -3571,3 +3571,15 @@ object Migration_184_185 : Migration(184, 185) {
         db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `frameZoom` REAL")
     }
 }
+
+object Migration_185_186 : Migration(185, 186) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `games` ADD COLUMN `saveFeatures` INTEGER")
+    }
+}
+
+object Migration_186_187 : Migration(186, 187) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `save_cache` ADD COLUMN `identityHash` TEXT")
+    }
+}

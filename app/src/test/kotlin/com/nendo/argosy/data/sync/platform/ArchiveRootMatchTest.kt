@@ -41,6 +41,7 @@ class ArchiveRootMatchTest {
             gciSaveHandler = mockk(relaxed = true),
             retroArchSaveHandler = mockk(relaxed = true),
             defaultSaveHandler = mockk(relaxed = true),
+            unitSaveHandler = mockk(relaxed = true),
             dreamcastSaveHandler = mockk(relaxed = true),
         )
         handler = registry.getFolderHandler("ps2") as? FolderSaveHandler

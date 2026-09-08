@@ -876,6 +876,64 @@ class SaveArchiver @Inject constructor(
 
     fun writeBytesToPath(path: String, data: ByteArray): Boolean = fal.writeBytes(path, data)
 
+    fun isZipArchive(file: File): Boolean = file.isFile && isZipFile(file)
+
+    fun readEntryBytes(zipFile: File, entryName: String): ByteArray? = try {
+        ZipFile.builder().setFile(zipFile).get().use { zf ->
+            zf.getEntry(entryName)?.let { entry -> zf.getInputStream(entry).use { it.readBytes() } }
+        }
+    } catch (e: Exception) {
+        Logger.warn(TAG, "[SaveSync] ARCHIVE | Cannot read entry | zip=${zipFile.name}, entry=$entryName, ${e.message}")
+        null
+    }
+
+    fun listFileEntries(zipFile: File): List<String> = try {
+        ZipArchiveInputStream(BufferedInputStream(FileInputStream(zipFile))).use { zis ->
+            val names = mutableListOf<String>()
+            var entry = zis.nextEntry
+            while (entry != null) {
+                if (!entry.isDirectory) names.add(entry.name)
+                entry = zis.nextEntry
+            }
+            names
+        }
+    } catch (e: Exception) {
+        Logger.warn(TAG, "[SaveSync] ARCHIVE | Cannot list entries | zip=${zipFile.name}, ${e.message}")
+        emptyList()
+    }
+
+    /**
+     * Writes each named entry of a flat bundle to the absolute path it maps to. Refuses the
+     * whole archive when it holds a file entry with no destination, so a bundle from an
+     * unknown layout never half-lands.
+     */
+    fun unzipEntriesTo(sourceZip: File, destinations: Map<String, String>): Boolean {
+        val entries = listFileEntries(sourceZip)
+        val unplaceable = entries.toSet() - destinations.keys
+        if (unplaceable.isNotEmpty()) {
+            Logger.error(TAG, "[SaveSync] ARCHIVE | Bundle holds entries with no destination; refusing to extract | entries=$unplaceable")
+            return false
+        }
+        return try {
+            ZipFile.builder().setFile(sourceZip).get().use { zf ->
+                for (entry in zf.entries.toList()) {
+                    if (entry.isDirectory) continue
+                    val target = destinations[entry.name] ?: continue
+                    target.substringBeforeLast('/', "").takeIf { it.isNotEmpty() }?.let { fal.mkdirs(it) }
+                    val bytes = zf.getInputStream(entry).use { it.readBytes() }
+                    if (!fal.writeBytes(target, bytes)) {
+                        Logger.error(TAG, "[SaveSync] ARCHIVE | Failed to write bundle entry | entry=${entry.name}, target=$target")
+                        return false
+                    }
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Logger.error(TAG, "[SaveSync] ARCHIVE | unzipEntriesTo failed | ${e.message}")
+            false
+        }
+    }
+
     fun copyFileToPath(source: File, targetPath: String): Boolean = fal.copyFile(source.absolutePath, targetPath)
 
     fun calculateFileHashAtPath(path: String): String {

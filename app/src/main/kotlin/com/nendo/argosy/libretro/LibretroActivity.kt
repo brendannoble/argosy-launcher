@@ -190,6 +190,7 @@ class LibretroActivity : ComponentActivity() {
     @Inject lateinit var verifyRAGameIdUseCase: com.nendo.argosy.domain.usecase.achievement.VerifyRAGameIdUseCase
     @Inject lateinit var achievementUpdateBus: AchievementUpdateBus
     @Inject lateinit var saveCacheManager: SaveCacheManager
+    @Inject lateinit var saveUnitResolver: com.nendo.argosy.data.sync.SaveUnitResolver
     @Inject lateinit var activeSaveRepository: com.nendo.argosy.data.repository.ActiveSaveRepository
     @Inject lateinit var ambientLedManager: AmbientLedManager
     @Inject lateinit var socialRepository: SocialRepository
@@ -267,6 +268,7 @@ class LibretroActivity : ComponentActivity() {
     private var activeMenuHandler: InputHandler? = null
 
     private var restoredSram: ByteArray? = null
+    private var restoredRtc: ByteArray? = null
     private var casualSaveInHardcore: Boolean = false
     private var hardcoreMode by mutableStateOf(false)
     private var hardcoreConfirmed by mutableStateOf(false)
@@ -683,6 +685,13 @@ class LibretroActivity : ComponentActivity() {
     }
 
     private fun initializeSaveState(savesDir: File, statesDir: File, channelName: String? = null) {
+        val sramPath = File(savesDir, "${File(romPath).nameWithoutExtension}.srm").absolutePath
+        val primarySavePath = coreName?.let { layout ->
+            kotlinx.coroutines.runBlocking {
+                val game = gameDao.getById(gameId)
+                saveUnitResolver.expectedPrimaryPath(sramPath, layout, platformSlug, File(romPath).name, game)
+            }
+        } ?: sramPath
         saveStateManager = SaveStateManager(
             savesDir = savesDir,
             statesDir = statesDir,
@@ -693,14 +702,17 @@ class LibretroActivity : ComponentActivity() {
             usesExternalMemcard = com.nendo.argosy.data.platform.PlatformDefinitions.getCanonicalSlug(platformSlug) == "gc",
             channelName = channelName,
             isVariant = variantFileId >= 0,
+            primarySavePath = primarySavePath,
             onLiveStateWritten = { slot, file -> recordStateOwnership(slot, file, channelName) },
             onLiveStateRemoved = { _, file -> clearStateOwnership(file) }
         )
         saveStateManager.adoptLegacySaveIfMissing()
+        if (coreName == "genesis_plus_gx" && isSegaCd()) saveStateManager.adoptSharedSegaCdBramIfMissing()
         val restoreResult = kotlinx.coroutines.runBlocking {
-            saveStateManager.restoreSaveForLaunchMode(launchMode)
+            saveStateManager.withRtcFromDisk(saveStateManager.restoreSaveForLaunchMode(launchMode))
         }
         restoredSram = restoreResult.sramData
+        restoredRtc = restoreResult.rtcData
         casualSaveInHardcore = restoreResult.casualSaveInHardcore
         if (restoreResult.switchToHardcore && secureSavesEnabled) {
             hardcoreMode = true
@@ -803,6 +815,9 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
+    private fun isSegaCd(): Boolean =
+        com.nendo.argosy.data.platform.PlatformDefinitions.getCanonicalSlug(platformSlug) == "scd"
+
     @Suppress("DEPRECATION")
     private fun onSecondaryDisplay(): Boolean =
         windowManager.defaultDisplay.displayId != android.view.Display.DEFAULT_DISPLAY
@@ -830,6 +845,7 @@ class LibretroActivity : ComponentActivity() {
                 systemDirectory = systemDir.absolutePath
                 savesDirectory = savesDir.absolutePath
                 saveRAMState = existingSram
+                rtcState = restoredRtc
                 shader = effectiveShader
                 skipDuplicateFrames = if (coreName == "dolphin") false else settings.skipDuplicateFrames
                 preferLowLatencyAudio = settings.lowLatencyAudio
@@ -2288,15 +2304,19 @@ class LibretroActivity : ComponentActivity() {
                 hideMenu()
             }
             InGameMenuAction.Quit -> {
-                menuVisible = false
                 isClosing = true
+                deferredMenuPause?.cancel()
                 lifecycleScope.launch {
                     try {
                         withContext(kotlinx.coroutines.Dispatchers.IO + kotlinx.coroutines.NonCancellable) {
+                            awaitSaveFlushWindow()
+                            withContext(kotlinx.coroutines.Dispatchers.Main) { menuVisible = false }
                             performAutoSaveState()
                             if (!isGuestJoinedSession) {
                                 saveStateManager.saveSram(retroView)
                             }
+                            coreDestroyed = true
+                            retroView.destroyNative()
                             try {
                                 playSessionTracker.cacheCurrentSessionForQuit()
                             } catch (e: Exception) {
@@ -2307,8 +2327,6 @@ class LibretroActivity : ComponentActivity() {
                             } catch (e: Exception) {
                                 Log.w(TAG, "Pre-quit state cache failed", e)
                             }
-                            coreDestroyed = true
-                            retroView.destroyNative()
                         }
                     } finally {
                         finish()
@@ -2756,10 +2774,40 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
+    private val saveFlushWindowMs: Long
+        get() = coreName?.let { LibretroCoreRegistry.getCoreById(it)?.saveFlushWindowMs } ?: 0L
+
+    private var menuOpenedAtMs = 0L
+    private var deferredMenuPause: kotlinx.coroutines.Job? = null
+
+    private fun pauseForMenu() {
+        retroView.suppressAutoResume = true
+        val window = saveFlushWindowMs
+        if (window <= 0L) {
+            retroView.pauseEmulation()
+            return
+        }
+        deferredMenuPause?.cancel()
+        deferredMenuPause = lifecycleScope.launch {
+            kotlinx.coroutines.delay(window)
+            if (menuVisible && !isClosing && !coreDestroyed) retroView.pauseEmulation()
+        }
+    }
+
+    private suspend fun awaitSaveFlushWindow() {
+        val window = saveFlushWindowMs
+        if (window <= 0L) return
+        val remaining = window - (System.currentTimeMillis() - menuOpenedAtMs)
+        if (remaining > 0) {
+            Log.i(TAG, "[SRAM] holding quit ${remaining}ms so the core can flush its own save file")
+            kotlinx.coroutines.delay(remaining)
+        }
+    }
+
     private fun showMenu() {
         if (!netplay.inSession) {
-            retroView.pauseEmulation()
-            retroView.suppressAutoResume = true
+            menuOpenedAtMs = System.currentTimeMillis()
+            pauseForMenu()
         }
         pendingSaveScreenshot?.recycle()
         pendingSaveScreenshot = try { retroView.captureRawFrame() } catch (_: Exception) { null }
@@ -2775,6 +2823,8 @@ class LibretroActivity : ComponentActivity() {
         menuQuickHistoryFocused = false
         pendingSaveScreenshot?.recycle()
         pendingSaveScreenshot = null
+        deferredMenuPause?.cancel()
+        deferredMenuPause = null
         if (!netplay.inSession) {
             retroView.suppressAutoResume = false
             retroView.resumeEmulation()

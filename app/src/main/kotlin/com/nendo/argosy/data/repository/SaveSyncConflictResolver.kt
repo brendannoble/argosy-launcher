@@ -282,7 +282,7 @@ class SaveSyncConflictResolver @Inject constructor(
             )
         }
 
-        val localHash = saveCacheManager.get().calculateLocalSaveHash(localPath)
+        val localHash = saveCacheManager.get().calculateLocalSaveHash(localPath, gameId, emulatorId)
         val localMatchesAnchor = syncEntity?.localContentHash != null
             && localHash != null
             && localHash == syncEntity.localContentHash
@@ -356,7 +356,7 @@ class SaveSyncConflictResolver @Inject constructor(
             return@withContext
         }
 
-        val existingHash = saveCacheManager.get().calculateLocalSaveHash(targetPath)
+        val existingHash = saveCacheManager.get().calculateLocalSaveHash(targetPath, gameId, currentEmulatorId)
         if (existingHash != null && existingHash == latestCache.contentHash) return@withContext
         if (existingHash != null) {
             val existingMtime = savePathResolver.findNewestFileTime(targetPath).takeIf { it > 0 }

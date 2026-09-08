@@ -55,6 +55,32 @@ interface SaveCacheDao {
         hash: String
     ): List<SaveCacheEntity>
 
+    @Query("""
+        SELECT * FROM save_cache
+        WHERE gameId = :gameId
+          AND ((channelName IS NULL AND :channelName IS NULL) OR channelName = :channelName)
+          AND identityHash = :identityHash
+          AND (ownerUserId IS NULL OR ownerUserId = :ownerUserId)
+        ORDER BY cachedAt DESC
+        LIMIT 1
+    """)
+    suspend fun getLatestByGameChannelAndIdentity(
+        gameId: Long,
+        ownerUserId: Long?,
+        channelName: String?,
+        identityHash: String
+    ): SaveCacheEntity?
+
+    @Query("""
+        SELECT * FROM save_cache
+        WHERE gameId = :gameId
+          AND identityHash = :identityHash
+          AND (ownerUserId IS NULL OR ownerUserId = :ownerUserId)
+        ORDER BY cachedAt DESC
+        LIMIT 1
+    """)
+    suspend fun getLatestByGameAndIdentity(gameId: Long, ownerUserId: Long?, identityHash: String): SaveCacheEntity?
+
     @Query("SELECT * FROM save_cache WHERE gameId = :gameId AND slotName = :slotName LIMIT 1")
     suspend fun getByGameAndSlot(gameId: Long, slotName: String): SaveCacheEntity?
 
