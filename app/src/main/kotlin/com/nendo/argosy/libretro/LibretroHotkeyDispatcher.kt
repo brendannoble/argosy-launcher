@@ -86,6 +86,8 @@ class LibretroHotkeyDispatcher(
     fun isPotentialComboKey(keyCode: Int, controllerId: String?): Boolean =
         hotkeyManager.isPotentialComboKey(keyCode, controllerId)
 
+    fun isComboInFlight(keyCode: Int): Boolean = hotkeyManager.isComboInFlight(keyCode)
+
     fun isMenuToggleKey(keyCode: Int, controllerId: String?): Boolean =
         hotkeyManager.isMenuToggleKey(keyCode, controllerId)
 

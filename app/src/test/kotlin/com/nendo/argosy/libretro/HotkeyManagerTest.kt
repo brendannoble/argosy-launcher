@@ -100,4 +100,39 @@ class HotkeyManagerTest {
         manager.setPlatformMappedButtons(mapOf("pad" to setOf(KeyEvent.KEYCODE_BUTTON_MODE)))
         assertFalse(manager.isMenuToggleKey(KeyEvent.KEYCODE_BUTTON_MODE, "pad"))
     }
+
+    @Test
+    fun `a combo is in flight only while another of its members is down`() {
+        val start = KeyEvent.KEYCODE_BUTTON_START
+        val select = KeyEvent.KEYCODE_BUTTON_SELECT
+        val manager = HotkeyManager(mockk<InputConfigRepository>(relaxed = true)).apply {
+            setHotkeys(
+                listOf(
+                    HotkeyEntity(
+                        action = HotkeyAction.IN_GAME_MENU,
+                        buttonComboJson = "[$start,$select]"
+                    ),
+                    HotkeyEntity(
+                        action = HotkeyAction.QUICK_SUSPEND,
+                        buttonComboJson = "[$start,$select]",
+                        holdMs = 1000
+                    )
+                )
+            )
+        }
+
+        assertFalse(manager.isComboInFlight(start))
+        assertNull(manager.onKeyDown(start, "pad"))
+        assertFalse(manager.isComboInFlight(start))
+        assertTrue(manager.isComboInFlight(select))
+
+        assertNull(manager.onKeyDown(select, "pad"))
+        assertTrue(manager.isComboInFlight(start))
+        assertTrue(manager.isComboInFlight(select))
+
+        manager.onKeyUp(select)
+        manager.onKeyUp(start)
+        assertFalse(manager.isComboInFlight(start))
+        assertFalse(manager.isComboInFlight(select))
+    }
 }

@@ -149,6 +149,20 @@ class HotkeyManager(
     }
 
     /**
+     * True while another member of a combo containing this key is down, so the combo may still
+     * complete and the key has to stay held back past the usual window.
+     */
+    fun isComboInFlight(keyCode: Int): Boolean {
+        if (keyCode in pendingComboKeyCodes) return true
+        return hotkeys.any { hotkey ->
+            hotkey.isEnabled &&
+                hotkey.keyCodes.size > 1 &&
+                keyCode in hotkey.keyCodes &&
+                hotkey.keyCodes.any { it != keyCode && it in pressedKeys }
+        }
+    }
+
+    /**
      * True when this key on its own is bound to the in-game menu. The menu consumes its own
      * hotkey while open, so a second press closes it instead of reaching the system, where an
      * unhandled guide button can act as Home.

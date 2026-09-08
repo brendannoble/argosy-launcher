@@ -39,6 +39,7 @@ class ControllerPortResolver : PortResolver {
     fun claimedPortFor0(): String? = claimedPorts.entries.firstOrNull { it.value == 0 }?.key
 
     override fun getPort(device: InputDevice): Int {
+        if (device.id == android.view.KeyCharacterMap.VIRTUAL_KEYBOARD) return 0
         val controllerId = getControllerId(device)
         controllerOrder[controllerId]?.let { return it }
         claimedPorts[controllerId]?.let { return it }

@@ -345,8 +345,20 @@ class LibretroActivity : ComponentActivity() {
     private var speedrunStartOnReset = true
     private var speedrunPanelSidePref = "Right"
     private val hotkeyConsumedKeys = mutableSetOf<Int>()
-    private val deferredCoreKeys = mutableSetOf<Int>()
-    private val coreHeldKeys = mutableSetOf<Int>()
+    private val coreHeldKeys = mutableMapOf<Int, KeyEvent>()
+    private val deferredCoreKeys = DeferredCoreKeys<KeyEvent>(
+        scope = lifecycleScope,
+        comboInFlight = { keyCode -> hotkeyDispatcher.isComboInFlight(keyCode) },
+        forwardDown = { keyCode, down ->
+            if (!shouldFilterShoulderButton(keyCode, down.device) && retroView.onKeyDown(keyCode, down)) {
+                coreHeldKeys[keyCode] = down
+            }
+        },
+        forwardUp = { keyCode, up ->
+            coreHeldKeys.remove(keyCode)
+            if (!shouldFilterShoulderButton(keyCode, up.device)) retroView.onKeyUp(keyCode, up)
+        },
+    )
     private var speedrunPickerVisible by mutableStateOf(false)
     private var speedrunPickerFocusIndex by mutableStateOf(0)
     private var speedrunPickerCategories by mutableStateOf<List<com.nendo.argosy.data.local.entity.SpeedrunCategoryEntity>>(emptyList())
@@ -2891,15 +2903,14 @@ class LibretroActivity : ComponentActivity() {
         if (action == KeyEvent.ACTION_DOWN) {
             if (hotkeyDispatcher.onKeyDown(keyCode, null)) return
             if (hotkeyDispatcher.isPotentialComboKey(keyCode, null)) {
-                deferredCoreKeys.add(keyCode)
+                deferredCoreKeys.hold(keyCode, event)
                 return
             }
-            retroView.onKeyDown(keyCode, event)
+            if (retroView.onKeyDown(keyCode, event)) coreHeldKeys[keyCode] = event
         } else {
             hotkeyDispatcher.onKeyUp(keyCode)
-            if (deferredCoreKeys.remove(keyCode)) {
-                retroView.onKeyDown(keyCode, KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-            }
+            if (deferredCoreKeys.release(keyCode, event)) return
+            coreHeldKeys.remove(keyCode)
             retroView.onKeyUp(keyCode, event)
         }
     }
@@ -2908,7 +2919,7 @@ class LibretroActivity : ComponentActivity() {
         if (isAnyMenuOpen) return super.onKeyDown(keyCode, event)
 
         if (event.repeatCount > 0 && keyCode in hotkeyConsumedKeys) return true
-        if (event.repeatCount > 0 && keyCode in deferredCoreKeys) return true
+        if (event.repeatCount > 0 && deferredCoreKeys.isHolding(keyCode)) return true
         if (event.repeatCount == 0) {
             val controllerId = event.device?.let { getControllerId(it) }
             if (hotkeyDispatcher.onKeyDown(keyCode, controllerId)) {
@@ -2916,7 +2927,7 @@ class LibretroActivity : ComponentActivity() {
                 return true
             }
             if (hotkeyDispatcher.isPotentialComboKey(keyCode, controllerId)) {
-                deferredCoreKeys.add(keyCode)
+                deferredCoreKeys.hold(keyCode, event)
                 return true
             }
         }
@@ -2925,7 +2936,7 @@ class LibretroActivity : ComponentActivity() {
 
         val handled = retroView.onKeyDown(keyCode, event)
         if (handled) {
-            coreHeldKeys.add(keyCode)
+            coreHeldKeys[keyCode] = event
             return true
         }
 
@@ -2941,13 +2952,7 @@ class LibretroActivity : ComponentActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         if (isAnyMenuOpen) return super.onKeyUp(keyCode, event)
 
-        if (deferredCoreKeys.remove(keyCode)) {
-            if (!shouldFilterShoulderButton(keyCode, event.device)) {
-                retroView.onKeyDown(keyCode, KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-                retroView.onKeyUp(keyCode, event)
-            }
-            return true
-        }
+        if (deferredCoreKeys.release(keyCode, event)) return true
 
         if (shouldFilterShoulderButton(keyCode, event.device)) return true
 
@@ -3372,12 +3377,6 @@ class LibretroActivity : ComponentActivity() {
     }
 
     /**
-     * A console without shoulders should not receive a stray trigger press, but the decision has to
-     * follow where the user's mapping sends the key rather than the key itself: a shoulder bound to
-     * a face button is a binding the console can honour, and dropping it by keycode would void an
-     * explicit remap.
-     */
-    /**
      * Releases every key the core is still holding. Key ups stop reaching the core the moment a
      * menu opens, so a button held across that boundary stays down for the rest of the session.
      */
@@ -3385,13 +3384,19 @@ class LibretroActivity : ComponentActivity() {
         if (::hotkeyDispatcher.isInitialized) hotkeyDispatcher.releaseHeldInput()
         deferredCoreKeys.clear()
         if (coreHeldKeys.isEmpty()) return
-        val held = coreHeldKeys.toList()
+        val held = coreHeldKeys.toMap()
         coreHeldKeys.clear()
-        held.forEach { keyCode ->
-            retroView.onKeyUp(keyCode, KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        held.forEach { (keyCode, down) ->
+            retroView.onKeyUp(keyCode, KeyEvent.changeAction(down, KeyEvent.ACTION_UP))
         }
     }
 
+    /**
+     * A console without shoulders should not receive a stray trigger press, but the decision has to
+     * follow where the user's mapping sends the key rather than the key itself: a shoulder bound to
+     * a face button is a binding the console can honour, and dropping it by keycode would void an
+     * explicit remap.
+     */
     private fun shouldFilterShoulderButton(keyCode: Int, device: InputDevice?): Boolean {
         val isShoulder = keyCode == KeyEvent.KEYCODE_BUTTON_L1 || keyCode == KeyEvent.KEYCODE_BUTTON_R1 ||
             keyCode == KeyEvent.KEYCODE_BUTTON_L2 || keyCode == KeyEvent.KEYCODE_BUTTON_R2
