@@ -1141,6 +1141,7 @@ class DownloadManager @Inject constructor(
                                 var lastDbUpdateTime = System.currentTimeMillis()
                                 var lastBytesForSpeed: Long = startOffset
                                 var currentSpeed: Long = 0
+                                var loggedDecile = -1
 
                                 var pauseLogCountdown = 0
                                 while (true) {
@@ -1185,6 +1186,19 @@ class DownloadManager @Inject constructor(
                                         )
                                         lastUpdateTime = now
                                         lastBytesForSpeed = bytesRead
+
+                                        val decile = if (totalSize > 0) {
+                                            ((bytesRead * 10) / totalSize).toInt()
+                                        } else -1
+                                        if (decile > loggedDecile) {
+                                            loggedDecile = decile
+                                            Logger.info(
+                                                TAG,
+                                                "Download progress | game=${progress.gameTitle} " +
+                                                    "${decile * 10}% ($bytesRead/$totalSize bytes) " +
+                                                    "at ${currentSpeed / 1024} KB/s"
+                                            )
+                                        }
                                     }
 
                                     if (now - lastDbUpdateTime > DB_UPDATE_INTERVAL_MS) {
