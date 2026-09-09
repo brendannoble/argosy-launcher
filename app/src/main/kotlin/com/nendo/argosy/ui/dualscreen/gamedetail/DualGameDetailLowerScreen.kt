@@ -68,8 +68,7 @@ import androidx.compose.ui.draw.clip
 import com.nendo.argosy.ui.components.CustomTileMenuModal
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.primitives.ArgosyConfirmModal
-import com.nendo.argosy.ui.primitives.ActionButton
-import com.nendo.argosy.ui.primitives.InputGlyph
+import com.nendo.argosy.ui.components.FooterBar
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import com.nendo.argosy.ui.primitives.ArgosyProgressBar
@@ -369,23 +368,6 @@ private fun SavesTabContent(
             if (isSyncing) {
                 ArgosyProgressBar(progress = null, style = ProgressBarStyle.Working)
             }
-            if (canManageSaveChannel) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(Dimens.spacingSm),
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
-                ) {
-                    ActionButton(onClick = onRenameSaveChannel) {
-                        InputGlyph(InputButton.X)
-                        Spacer(Modifier.width(Dimens.spacingSm))
-                        Text(stringResource(R.string.ui_save_channel_footer_rename), color = theme.textPrimary)
-                    }
-                    ActionButton(onClick = onDeleteSaveChannel) {
-                        InputGlyph(InputButton.Y)
-                        Spacer(Modifier.width(Dimens.spacingSm))
-                        Text(stringResource(R.string.ui_save_channel_footer_delete_slot), color = theme.textPrimary)
-                    }
-                }
-            }
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -413,6 +395,21 @@ private fun SavesTabContent(
                     modifier = Modifier
                         .weight(0.6f)
                         .fillMaxHeight()
+                )
+            }
+            if (canManageSaveChannel) {
+                FooterBar(
+                    hints = listOf(
+                        InputButton.X to stringResource(R.string.ui_save_channel_footer_rename),
+                        InputButton.Y to stringResource(R.string.ui_save_channel_footer_delete_slot)
+                    ),
+                    onHintClick = { button ->
+                        when (button) {
+                            InputButton.X -> onRenameSaveChannel()
+                            InputButton.Y -> onDeleteSaveChannel()
+                            else -> Unit
+                        }
+                    }
                 )
             }
         }

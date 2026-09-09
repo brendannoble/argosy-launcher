@@ -1234,9 +1234,13 @@ class DualScreenManager(
 
     var onOverlayFocusChanged: ((Boolean) -> Unit)? = null
     var isOverlayFocused = false
+        get() {
+            val modal = _dualGameDetailState.value?.modalType
+            return field || (!isRolesSwapped.value && modal != null && modal != ActiveModal.NONE)
+        }
         set(value) {
             field = value
-            onOverlayFocusChanged?.invoke(value)
+            onOverlayFocusChanged?.invoke(isOverlayFocused)
         }
     var swappedDualHomeViewModel: DualHomeViewModel? = null
         private set
