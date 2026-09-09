@@ -101,6 +101,7 @@ class ServerSettingsDelegate @Inject constructor(
         _state.update {
             it.copy(
                 rommConfiguring = true,
+                rommUrlSaved = false,
                 rommAuthMethod = defaultAuthMethod(),
                 rommConfigUrl = it.rommUrl,
                 rommConfigPairingCode = "",
@@ -129,6 +130,7 @@ class ServerSettingsDelegate @Inject constructor(
         _state.update {
             it.copy(
                 rommConfiguring = false,
+                rommUrlSaved = false,
                 rommConfigUrl = it.rommUrl,
                 rommConfigPairingCode = "",
                 rommConfigError = null,
@@ -142,18 +144,23 @@ class ServerSettingsDelegate @Inject constructor(
     }
 
     fun setRommConfigUrl(url: String) {
-        _state.update { it.copy(rommConfigUrl = url, rommConfigError = null) }
+        _state.update { it.copy(rommConfigUrl = url, rommConfigError = null, rommUrlSaved = false) }
     }
 
     fun saveRommUrl(scope: CoroutineScope) {
         val state = _state.value
         if (state.rommConnecting || state.rommConfigUrl.isBlank()) return
-        _state.update { it.copy(rommConnecting = true, rommConfigError = null) }
+        _state.update { it.copy(rommConnecting = true, rommConfigError = null, rommUrlSaved = false) }
         scope.launch {
             try {
                 when (val result = romMRepository.updateServerUrl(state.rommConfigUrl)) {
                     is RomMResult.Success -> _state.update {
-                        it.copy(rommUrl = result.data, rommConfigUrl = result.data, connectionStatus = ConnectionStatus.ONLINE)
+                        it.copy(
+                            rommUrl = result.data,
+                            rommConfigUrl = result.data,
+                            rommUrlSaved = true,
+                            connectionStatus = ConnectionStatus.ONLINE
+                        )
                     }
                     is RomMResult.Error -> _state.update {
                         it.copy(rommConfigError = when {

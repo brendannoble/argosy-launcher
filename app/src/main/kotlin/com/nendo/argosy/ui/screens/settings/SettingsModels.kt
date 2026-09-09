@@ -890,6 +890,7 @@ data class ServerState(
     val rommHasCamera: Boolean = false,
     val rommConnecting: Boolean = false,
     val rommConfigError: String? = null,
+    val rommUrlSaved: Boolean = false,
     val rommFocusField: Int? = null,
     val rommDevicePairing: Boolean = false,
     val rommDeviceUserCode: String? = null,

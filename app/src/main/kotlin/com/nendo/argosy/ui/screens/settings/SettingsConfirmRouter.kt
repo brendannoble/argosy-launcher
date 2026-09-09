@@ -131,27 +131,34 @@ import com.nendo.argosy.ui.screens.settings.sections.LibraryLayoutState
 
 private fun rommConfigMaxIndex(server: ServerState): Int {
     if (server.rommDevicePairing) return 0
-    return when (server.rommAuthMethod) {
-        RomMAuthMethod.DEVICE -> 4
-        RomMAuthMethod.PAIRING_CODE -> if (server.rommHasCamera) 6 else 5
-    }
+    return rommConfigIndices(server).cancelIndex
 }
 
 private data class RommConfigIndices(
     val connectIndex: Int,
     val scanIndex: Int?,
     val certificateIndex: Int,
-    val cancelIndex: Int
+    val cancelIndex: Int,
+    val saveUrlIndex: Int? = null
 )
 
-private fun rommConfigIndices(server: ServerState): RommConfigIndices = when (server.rommAuthMethod) {
-    RomMAuthMethod.DEVICE -> RommConfigIndices(2, null, 3, 4)
-    RomMAuthMethod.PAIRING_CODE ->
-        if (server.rommHasCamera) {
-            RommConfigIndices(3, 4, 5, 6)
-        } else {
-            RommConfigIndices(3, null, 4, 5)
-        }
+private fun rommConfigIndices(server: ServerState): RommConfigIndices {
+    val indices = when (server.rommAuthMethod) {
+        RomMAuthMethod.DEVICE -> RommConfigIndices(2, null, 3, 4)
+        RomMAuthMethod.PAIRING_CODE ->
+            if (server.rommHasCamera) {
+                RommConfigIndices(3, 4, 5, 6)
+            } else {
+                RommConfigIndices(3, null, 4, 5)
+            }
+    }
+    return if (server.rommUrl.isNotBlank()) indices.copy(
+        connectIndex = indices.connectIndex + 1,
+        scanIndex = indices.scanIndex?.plus(1),
+        certificateIndex = indices.certificateIndex + 1,
+        cancelIndex = indices.cancelIndex + 1,
+        saveUrlIndex = indices.connectIndex
+    ) else indices
 }
 
 private fun nextRommAuthMethod(current: RomMAuthMethod): RomMAuthMethod = when (current) {
@@ -347,6 +354,7 @@ private fun routeRomMConfirm(vm: SettingsViewModel, state: SettingsUiState): Inp
                 return InputResult.handled(SoundType.OPEN_MODAL)
             }
             indices.connectIndex -> vm.connectToRomm()
+            indices.saveUrlIndex -> vm.saveRommUrl()
             indices.scanIndex -> vm.showRommScanner()
             indices.certificateIndex -> vm.requestCertificatePicker()
             indices.cancelIndex -> vm.cancelRommConfig()
@@ -358,8 +366,6 @@ private fun routeRomMConfirm(vm: SettingsViewModel, state: SettingsUiState): Inp
     val items = buildRomMItemsFromState(state)
     when (rommItemAtFocusIndex(state.focusedIndex, items)) {
         RomMItem.RomManager -> vm.startRommConfig()
-        RomMItem.ServerUrl -> vm.serverDelegate.setRommFocusField(state.focusedIndex)
-        RomMItem.SaveServerUrl -> vm.saveRommUrl()
         RomMItem.RomMSignOut -> vm.requestRommSignOut()
         RomMItem.Accounts -> vm.navigateToSection(SettingsSection.ACCOUNTS)
         RomMItem.SyncSettings -> vm.navigateToSection(SettingsSection.SYNC_SETTINGS)

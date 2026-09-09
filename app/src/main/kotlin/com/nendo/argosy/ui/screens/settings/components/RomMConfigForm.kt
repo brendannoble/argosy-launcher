@@ -84,6 +84,7 @@ fun RomMConfigForm(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val isDevice = authMethod == RomMAuthMethod.DEVICE
     val isPairingCode = authMethod == RomMAuthMethod.PAIRING_CODE
     val hasCamera = uiState.server.rommHasCamera
+    val canUpdateUrl = uiState.server.rommUrl.isNotBlank()
 
     LaunchedEffect(uiState.server.rommFocusField) {
         when (uiState.server.rommFocusField) {
@@ -107,13 +108,14 @@ fun RomMConfigForm(uiState: SettingsUiState, viewModel: SettingsViewModel) {
             label = { Text(stringResource(R.string.settings_romm_config_server_url_label)) },
             placeholder = { Text(stringResource(R.string.settings_romm_config_server_url_placeholder)) },
             singleLine = true,
+            enabled = !uiState.server.rommConnecting,
             shape = inputShape,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
             keyboardActions = KeyboardActions(
                 onGo = {
                     if (!uiState.server.rommConnecting && uiState.server.rommConfigUrl.isNotBlank()) {
                         keyboard?.hide()
-                        viewModel.commitRommUrl()
+                        if (canUpdateUrl) viewModel.saveRommUrl() else viewModel.commitRommUrl()
                     }
                 }
             ),
@@ -121,7 +123,7 @@ fun RomMConfigForm(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 .fillMaxWidth()
                 .focusRequester(urlFocusRequester)
                 .onFocusChanged { fs ->
-                    if (wasUrlFocused && !fs.isFocused && uiState.server.rommConfigUrl.isNotBlank()) {
+                    if (!canUpdateUrl && wasUrlFocused && !fs.isFocused && uiState.server.rommConfigUrl.isNotBlank()) {
                         viewModel.commitRommUrl()
                     }
                     wasUrlFocused = fs.isFocused
@@ -178,6 +180,13 @@ fun RomMConfigForm(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(start = Dimens.spacingSm)
             )
+        } else if (uiState.server.rommUrlSaved) {
+            Text(
+                text = stringResource(R.string.settings_romm_url_saved),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = Dimens.spacingSm)
+            )
         }
 
         Spacer(modifier = Modifier.height(Dimens.spacingSm))
@@ -185,6 +194,20 @@ fun RomMConfigForm(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         var buttonIndex = when (authMethod) {
             RomMAuthMethod.DEVICE -> 2
             RomMAuthMethod.PAIRING_CODE -> 3
+        }
+
+        if (canUpdateUrl) {
+            ActionPreference(
+                title = stringResource(
+                    if (uiState.server.rommConnecting) R.string.settings_romm_url_saving
+                    else R.string.settings_romm_url_save
+                ),
+                subtitle = stringResource(R.string.settings_romm_url_subtitle),
+                isFocused = uiState.focusedIndex == buttonIndex,
+                isEnabled = !uiState.server.rommConnecting && uiState.server.rommConfigUrl.isNotBlank(),
+                onClick = { viewModel.saveRommUrl() }
+            )
+            buttonIndex++
         }
 
         ActionPreference(
