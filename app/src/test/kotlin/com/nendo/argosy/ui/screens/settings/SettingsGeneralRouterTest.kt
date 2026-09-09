@@ -1,6 +1,9 @@
 package com.nendo.argosy.ui.screens.settings
 
 import com.nendo.argosy.data.preferences.DisplayRoleOverride
+import com.nendo.argosy.data.preferences.DisplayRoleOverride.AUTO
+import com.nendo.argosy.data.preferences.DisplayRoleOverride.STANDARD
+import com.nendo.argosy.data.preferences.DisplayRoleOverride.SWAPPED
 import com.nendo.argosy.util.SecondaryDisplayType
 import io.mockk.every
 import io.mockk.mockk
@@ -22,14 +25,19 @@ class SettingsGeneralRouterTest {
         mockkStatic(::routeSetDisplayRoleOverride)
         try {
             every { routeSetDisplayRoleOverride(vm, capture(selected)) } returns Unit
-            val options = listOf(DisplayRoleOverride.AUTO, DisplayRoleOverride.STANDARD, DisplayRoleOverride.SWAPPED)
-            for (direction in listOf(-1, 1)) {
-                for ((index, current) in options.withIndex()) {
-                    state.value = state.value.copy(display = state.value.display.copy(displayRoleOverride = current))
-                    selected.clear()
-                    routeCycleDisplayRoleOverride(vm, direction)
-                    assertEquals("$current, direction $direction", options[(index + direction).mod(options.size)], selected.captured)
-                }
+            val transitions = listOf(
+                Triple(AUTO, 1, STANDARD),
+                Triple(STANDARD, 1, SWAPPED),
+                Triple(SWAPPED, 1, AUTO),
+                Triple(AUTO, -1, SWAPPED),
+                Triple(SWAPPED, -1, STANDARD),
+                Triple(STANDARD, -1, AUTO)
+            )
+            for ((current, direction, expected) in transitions) {
+                state.value = state.value.copy(display = state.value.display.copy(displayRoleOverride = current))
+                selected.clear()
+                routeCycleDisplayRoleOverride(vm, direction)
+                assertEquals("$current, direction $direction", expected, selected.captured)
             }
         } finally {
             unmockkStatic(::routeSetDisplayRoleOverride)
