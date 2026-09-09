@@ -106,6 +106,7 @@ fun DualGameDetailUpperScreen(
     onModalCollectionCreateDismiss: () -> Unit = {},
     onSaveNameTextChange: (String) -> Unit = {},
     onSaveNameConfirm: () -> Unit = {},
+    onSaveDeleteConfirm: () -> Unit = {},
     onDiscSelect: (Int) -> Unit = {},
     onModalSteamInstallSelect: (Int) -> Unit = {},
     onModalDismiss: () -> Unit = {},
@@ -246,9 +247,19 @@ fun DualGameDetailUpperScreen(
             }
             ActiveModal.SAVE_NAME -> DualSaveNamePrompt(
                 text = state.saveNameText,
+                isRenaming = state.saveNamePromptAction == "RENAME_SLOT",
                 onTextChange = onSaveNameTextChange,
                 onConfirm = onSaveNameConfirm,
                 onDismiss = onModalDismiss
+            )
+            ActiveModal.SAVE_DELETE -> com.nendo.argosy.ui.primitives.ArgosyConfirmModal(
+                title = stringResource(R.string.ui_save_channel_delete_slot_title),
+                message = stringResource(R.string.ui_save_channel_delete_slot_message, state.saveChannelName.orEmpty()),
+                confirmLabel = stringResource(R.string.ui_save_channel_delete_slot_confirm),
+                onConfirm = onSaveDeleteConfirm,
+                onDismiss = onModalDismiss,
+                focusedIndex = state.saveDeleteFocusIndex,
+                destructive = true
             )
             ActiveModal.DISC_PICKER -> DualDiscPickerContent(
                 discs = state.discPickerOptions,
@@ -1225,6 +1236,7 @@ private fun StatePreviewDisplay(
 @Composable
 private fun DualSaveNamePrompt(
     text: String,
+    isRenaming: Boolean,
     onTextChange: (String) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
@@ -1247,7 +1259,7 @@ private fun DualSaveNamePrompt(
                 verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
             ) {
                 Text(
-                    text = stringResource(R.string.dual_detail_save_name_heading),
+                    text = stringResource(if (isRenaming) R.string.ui_save_channel_rename_title_rename else R.string.dual_detail_save_name_heading),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = theme.textPrimary
@@ -1272,7 +1284,7 @@ private fun DualSaveNamePrompt(
                     )
                     Spacer(modifier = Modifier.width(Dimens.spacingSm))
                     ActionButton(
-                        label = stringResource(R.string.dual_detail_save_name_create),
+                        label = stringResource(if (isRenaming) R.string.ui_save_channel_rename_confirm_rename else R.string.dual_detail_save_name_create),
                         onClick = onConfirm,
                         primary = true
                     )

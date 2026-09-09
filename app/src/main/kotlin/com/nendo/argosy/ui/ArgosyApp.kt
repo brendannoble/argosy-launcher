@@ -618,6 +618,8 @@ fun ArgosyApp(
                     }
                 } else if (state?.modalType == ActiveModal.COVER_PICKER) {
                     activity?.moveDualCoverPickerFocus(-1)
+                } else if (state?.modalType == ActiveModal.SAVE_DELETE) {
+                    activity?.dualScreenManager?.moveDualSaveDeleteFocus(-1)
                 } else if (state?.modalType == ActiveModal.REVIEW_EDITOR) {
                     activity?.adjustDualReviewEditor(-1)
                 }
@@ -635,6 +637,8 @@ fun ArgosyApp(
                     }
                 } else if (state?.modalType == ActiveModal.COVER_PICKER) {
                     activity?.moveDualCoverPickerFocus(1)
+                } else if (state?.modalType == ActiveModal.SAVE_DELETE) {
+                    activity?.dualScreenManager?.moveDualSaveDeleteFocus(1)
                 } else if (state?.modalType == ActiveModal.REVIEW_EDITOR) {
                     activity?.adjustDualReviewEditor(1)
                 }
@@ -699,6 +703,7 @@ fun ArgosyApp(
                     ActiveModal.COLLECTION -> activity?.toggleDualCollectionAtFocus()
                     ActiveModal.STEAM_INSTALL -> activity?.confirmDualSteamInstallSelection()
                     ActiveModal.SAVE_NAME -> activity?.confirmDualSaveName()
+                    ActiveModal.SAVE_DELETE -> activity?.dualScreenManager?.confirmDualSaveDelete()
                     ActiveModal.FILE_PICKER -> activity?.activateDualFilePickerFocused()
                     ActiveModal.COVER_PICKER -> activity?.confirmDualCoverAtFocus()
                     ActiveModal.REVIEW_EDITOR -> activity?.confirmDualReviewEditor()
@@ -1326,6 +1331,9 @@ fun ArgosyApp(
                             },
                             onSaveNameConfirm = {
                                 activity?.confirmDualSaveName()
+                            },
+                            onSaveDeleteConfirm = {
+                                activity?.dualScreenManager?.confirmDualSaveDelete(true)
                             },
                             onDiscSelect = { index ->
                                 activity?.selectDualDisc(index)
