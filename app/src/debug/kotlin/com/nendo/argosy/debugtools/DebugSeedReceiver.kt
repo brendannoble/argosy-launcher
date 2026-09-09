@@ -14,7 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-/** Debug-only test seam: seeds RomM config and skips first-run. Trigger: adb shell am broadcast -n com.nendo.argosy.debug/com.nendo.argosy.debugtools.DebugSeedReceiver --es url <URL> --es token <RAW_TOKEN> */
+/**
+ * Debug-only setup: pass url/token to seed RomM, or --ez skipSetup true for an offline library.
+ */
 class DebugSeedReceiver : BroadcastReceiver() {
 
     @EntryPoint
@@ -25,8 +27,10 @@ class DebugSeedReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        val url = intent.getStringExtra("url") ?: return
-        val token = intent.getStringExtra("token") ?: return
+        val skipSetup = intent.getBooleanExtra("skipSetup", false)
+        val url = intent.getStringExtra("url")
+        val token = intent.getStringExtra("token")
+        if (!skipSetup && (url == null || token == null)) return
         val entryPoint = EntryPointAccessors.fromApplication(
             context.applicationContext,
             SeedEntryPoint::class.java
@@ -34,7 +38,9 @@ class DebugSeedReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                entryPoint.romMRepository().connectWithToken(url, token)
+                if (!skipSetup) {
+                    entryPoint.romMRepository().connectWithToken(requireNotNull(url), requireNotNull(token))
+                }
                 entryPoint.userPreferencesRepository().setFirstRunComplete()
             } finally {
                 pending.finish()
