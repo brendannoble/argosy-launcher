@@ -55,7 +55,6 @@ import com.nendo.argosy.R
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.nendo.argosy.data.emulator.DiscOption
-import androidx.compose.material3.OutlinedTextField
 import com.nendo.argosy.domain.model.UnifiedStateEntry
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.nendo.argosy.ui.common.displayName
@@ -70,7 +69,8 @@ import com.nendo.argosy.ui.dualscreen.ShowcaseEyebrow
 import com.nendo.argosy.ui.dualscreen.ShowcaseRatingsCluster
 import com.nendo.argosy.ui.dualscreen.ShowcaseStatsRow
 import com.nendo.argosy.ui.dualscreen.ShowcaseTimeToBeatRow
-import com.nendo.argosy.ui.primitives.ActionButton
+import com.nendo.argosy.ui.common.savechannel.RenameChannelOverlay
+import com.nendo.argosy.ui.common.savechannel.RenameMode
 import com.nendo.argosy.ui.primitives.GlassPanel
 import com.nendo.argosy.ui.primitives.RowButton
 import com.nendo.argosy.ui.screens.collections.dialogs.CreateCollectionDialog
@@ -245,12 +245,16 @@ fun DualGameDetailUpperScreen(
                     onDismiss = onModalDismiss
                 )
             }
-            ActiveModal.SAVE_NAME -> DualSaveNamePrompt(
+            ActiveModal.SAVE_NAME -> RenameChannelOverlay(
+                mode = when (state.saveNamePromptAction) {
+                    "RENAME_SLOT" -> RenameMode.RENAME
+                    "LOCK_AS_SLOT" -> RenameMode.SAVE_AS
+                    else -> RenameMode.NEW_SLOT
+                },
                 text = state.saveNameText,
-                isRenaming = state.saveNamePromptAction == "RENAME_SLOT",
                 onTextChange = onSaveNameTextChange,
                 onConfirm = onSaveNameConfirm,
-                onDismiss = onModalDismiss
+                onCancel = onModalDismiss
             )
             ActiveModal.SAVE_DELETE -> com.nendo.argosy.ui.primitives.ArgosyConfirmModal(
                 title = stringResource(R.string.ui_save_channel_delete_slot_title),
@@ -1230,66 +1234,5 @@ private fun StatePreviewDisplay(
         )
 
         footerHints()
-    }
-}
-
-@Composable
-private fun DualSaveNamePrompt(
-    text: String,
-    isRenaming: Boolean,
-    onTextChange: (String) -> Unit,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    val theme = LocalArgosyTheme.current
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f))
-            .touchOnly { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
-        GlassPanel(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .touchOnly { }
-        ) {
-            Column(
-                modifier = Modifier.padding(Dimens.spacingLg),
-                verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
-            ) {
-                Text(
-                    text = stringResource(if (isRenaming) R.string.ui_save_channel_rename_title_rename else R.string.dual_detail_save_name_heading),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.textPrimary
-                )
-
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    label = { Text(stringResource(R.string.dual_detail_save_name_field_label)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ActionButton(
-                        label = stringResource(R.string.dual_detail_save_name_cancel),
-                        onClick = onDismiss
-                    )
-                    Spacer(modifier = Modifier.width(Dimens.spacingSm))
-                    ActionButton(
-                        label = stringResource(if (isRenaming) R.string.ui_save_channel_rename_confirm_rename else R.string.dual_detail_save_name_create),
-                        onClick = onConfirm,
-                        primary = true
-                    )
-                }
-            }
-        }
     }
 }
