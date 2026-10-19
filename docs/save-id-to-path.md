@@ -187,7 +187,7 @@ returns the *parent*, not a match, because there is no single folder. All of
 that lives in `PrefixBundleFolderHandler`, shared with PS3; what PSP owns is
 the PARAM.SFO test that keeps installed game data out of the bundle.
 
-### Vita, Wii, Wii U (plain `FolderSaveHandler`)
+### Vita, Wii U (plain `FolderSaveHandler`)
 
 `FOLDER_EXACT`, one directory named exactly for the id:
 
@@ -195,9 +195,19 @@ the PARAM.SFO test that keeps installed game data out of the bundle.
 <base>/<save_id>
 ```
 
-For Wii the base is the NAND's `Wii/title/00010000`: under the standalone app's files for
-`dolphin_wii`, and `<builtin saves>/User/Wii/title/00010000` for the built-in Dolphin core
-(`argosy_wii`). Both upload through the same handler, so a game's save moves between the two.
+### Wii (`WiiFolderHandler`)
+
+Sigil's disc and WAD readers return a split hexadecimal `category/title` save id,
+such as `00010000/524d4745`. The category comes from the title id and can differ
+between titles. Legacy bare eight-digit ids use category `00010000`.
+
+The handler discovers and constructs `<NAND>/Wii/title/<category>/<title>`, with
+lowercase components. Standalone Dolphin and the built-in core share this layout;
+the built-in NAND lives under `<builtin saves>/User`. Construction uses the same
+effective custom save root as discovery, including before the NAND exists.
+
+Archives retain their historical title-only root (`524d4745/`), so saves already
+uploaded by standalone Dolphin remain restorable after switching emulators.
 
 ### GameCube (`GciSaveHandler`)
 

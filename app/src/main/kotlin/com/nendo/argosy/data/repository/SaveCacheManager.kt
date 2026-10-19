@@ -530,23 +530,27 @@ class SaveCacheManager @Inject constructor(
      * it. True when there is nothing to protect or it is now cached (or already was); false when
      * the bytes could not be cached, and the caller must not overwrite them.
      */
-    suspend fun protectBeforeOverwrite(gameId: Long, emulatorId: String, savePath: String): Boolean =
+    suspend fun protectBeforeOverwrite(gameId: Long, emulatorId: String, savePath: String): Boolean = withContext(Dispatchers.IO) {
         when (sigilSaveHandler.collect(gameId, emulatorId)) {
-            SigilCollect.NotRouted -> !fal.exists(savePath) ||
-                !holdsSaveForGame(gameId, savePath) ||
-                cacheAsRollback(gameId, emulatorId, savePath) !is CacheResult.Failed
+            SigilCollect.NotRouted -> !fal.exists(savePath) || when (holdsSaveForGame(gameId, savePath)) {
+                false -> true
+                null -> false
+                true -> cacheAsRollback(gameId, emulatorId, savePath) !is CacheResult.Failed
+            }
             SigilCollect.Absent -> true
             is SigilCollect.Unreadable -> false
             is SigilCollect.Found -> cacheAsRollback(gameId, emulatorId, savePath) !is CacheResult.Failed
         }
+    }
 
-    private suspend fun holdsSaveForGame(gameId: Long, savePath: String): Boolean {
+    private suspend fun holdsSaveForGame(gameId: Long, savePath: String): Boolean? {
         if (!fal.isDirectory(savePath)) return true
+        val entries = fal.listFiles(savePath) ?: return null
+        if (entries.isEmpty()) return false
         val game = gameDao.getById(gameId) ?: return true
         val saveId = game.saveId ?: game.titleId ?: return true
         if (PlatformDefinitions.getCanonicalSlug(game.platformSlug) !in FOLDER_PREFIX_PLATFORMS) return true
         val handler = saveHandlerRegistry.getFolderHandler(game.platformSlug) ?: return true
-        if (fal.listFiles(savePath) == null) return true
         return handler.findAllSaveFoldersBySaveId(savePath, saveId).isNotEmpty()
     }
 

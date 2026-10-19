@@ -1060,14 +1060,14 @@ class SavePathResolver @Inject constructor(
         } else {
             val packaged = resolveFolderBasePaths(config, emulatorPackage, gameId)
             selectedMemcard
-                ?: saveHandlerRegistry.getFolderHandler(platformSlug)
+                ?: saveHandlerRegistry.getFolderHandler(platformSlug)?.takeUnless { config.emulatorId == EmulatorRegistry.BUILTIN_ID }
                     ?.resolveBasePath(config, basePathOverride)
                 ?: basePathOverride
                 ?: packaged.firstOrNull { directoryExists(it) }
                 ?: packaged.firstOrNull()
         } ?: return null
 
-        if (!directoryExists(baseDir)) {
+        if (config.emulatorId != EmulatorRegistry.BUILTIN_ID && !directoryExists(baseDir)) {
             Logger.debug(TAG, "[SaveSync] CONSTRUCT | Base dir does not exist | path=$baseDir")
             return null
         }

@@ -32,6 +32,7 @@ class SaveCacheManagerCachingTest {
 
     private lateinit var tempDir: File
     private lateinit var manager: SaveCacheManager
+    private lateinit var fal: com.nendo.argosy.data.storage.FileAccessLayer
 
     private val context = mockk<Context>(relaxed = true)
     private val saveCacheDao = mockk<SaveCacheDao>(relaxed = true)
@@ -54,7 +55,7 @@ class SaveCacheManagerCachingTest {
 
         coEvery { syncPreferencesRepository.isSecureSaves() } returns true
 
-        val fal = realFsFal()
+        fal = realFsFal()
         val archiver = SaveArchiver(mockk<AndroidDataAccessor>(relaxed = true), fal)
         manager = SaveCacheManager(
             context = context,
@@ -99,6 +100,34 @@ class SaveCacheManagerCachingTest {
     }
 
     @Test
+    fun `an empty restore destination needs no rollback archive`() = runTest {
+        val target = File(tempDir, "libretro/saves/User/Wii/title/00010000/524d4745").apply { mkdirs() }
+
+        assertTrue(manager.protectBeforeOverwrite(9L, "argosy", target.path))
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+    }
+
+    @Test
+    fun `a missing restore destination needs no rollback archive`() = runTest {
+        val target = File(tempDir, "libretro/saves/User/Wii/title/00010000/524d4745")
+
+        assertTrue(manager.protectBeforeOverwrite(9L, "argosy", target.path))
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+    }
+
+    @Test
+    fun `existing Wii progress is backed up and backup failure preserves the original`() = runTest {
+        val data = File(tempDir, "libretro/saves/User/Wii/title/00010000/524d4745/data").apply { mkdirs() }
+        val save = File(data, "GameData.bin").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+
+        assertTrue(manager.protectBeforeOverwrite(9L, "argosy", data.parent))
+        coVerify(exactly = 1) { saveCacheDao.insert(any()) }
+        coEvery { saveCacheDao.insert(any()) } throws java.io.IOException("cache storage unavailable")
+        assertFalse(manager.protectBeforeOverwrite(9L, "argosy", data.parent))
+        assertEquals(listOf<Byte>(1, 2, 3), save.readBytes().toList())
+    }
+
+    @Test
     fun `a memory card with no save for the game needs no backup before a download lands`() = runTest {
         val card = ps2Card(gameFolders = emptyList())
 
@@ -109,12 +138,10 @@ class SaveCacheManagerCachingTest {
     @Test
     fun `a memory card that cannot be listed is treated as holding the save`() = runTest {
         val card = ps2Card(gameFolders = emptyList())
-        card.setReadable(false)
-        try {
-            assertFalse(manager.protectBeforeOverwrite(9L, "armsx2", card.path))
-        } finally {
-            card.setReadable(true)
-        }
+        every { fal.listFiles(card.path) } returns null
+
+        assertFalse(manager.protectBeforeOverwrite(9L, "armsx2", card.path))
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
     }
 
     @Test

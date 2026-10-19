@@ -129,6 +129,23 @@ class RestoreCachedSaveServerCachingTest {
     }
 
     @Test
+    fun `failed extraction never activates marks or uploads the save`() = runTest {
+        coEvery { saveCacheManager.restoreSave(any(), any(), any()) } returns false
+
+        for (source in Source.entries) {
+            val entry = localEntry().copy(source = source, serverSaveId = serverSaveId)
+            assertEquals(
+                RestoreCachedSaveUseCase.Result.Error(RestoreCachedSaveFailureReason.RestoreFailed),
+                useCase(entry, gameId, emulatorId = "argosy", syncToServer = true)
+            )
+        }
+        coVerify(exactly = 0) { activeSaveRepository.activateCache(any(), any()) }
+        coVerify(exactly = 0) { saveSyncRepository.markRestored(any(), any(), any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { saveSyncRepository.uploadSave(any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { saveSyncRepository.confirmOrQueueDeviceSync(any(), any()) }
+    }
+
+    @Test
     fun `local restore activates the restored cache row`() = runTest {
         useCase(localEntry(), gameId, emulatorId = "vbam", syncToServer = false)
 

@@ -162,6 +162,41 @@ class SaveCacheRestoreTargetTest {
     }
 
     @Test
+    fun `a standalone Wii archive restores bytes into the builtin title with secure saves on or off`() = runTest {
+        val fal = realFsFal()
+        val registry = PlatformSaveHandlerRegistry(
+            context, fal, archiver, mockk(relaxed = true), mockk(relaxed = true),
+            mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), sigil
+        )
+        every { saveHandlerRegistry.getFolderHandler("wii") } returns registry.getFolderHandler("wii")
+        val game = GAME.copy(platformSlug = "wii", saveId = "00010000/524d4745", titleId = "524D4745")
+        coEvery { gameDao.getById(GAME_ID) } returns game
+        val source = File(tempDir, "standalone/Wii/title/00010000/524d4745").apply { mkdirs() }
+        File(source, "data/GameData.bin").apply { parentFile.mkdirs(); writeBytes(byteArrayOf(4, 2, 3)) }
+        val zip = File(tempDir, "save_cache/u3/4/wii.zip").apply { parentFile.mkdirs() }
+        assertTrue(archiver.zipFolder(source, zip))
+        val row = SaveCacheEntity(
+            id = ROW_ID, gameId = GAME_ID, emulatorId = "dolphin", cachedAt = Instant.EPOCH,
+            saveSize = zip.length(), cachePath = "u3/4/wii.zip", contentHash = archiver.calculateFolderAsZipHash(source),
+            channelName = "autosave", ownerUserId = OWNER, saveFormat = SaveCacheEntity.FORMAT_NATIVE
+        )
+        coEvery { saveCacheDao.getById(ROW_ID) } returns row
+        val target = File(tempDir, "builtin/User/Wii/title/00010000/524d4745")
+        val other = File(target.parentFile, "524d4750/data/other.bin").apply {
+            parentFile.mkdirs()
+            writeBytes(byteArrayOf(9))
+        }
+
+        for (secure in listOf(true, false)) {
+            coEvery { syncPreferencesRepository.isSecureSaves() } returns secure
+            assertTrue(manager.restoreSave(ROW_ID, target.path, TARGET))
+            org.junit.Assert.assertArrayEquals(byteArrayOf(4, 2, 3), File(target, "data/GameData.bin").readBytes())
+            org.junit.Assert.assertArrayEquals(byteArrayOf(9), other.readBytes())
+        }
+        coVerify(exactly = 0) { ownership.record(any(), "dolphin", any(), any(), any()) }
+    }
+
+    @Test
     fun `a native cache is never written over a Sigil save root`() = runTest {
         cachedRow(SaveCacheEntity.FORMAT_NATIVE)
         val root = File(tempDir, "builtin/saves")

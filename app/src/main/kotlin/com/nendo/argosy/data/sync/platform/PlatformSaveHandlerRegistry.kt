@@ -49,7 +49,7 @@ class PlatformSaveHandlerRegistry @Inject constructor(
     private val folderHandlers: Map<String, FolderSaveHandler> = listOf(
         FolderSaveHandler(context, fal, saveArchiver, platformSlug = "vita"),
         PspFolderHandler(context, fal, saveArchiver),
-        FolderSaveHandler(context, fal, saveArchiver, platformSlug = "wii"),
+        WiiFolderHandler(context, fal, saveArchiver),
         FolderSaveHandler(context, fal, saveArchiver, platformSlug = "wiiu"),
         N3dsFolderHandler(context, fal, saveArchiver),
         Ps2FolderHandler(context, fal, saveArchiver),
@@ -190,6 +190,55 @@ class PlatformSaveHandlerRegistry @Inject constructor(
         val RETROARCH_EMULATOR_IDS = setOf("retroarch", "retroarch_64", "retroarch_32")
         val UNIT_EMULATOR_IDS = RETROARCH_EMULATOR_IDS + EmulatorRegistry.BUILTIN_ID + EmulatorRegistry.LEGACY_BUILTIN_ID
     }
+}
+
+private class WiiFolderHandler(
+    context: Context,
+    private val fal: FileAccessLayer,
+    saveArchiver: SaveArchiver
+) : FolderSaveHandler(context, fal, saveArchiver, "wii") {
+    private val saveIdPattern = Regex("(?i)(?:([0-9a-f]{8})/)?([0-9a-f]{8})")
+
+    private fun key(saveId: String): Pair<String, String>? {
+        val match = saveIdPattern.matchEntire(saveId) ?: return null
+        return match.groupValues[1].ifEmpty { "00010000" }.lowercase() to match.groupValues[2].lowercase()
+    }
+
+    private fun categoryBase(basePath: String, category: String): File {
+        val base = File(basePath)
+        return when {
+            base.name == "title" -> File(base, category)
+            base.parentFile?.name == "title" -> File(base.parentFile, category)
+            else -> base
+        }
+    }
+
+    override fun constructSavePath(baseDir: String, saveId: String): String? {
+        val (category, title) = key(saveId) ?: return null
+        return File(categoryBase(baseDir, category), title).path
+    }
+
+    override fun findSaveFolderBySaveId(basePath: String, saveId: String): String? =
+        findAllSaveFoldersBySaveId(basePath, saveId).firstOrNull()
+
+    override fun findAllSaveFoldersBySaveId(basePath: String, saveId: String): List<String> {
+        val (category, title) = key(saveId) ?: return emptyList()
+        val base = categoryBase(basePath, category)
+        return fal.listFiles(base.path).orEmpty()
+            .filter { it.isDirectory && it.name.equals(title, ignoreCase = true) }
+            .map { it.path }
+    }
+
+    override fun folderMatches(folderName: String, saveId: String): Boolean =
+        key(saveId)?.second?.equals(folderName, ignoreCase = true) == true
+
+    override fun normalizeSaveId(value: String): String = key(value)?.second.orEmpty()
+
+    override fun matchArchive(tempFile: File, saveId: String): ArchiveRootMatch? =
+        saveArchiver.peekRootEntryNames(tempFile).singleOrNull()?.let { matchArchiveRoot(it, saveId) }
+
+    override fun pathsClearedBeforeRestore(paths: List<String>, archiveRoots: Set<String>?): List<String> =
+        paths.filter { path -> archiveRoots?.singleOrNull()?.equals(File(path).name, ignoreCase = true) == true }
 }
 
 /**

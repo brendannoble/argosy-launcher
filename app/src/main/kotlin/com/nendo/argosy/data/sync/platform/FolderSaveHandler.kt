@@ -216,7 +216,7 @@ open class FolderSaveHandler(
      */
     protected open val unidentifiedArchiveRoots: Set<String> = emptySet()
 
-    private fun normalizeSaveId(value: String): String =
+    protected open fun normalizeSaveId(value: String): String =
         value.replace("-", "").replace("_", "").uppercase()
 
 

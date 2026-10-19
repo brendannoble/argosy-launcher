@@ -120,6 +120,30 @@ class SavePathResolverDiscoveryTest {
     }
 
     @Test
+    fun `Wii first-save construction uses the custom builtin root even before NAND exists`() = runTest {
+        val root = File(tempDir, "custom/wii-saves").apply { mkdirs() }
+        builtinSettings = builtinSettings.copy(customSavePath = root.absolutePath)
+        stubBuiltinSettings()
+        val game = GameEntity(
+            id = 1L, title = "Super Mario Galaxy", sortTitle = "super mario galaxy", platformId = 2L,
+            platformSlug = "wii", rommId = 7L, igdbId = null, localPath = "/roms/Galaxy.wbfs",
+            source = GameSource.ROMM_SYNCED, titleId = "524D4745", saveId = "00010000/524d4745"
+        )
+        coEvery { gameDao.getById(1L) } returns game
+        val fal = realFsFal()
+        val handler = com.nendo.argosy.data.sync.platform.FolderSaveHandler(
+            context, fal, SaveArchiver(mockk(relaxed = true), fal), "wii"
+        )
+        every { saveHandlerRegistry.getFolderHandler("wii") } returns handler
+
+        val result = resolver.constructFolderSavePathWithOverride(
+            "argosy", "wii", game.localPath, game.id, game.title, "524d4745", "argosy.builtin.libretro"
+        )
+
+        assertEquals(File(root, "User/Wii/title/00010000/524d4745"), result?.let(::File))
+    }
+
+    @Test
     fun `a GameCube save with nothing on disk is placed in the region card folder Dolphin reads`() = runTest {
         stubBuiltinSettings()
         val rom = File(tempDir, "roms/Zelda.iso").apply { parentFile?.mkdirs(); writeBytes(byteArrayOf(0)) }
