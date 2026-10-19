@@ -532,7 +532,7 @@ class SaveCacheManager @Inject constructor(
      */
     suspend fun protectBeforeOverwrite(gameId: Long, emulatorId: String, savePath: String): Boolean = withContext(Dispatchers.IO) {
         when (sigilSaveHandler.collect(gameId, emulatorId)) {
-            SigilCollect.NotRouted -> !fal.exists(savePath) || when (holdsSaveForGame(gameId, savePath)) {
+            SigilCollect.NotRouted -> isProvenAbsent(savePath) || when (holdsSaveForGame(gameId, savePath)) {
                 false -> true
                 null -> false
                 true -> cacheAsRollback(gameId, emulatorId, savePath) !is CacheResult.Failed
@@ -540,6 +540,18 @@ class SaveCacheManager @Inject constructor(
             SigilCollect.Absent -> true
             is SigilCollect.Unreadable -> false
             is SigilCollect.Found -> cacheAsRollback(gameId, emulatorId, savePath) !is CacheResult.Failed
+        }
+    }
+
+    private fun isProvenAbsent(savePath: String): Boolean {
+        if (fal.exists(savePath)) return false
+        var child = File(savePath)
+        while (true) {
+            val parent = child.parentFile ?: return false
+            if (fal.isListable(parent.path)) {
+                return fal.listFilesUnion(parent.path).none { it.name.equals(child.name, ignoreCase = true) }
+            }
+            child = parent
         }
     }
 

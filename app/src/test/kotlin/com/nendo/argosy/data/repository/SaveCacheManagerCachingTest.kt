@@ -119,6 +119,32 @@ class SaveCacheManagerCachingTest {
     }
 
     @Test
+    fun `an unstatable restricted destination is not proven absent`() = runTest {
+        val target = File(tempDir, "Android/data/dolphin/files/Wii/title/00010000/524d4745")
+        val original = File(target, "data/GameData.bin").apply {
+            parentFile.mkdirs()
+            writeBytes(byteArrayOf(4, 2))
+        }
+        every { fal.exists(target.path) } returns false
+        every { fal.isDirectory(target.path) } returns false
+        every { fal.isListable(any()) } answers { File(firstArg<String>()) == tempDir }
+
+        assertFalse(manager.protectBeforeOverwrite(9L, "dolphin", target.path))
+        org.junit.Assert.assertArrayEquals(byteArrayOf(4, 2), original.readBytes())
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+    }
+
+    @Test
+    fun `a listable ancestor can prove an uninitialized restricted destination is absent`() = runTest {
+        val ancestor = File(tempDir, "Android/data/dolphin/files").apply { mkdirs() }
+        val target = File(ancestor, "Wii/title/00010000/524d4745")
+
+        assertTrue(manager.protectBeforeOverwrite(9L, "dolphin", target.path))
+        assertFalse(target.exists())
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+    }
+
+    @Test
     fun `a missing restore destination needs no rollback archive`() = runTest {
         val target = File(tempDir, "libretro/saves/User/Wii/title/00010000/524d4745")
 
