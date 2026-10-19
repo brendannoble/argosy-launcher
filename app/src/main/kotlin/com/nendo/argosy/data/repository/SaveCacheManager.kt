@@ -545,12 +545,14 @@ class SaveCacheManager @Inject constructor(
 
     private suspend fun holdsSaveForGame(gameId: Long, savePath: String): Boolean? {
         if (!fal.isDirectory(savePath)) return true
-        val entries = fal.listFiles(savePath) ?: return null
+        if (!fal.isListable(savePath)) return null
+        val entries = fal.listFilesUnion(savePath)
         if (entries.isEmpty()) return false
         val game = gameDao.getById(gameId) ?: return true
         val saveId = game.saveId ?: game.titleId ?: return true
         if (PlatformDefinitions.getCanonicalSlug(game.platformSlug) !in FOLDER_PREFIX_PLATFORMS) return true
         val handler = saveHandlerRegistry.getFolderHandler(game.platformSlug) ?: return true
+        if (fal.listFiles(savePath) == null) return true
         return handler.findAllSaveFoldersBySaveId(savePath, saveId).isNotEmpty()
     }
 

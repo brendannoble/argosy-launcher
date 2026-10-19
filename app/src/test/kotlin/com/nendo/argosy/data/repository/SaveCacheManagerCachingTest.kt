@@ -108,6 +108,17 @@ class SaveCacheManagerCachingTest {
     }
 
     @Test
+    fun `a readable empty restricted destination needs no rollback when ordinary listing is unavailable`() = runTest {
+        val target = File(tempDir, "Android/data/dolphin/files/Wii/title/00010000/524d4745").apply { mkdirs() }
+        every { fal.listFiles(target.path) } returns null
+        every { fal.isListable(target.path) } returns true
+        every { fal.listFilesUnion(target.path) } returns emptyList()
+
+        assertTrue(manager.protectBeforeOverwrite(9L, "dolphin", target.path))
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+    }
+
+    @Test
     fun `a missing restore destination needs no rollback archive`() = runTest {
         val target = File(tempDir, "libretro/saves/User/Wii/title/00010000/524d4745")
 
@@ -139,6 +150,8 @@ class SaveCacheManagerCachingTest {
     fun `a memory card that cannot be listed is treated as holding the save`() = runTest {
         val card = ps2Card(gameFolders = emptyList())
         every { fal.listFiles(card.path) } returns null
+        every { fal.isListable(card.path) } returns false
+        every { fal.listFilesUnion(card.path) } returns emptyList()
 
         assertFalse(manager.protectBeforeOverwrite(9L, "armsx2", card.path))
         coVerify(exactly = 0) { saveCacheDao.insert(any()) }
