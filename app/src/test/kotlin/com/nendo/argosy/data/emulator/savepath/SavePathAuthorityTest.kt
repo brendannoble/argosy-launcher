@@ -141,6 +141,26 @@ class SavePathAuthorityTest {
     }
 
     @Test
+    fun `wii title root displays the category and title remainder`() = runTest {
+        val resolution = authority().resolve(
+            SavePathRequest("wii", "dolphin", DOLPHIN_PKG, perGameOverride = "/sd/Wii/title")
+        )
+
+        assertEquals("<type>/<id>/data", resolution.unresolvedShape)
+        assertEquals("/sd/Wii/title", resolution.basePath)
+    }
+
+    @Test
+    fun `wii historical category root still displays only the title remainder`() = runTest {
+        val resolution = authority().resolve(
+            SavePathRequest("wii", "dolphin", DOLPHIN_PKG, perGameOverride = "/sd/Wii/title/00010001")
+        )
+
+        assertEquals("<id>/data", resolution.unresolvedShape)
+        assertEquals("/sd/Wii/title/00010001", resolution.basePath)
+    }
+
+    @Test
     fun `gamecube carries the region and card remainder`() = runTest {
         val auth = authority()
         val resolution = auth.resolve(

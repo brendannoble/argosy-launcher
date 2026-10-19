@@ -204,10 +204,10 @@ object SavePathRegistry {
         "dolphin_wii" to SavePathConfig(
             emulatorId = "dolphin_wii",
             defaultPaths = listOf(
-                "{extStorage}/Android/data/org.dolphinemu.dolphinemu/files/Wii/title/00010000",
-                "{extStorage}/Android/data/org.dolphinemu.handheld/files/Wii/title/00010000",
-                "{extStorage}/Android/data/com.joeyos.dolphinemu/files/Wii/title/00010000",
-                "{extStorage}/dolphin-emu/Wii/title/00010000"
+                "{extStorage}/Android/data/org.dolphinemu.dolphinemu/files/Wii/title",
+                "{extStorage}/Android/data/org.dolphinemu.handheld/files/Wii/title",
+                "{extStorage}/Android/data/com.joeyos.dolphinemu/files/Wii/title",
+                "{extStorage}/dolphin-emu/Wii/title"
             ),
             saveExtensions = listOf("*"),
             usesFolderBasedSaves = true,
@@ -216,9 +216,9 @@ object SavePathRegistry {
         "dolphin_mmjr_wii" to SavePathConfig(
             emulatorId = "dolphin_mmjr_wii",
             defaultPaths = listOf(
-                "{extStorage}/Android/data/org.dolphinemu.mmjr/files/Wii/title/00010000",
-                "{extStorage}/mmjr/Wii/title/00010000",
-                "{extStorage}/mmjr2-vbi/Wii/title/00010000"
+                "{extStorage}/Android/data/org.dolphinemu.mmjr/files/Wii/title",
+                "{extStorage}/mmjr/Wii/title",
+                "{extStorage}/mmjr2-vbi/Wii/title"
             ),
             saveExtensions = listOf("*"),
             usesFolderBasedSaves = true,
@@ -716,7 +716,7 @@ object SavePathRegistry {
 
         "${BUILTIN_EMULATOR_ID}_wii" to SavePathConfig(
             emulatorId = BUILTIN_EMULATOR_ID,
-            defaultPaths = listOf("$BUILTIN_SAVES_TOKEN/User/Wii/title/00010000"),
+            defaultPaths = listOf("$BUILTIN_SAVES_TOKEN/User/Wii/title"),
             saveExtensions = listOf("*"),
             usesFolderBasedSaves = true,
             usesInternalStorage = true,

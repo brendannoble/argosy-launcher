@@ -27,6 +27,7 @@ import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -119,6 +120,98 @@ class SavePathResolverDiscoveryTest {
         coEvery { platformLibretroSettingsDao.getByPlatformId(any()) } returns null
     }
 
+    private fun registerWiiHandler() {
+        val fal = realFsFal()
+        val registry = PlatformSaveHandlerRegistry(
+            context, fal, SaveArchiver(mockk<AndroidDataAccessor>(relaxed = true), fal),
+            mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true),
+            mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true)
+        )
+        every { saveHandlerRegistry.getFolderHandler("wii") } returns registry.getFolderHandler("wii")
+    }
+
+    @Test
+    fun `Wii channel saves are discovered in builtin NAND without the disc category`() = runTest {
+        stubBuiltinSettings()
+        registerWiiHandler()
+        val titleRoot = File(tempDir, "libretro/saves/User/Wii/title")
+        val channelSave = File(titleRoot, "00010001/57414245").apply { mkdirs() }
+        File(channelSave, "data/save.bin").apply {
+            parentFile!!.mkdirs()
+            writeBytes(byteArrayOf(42))
+        }
+        assertFalse(File(titleRoot, "00010000").exists())
+
+        val result = resolver.discoverSavePath(
+            emulatorId = "argosy", gameTitle = "Wii Channel", platformSlug = "wii",
+            cachedSaveId = "00010001/57414245"
+        )
+
+        assertEquals(channelSave, result?.let(::File))
+        assertFalse(File(titleRoot, "00010000").exists())
+    }
+
+    @Test
+    fun `Wii channel saves are discovered in standalone NAND without the disc category`() = runTest {
+        registerWiiHandler()
+        val titleRoot = File(tempDir, "Android/data/org.dolphinemu.dolphinemu/files/Wii/title")
+        val channelSave = File(titleRoot, "00010001/57414245").apply { mkdirs() }
+        File(channelSave, "data/save.bin").apply {
+            parentFile!!.mkdirs()
+            writeBytes(byteArrayOf(42))
+        }
+        assertFalse(File(titleRoot, "00010000").exists())
+
+        val result = resolver.discoverSavePath(
+            emulatorId = "dolphin", gameTitle = "Wii Channel", platformSlug = "wii",
+            cachedSaveId = "00010001/57414245", emulatorPackage = "org.dolphinemu.dolphinemu"
+        )
+
+        assertEquals(channelSave, result?.let(::File))
+        assertFalse(File(titleRoot, "00010000").exists())
+    }
+
+    @Test
+    fun `Wii channel restore targets standalone NAND with only the channel category`() = runTest {
+        registerWiiHandler()
+        val titleRoot = File(tempDir, "Android/data/org.dolphinemu.dolphinemu/files/Wii/title")
+        File(titleRoot, "00010001").mkdirs()
+
+        val result = resolver.constructFolderSavePathWithOverride(
+            "dolphin", "wii", null, 1L, "Wii Channel", "00010001/57414245", "org.dolphinemu.dolphinemu"
+        )
+
+        assertEquals(File(titleRoot, "00010001/57414245"), result?.let(::File))
+        assertFalse(File(titleRoot, "00010000").exists())
+        assertFalse(File(titleRoot, "00010001/57414245").exists())
+    }
+
+    @Test
+    fun `Wii channel restore can add the channel category to standalone disc NAND`() = runTest {
+        registerWiiHandler()
+        val titleRoot = File(tempDir, "Android/data/org.dolphinemu.dolphinemu/files/Wii/title")
+        File(titleRoot, "00010000").mkdirs()
+
+        val result = resolver.constructFolderSavePathWithOverride(
+            "dolphin", "wii", null, 1L, "Wii Channel", "00010001/57414245", "org.dolphinemu.dolphinemu"
+        )
+
+        assertEquals(File(titleRoot, "00010001/57414245"), result?.let(::File))
+        assertFalse(File(titleRoot, "00010001").exists())
+    }
+
+    @Test
+    fun `Wii standalone construction still rejects a missing NAND root`() = runTest {
+        registerWiiHandler()
+
+        val result = resolver.constructFolderSavePathWithOverride(
+            "dolphin", "wii", null, 1L, "Wii Channel", "00010001/57414245", "org.dolphinemu.dolphinemu"
+        )
+
+        assertNull(result)
+        assertFalse(File(tempDir, "Android/data/org.dolphinemu.dolphinemu").exists())
+    }
+
     @Test
     fun `Wii first-save construction uses the custom builtin root even before NAND exists`() = runTest {
         val root = File(tempDir, "custom/wii-saves").apply { mkdirs() }
@@ -127,20 +220,17 @@ class SavePathResolverDiscoveryTest {
         val game = GameEntity(
             id = 1L, title = "Super Mario Galaxy", sortTitle = "super mario galaxy", platformId = 2L,
             platformSlug = "wii", rommId = 7L, igdbId = null, localPath = "/roms/Galaxy.wbfs",
-            source = GameSource.ROMM_SYNCED, titleId = "524D4745", saveId = "00010000/524d4745"
+            source = GameSource.ROMM_SYNCED, titleId = "524D4745", saveId = "00010001/524d4745"
         )
         coEvery { gameDao.getById(1L) } returns game
-        val fal = realFsFal()
-        val handler = com.nendo.argosy.data.sync.platform.FolderSaveHandler(
-            context, fal, SaveArchiver(mockk(relaxed = true), fal), "wii"
-        )
-        every { saveHandlerRegistry.getFolderHandler("wii") } returns handler
+        registerWiiHandler()
 
         val result = resolver.constructFolderSavePathWithOverride(
-            "argosy", "wii", game.localPath, game.id, game.title, "524d4745", "argosy.builtin.libretro"
+            "argosy", "wii", game.localPath, game.id, game.title, "00010001/524D4745", "argosy.builtin.libretro"
         )
 
-        assertEquals(File(root, "User/Wii/title/00010000/524d4745"), result?.let(::File))
+        assertEquals(File(root, "User/Wii/title/00010001/524d4745"), result?.let(::File))
+        assertFalse(File(root, "User").exists())
     }
 
     @Test

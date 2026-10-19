@@ -416,7 +416,7 @@ class SaveCacheManager @Inject constructor(
         val gciMembers = if (unit == null) gciUnitMembers(savePath)?.takeIf { it.size > 1 } else null
         val members = unit?.memberPaths ?: gciMembers
         if (members != null) {
-            members.forEach { fal.prepareSaveAccess(it) }
+            if (!fal.prepareSaveAccess(*members.toTypedArray())) return null
             val zip = File(context.cacheDir, "temp_unit_${System.currentTimeMillis()}.zip")
             if (!saveArchiver.zipFiles(members.map { fal.getTransformedFile(it) }, zip)) {
                 Logger.error(TAG,"Failed to bundle save unit | members=$members")
@@ -531,6 +531,7 @@ class SaveCacheManager @Inject constructor(
      * the bytes could not be cached, and the caller must not overwrite them.
      */
     suspend fun protectBeforeOverwrite(gameId: Long, emulatorId: String, savePath: String): Boolean = withContext(Dispatchers.IO) {
+        if (!fal.prepareSaveAccess(savePath)) return@withContext false
         when (sigilSaveHandler.collect(gameId, emulatorId)) {
             SigilCollect.NotRouted -> isProvenAbsent(savePath) || when (holdsSaveForGame(gameId, savePath)) {
                 false -> true
@@ -573,6 +574,7 @@ class SaveCacheManager @Inject constructor(
         emulatorId: String,
         savePath: String
     ): CacheResult = withContext(Dispatchers.IO) {
+        if (!fal.prepareSaveAccess(savePath)) return@withContext CacheResult.Failed
         val sigil = when (val collected = sigilSaveHandler.collect(gameId, emulatorId)) {
             SigilCollect.NotRouted -> null
             is SigilCollect.Found -> collected
@@ -583,7 +585,6 @@ class SaveCacheManager @Inject constructor(
             return@withContext CacheResult.Failed
         }
 
-        fal.prepareSaveAccess(savePath)
         val saveFile = fal.getTransformedFile(savePath)
         val ownerUserId = syncPreferencesRepository.getRommUserId()
         var tempFile: File? = null

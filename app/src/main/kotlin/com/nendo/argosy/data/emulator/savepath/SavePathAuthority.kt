@@ -278,8 +278,11 @@ open class SavePathAuthority @Inject constructor(
         basePath: String
     ): String? = when {
         config.usesGciFormat -> "<region>/Card A"
-        PlatformDefinitions.getCanonicalSlug(platformSlug) == "wii" ->
-            if (basePath.contains("/title/")) "<id>/data" else "title/<type>/<id>/data"
+        PlatformDefinitions.getCanonicalSlug(platformSlug) == "wii" -> when {
+            basePath.trimEnd('/').endsWith("/title") -> "<type>/<id>/data"
+            basePath.contains("/title/") -> "<id>/data"
+            else -> "title/<type>/<id>/data"
+        }
         config.usesFolderBasedSaves -> "<save folder>"
         else -> null
     }

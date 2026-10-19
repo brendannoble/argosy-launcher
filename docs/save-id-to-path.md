@@ -206,6 +206,9 @@ lowercase components. Standalone Dolphin and the built-in core share this layout
 the built-in NAND lives under `<builtin saves>/User`. Construction uses the same
 effective custom save root as discovery, including before the NAND exists.
 
+Packaged paths stop at the common `title` directory; the handler selects the save
+id's category, so a channel-only NAND does not require a `00010000` directory.
+
 Archives retain their historical title-only root (`524d4745/`), so saves already
 uploaded by standalone Dolphin remain restorable after switching emulators.
 

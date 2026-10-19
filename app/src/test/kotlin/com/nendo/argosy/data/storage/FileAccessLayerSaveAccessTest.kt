@@ -47,6 +47,19 @@ class FileAccessLayerSaveAccessTest {
     }
 
     @Test
+    fun `preparation reports mirror refresh failure without changing non mirrored access`() {
+        every { androidDataAccessor.syncMirror(listOf(restricted)) } returns false
+        org.junit.Assert.assertEquals(false, fal.prepareSaveAccess(restricted, open))
+
+        every { androidDataAccessor.syncMirror(listOf(restricted)) } returns true
+        org.junit.Assert.assertEquals(true, fal.prepareSaveAccess(restricted, open))
+
+        every { androidDataAccessor.syncMirror(listOf(restricted)) } returns null
+        org.junit.Assert.assertEquals(true, fal.prepareSaveAccess(restricted, open))
+        org.junit.Assert.assertEquals(true, fal.prepareSaveAccess(open, null))
+    }
+
+    @Test
     fun `grants only the restricted paths in one call`() {
         every { rootFileAccessor.isAvailable } returns true
 

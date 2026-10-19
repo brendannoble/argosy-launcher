@@ -119,6 +119,81 @@ class SaveCacheManagerCachingTest {
     }
 
     @Test
+    fun `fresh restricted progress is backed up despite a stale empty or missing mirror`() = runTest {
+        for (reportedMissing in listOf(false, true)) {
+            val target = File(tempDir, "Android/data/dolphin/$reportedMissing/title/00010000/524d4745")
+            val data = File(target, "data").apply { mkdirs() }
+            val progress = byteArrayOf(4, 2, 9)
+            File(data, "GameData.bin").writeBytes(progress)
+            var refreshed = false
+            every { fal.prepareSaveAccess(target.path) } answers {
+                refreshed = true
+                true
+            }
+            every { fal.exists(target.path) } answers { refreshed || !reportedMissing }
+            every { fal.listFilesUnion(target.parent) } answers {
+                if (refreshed) listOf(com.nendo.argosy.data.storage.FileInfo(
+                    path = target.path, name = target.name, isDirectory = true, isFile = false,
+                    size = 0L, lastModified = target.lastModified()
+                )) else emptyList()
+            }
+            every { fal.listFilesUnion(target.path) } answers {
+                if (refreshed) listOf(com.nendo.argosy.data.storage.FileInfo(
+                    path = data.path, name = data.name, isDirectory = true, isFile = false,
+                    size = 0L, lastModified = data.lastModified()
+                )) else emptyList()
+            }
+            val cached = slot<SaveCacheEntity>()
+            coEvery { saveCacheDao.insert(capture(cached)) } returns 1L
+
+            assertTrue(manager.protectBeforeOverwrite(9L, "dolphin", target.path))
+
+            assertTrue("Storage must be refreshed before deciding nothing needs protection", refreshed)
+            val archive = File(tempDir, "save_cache/${cached.captured.cachePath}")
+            java.util.zip.ZipFile(archive).use { zip ->
+                val entry = zip.entries().asSequence().single { it.name.endsWith("GameData.bin") }
+                org.junit.Assert.assertArrayEquals(progress, zip.getInputStream(entry).use { it.readBytes() })
+            }
+        }
+    }
+
+    @Test
+    fun `a failed mirror refresh blocks overwrite before classifying empty or missing destinations`() = runTest {
+        for (exists in listOf(false, true)) {
+            val target = File(tempDir, "Android/data/dolphin/$exists/title/00010000/524d4745")
+            if (exists) target.mkdirs()
+            every { fal.prepareSaveAccess(target.path) } returns false
+
+            assertFalse(manager.protectBeforeOverwrite(9L, "dolphin", target.path))
+
+            io.mockk.verify(exactly = 0) { fal.exists(target.path) }
+            io.mockk.verify(exactly = 0) { fal.isListable(any()) }
+            io.mockk.verify(exactly = 0) { fal.listFilesUnion(any()) }
+            coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+        }
+    }
+
+    @Test
+    fun `rollback creation fails when its mirror refresh fails`() = runTest {
+        val target = File(tempDir, "Android/data/dolphin/title/00010000/524d4745")
+        val save = File(target, "data/GameData.bin").apply {
+            parentFile.mkdirs()
+            writeBytes(byteArrayOf(4, 2))
+        }
+        every { fal.prepareSaveAccess(target.path) } returns false
+
+        assertEquals(SaveCacheManager.CacheResult.Failed, manager.cacheAsRollback(9L, "dolphin", target.path))
+
+        org.junit.Assert.assertArrayEquals(byteArrayOf(4, 2), save.readBytes())
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+
+        every { fal.prepareSaveAccess(target.path) } returnsMany listOf(true, false)
+        assertFalse(manager.protectBeforeOverwrite(9L, "dolphin", target.path))
+        org.junit.Assert.assertArrayEquals(byteArrayOf(4, 2), save.readBytes())
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+    }
+
+    @Test
     fun `an unstatable restricted destination is not proven absent`() = runTest {
         val target = File(tempDir, "Android/data/dolphin/files/Wii/title/00010000/524d4745")
         val original = File(target, "data/GameData.bin").apply {
@@ -561,6 +636,24 @@ class SaveCacheManagerCachingTest {
             ByteArray(32).also { internal.toByteArray().copyInto(it) }.copyInto(bytes, 8)
             writeBytes(bytes)
         }
+
+    @Test
+    fun `a multi member rollback fails when refreshing the complete unit fails`() = runTest {
+        val card = File(tempDir, "GC/USA/Card A").apply { mkdirs() }
+        val first = gci(card, "8P-GFZE-fzc.dat.gci", "GFZE", "fzc.dat", 1)
+        val second = gci(card, "8P-GFZE-f_zero.dat.gci", "GFZE", "f_zero.dat", 2)
+        val firstBytes = first.readBytes()
+        val secondBytes = second.readBytes()
+        every { fal.prepareSaveAccess(*anyVararg()) } answers {
+            firstArg<Array<String?>>().none { it == second.path }
+        }
+
+        assertEquals(SaveCacheManager.CacheResult.Failed, manager.cacheAsRollback(9L, "builtin", first.path))
+
+        org.junit.Assert.assertArrayEquals(firstBytes, first.readBytes())
+        org.junit.Assert.assertArrayEquals(secondBytes, second.readBytes())
+        coVerify(exactly = 0) { saveCacheDao.insert(any()) }
+    }
 
     @Test
     fun `a GameCube save of several files caches every member of the game as one archive`() = runTest {
